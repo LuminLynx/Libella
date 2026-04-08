@@ -11,6 +11,8 @@ import com.example.foss101.ui.details.TermDetailsScreen
 import com.example.foss101.ui.home.HomeScreen
 import com.example.foss101.ui.settings.SettingsScreen
 import com.example.foss101.ui.trendwatcher.TrendWatcherScreen
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 
 @Composable
 fun AppNav() {
@@ -23,7 +25,14 @@ fun AppNav() {
         composable("browse") { BrowseTermsScreen() }
         composable("categories") { TermDetailsScreen() }
         composable("search") { BrowseTermsScreen() }
-        composable("details") { TermDetailsScreen() }
+        composable(
+            route = "details/{termId}",
+            arguments = listOf(
+                navArgument("termId")  { type = NavType.StringType }
+            )
+        ) {
+            TermDetailsScreen()
+        }
         composable("ai_tools") { AiToolsScreen() }
         composable("trend_watcher") { TrendWatcherScreen() }
         composable("ask_glossary") { ChatScreen() }
