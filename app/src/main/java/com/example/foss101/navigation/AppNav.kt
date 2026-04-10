@@ -30,8 +30,9 @@ fun AppNav() {
             arguments = listOf(
                 navArgument("termId")  { type = NavType.StringType }
             )
-        ) {
-            TermDetailsScreen()
+        ) { backStackEntry ->
+            val termId = backStackEntry.arguments?.getString("termId")
+            TermDetailsScreen(termId)
         }
         composable("ai_tools") { AiToolsScreen() }
         composable("trend_watcher") { TrendWatcherScreen() }

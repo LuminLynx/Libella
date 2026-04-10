@@ -4,6 +4,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 
 @Composable
-fun TermDetailsScreen() {
-    Text("Term Details Screen Placeholder")
+fun TermDetailsScreen(termId: String? = null) {
+    Text("Term Details Screen Placeholder for: $termId")
 }
