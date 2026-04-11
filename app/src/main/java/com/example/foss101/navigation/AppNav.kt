@@ -6,9 +6,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.foss101.ui.ai.AiToolsScreen
 import com.example.foss101.ui.browse.BrowseTermsScreen
+import com.example.foss101.ui.categories.CategoriesScreen
 import com.example.foss101.ui.chat.ChatScreen
 import com.example.foss101.ui.details.TermDetailsScreen
 import com.example.foss101.ui.home.HomeScreen
+import com.example.foss101.ui.search.SearchScreen
 import com.example.foss101.ui.settings.SettingsScreen
 import com.example.foss101.ui.trendwatcher.TrendWatcherScreen
 import androidx.navigation.NavType
@@ -25,9 +27,11 @@ fun AppNav() {
         composable("browse") { 
             BrowseTermsScreen(onNavigate = { route -> navController.navigate(route) })
         }
-        composable("categories") { TermDetailsScreen() }
-        composable("search") { 
-            BrowseTermsScreen(onNavigate = { route -> navController.navigate(route) }) 
+        composable("categories") {
+            CategoriesScreen(onNavigate = { route -> navController.navigate(route) })
+        }
+        composable("search") {
+            SearchScreen(onNavigate = { route -> navController.navigate(route) })
         }
         composable(
             route = "details/{termId}",
