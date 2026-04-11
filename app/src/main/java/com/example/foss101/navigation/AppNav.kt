@@ -20,11 +20,15 @@ fun AppNav() {
 
     NavHost(navController = navController, startDestination = "home") {
         composable("home") {
-            HomeScreen(onNavigate = navController::navigate)
+            HomeScreen(onNavigate = { route -> navController.navigate(route) })
         }
-        composable("browse") { BrowseTermsScreen() }
+        composable("browse") { 
+            BrowseTermsScreen(onNavigate = { route -> navController.navigate(route) })
+        }
         composable("categories") { TermDetailsScreen() }
-        composable("search") { BrowseTermsScreen() }
+        composable("search") { 
+            BrowseTermsScreen(onNavigate = { route -> navController.navigate(route) }) 
+        }
         composable(
             route = "details/{termId}",
             arguments = listOf(
