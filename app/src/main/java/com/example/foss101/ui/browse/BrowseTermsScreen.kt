@@ -15,13 +15,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.foss101.data.repository.MockGlossaryRepository
+import com.example.foss101.data.repository.GlossaryRepository
 import com.example.foss101.model.GlossaryTerm
 
 @Composable
-fun BrowseTermsScreen(onNavigate: (String) -> Unit) {
-    val repository = remember { MockGlossaryRepository() }
-    val terms = remember { repository.getAllTerms() }
+fun BrowseTermsScreen(
+    onNavigate: (String) -> Unit,
+    repository: GlossaryRepository
+) {
+    val terms = remember(repository) { repository.getAllTerms() }
 
     Column(
         modifier = Modifier
