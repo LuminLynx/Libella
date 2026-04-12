@@ -1,8 +1,8 @@
-# FOSS-101 Backend and Database Scope
+# AI-101 Backend and Database Scope
 
 ## 1. Purpose
 
-This document defines the approved MVP scope for the backend and database of the FOSS-101 project.
+This document defines the approved MVP scope for the backend and database of the AI-101 project.
 
 It exists to make sure the Android app, backend, database, and AI agents all work from the same assumptions.
 
@@ -13,7 +13,7 @@ It exists to make sure the Android app, backend, database, and AI agents all wor
 The following decisions are approved for the MVP:
 
 1. **No user accounts**
-2. **No chat / AI tools**
+2. **No chat / AI tools inside the app**
 3. **No admin panel**
 4. **Online-first app**
 5. **Content managed manually at first**
@@ -23,11 +23,35 @@ These decisions reduce scope and keep the MVP focused on the glossary core.
 
 ---
 
-## 3. System Shape
+## 3. Product Direction
 
-FOSS-101 is a **client + backend + database** application.
+AI-101 is an **AI Terms Glossary**.
 
-### 3.1 Android client responsibilities
+### 3.1 Glossary direction
+The glossary content should be:
+- AI-first
+- centered on AI, machine learning, LLM, prompt, model, inference, safety, data, and related concepts
+
+Supporting adjacent technical terms are allowed when they help explain AI concepts clearly.
+
+### 3.2 Naming rule for now
+The visible product direction should use:
+- **AI-101**
+- **AI Terms Glossary**
+
+For now, this does **not** require renaming:
+- repository name
+- file names
+- folder names
+- package names
+
+---
+
+## 4. System Shape
+
+AI-101 is a **client + backend + database** application.
+
+### 4.1 Android client responsibilities
 The Android app is responsible for:
 - presenting the UI
 - navigation between screens
@@ -36,7 +60,7 @@ The Android app is responsible for:
 - calling backend APIs
 - managing UI state
 
-### 3.2 Backend responsibilities
+### 4.2 Backend responsibilities
 The backend is responsible for:
 - serving glossary terms
 - serving term details
@@ -45,7 +69,7 @@ The backend is responsible for:
 - supporting category filtering
 - exposing stable API responses to the Android app
 
-### 3.3 Database responsibilities
+### 4.3 Database responsibilities
 The database is responsible for:
 - storing glossary terms
 - storing categories
@@ -54,7 +78,7 @@ The database is responsible for:
 
 ---
 
-## 4. MVP Feature Coverage
+## 5. MVP Feature Coverage
 
 The backend and database must support these MVP Android features:
 
@@ -73,7 +97,7 @@ The backend/database are directly required for:
 
 ---
 
-## 5. Backend MVP Scope
+## 6. Backend MVP Scope
 
 The backend should support these use cases in the MVP:
 
@@ -83,36 +107,33 @@ The backend should support these use cases in the MVP:
 4. Return terms filtered by category
 5. Return terms filtered by search query
 
-### 5.1 Out of scope for MVP
+### 6.1 Out of scope for MVP
 The backend should **not** include these in MVP:
 - authentication
 - user profiles
 - bookmarks/favorites sync
 - chat
-- AI-generated answers
+- AI-generated answers inside the app
 - trend ingestion
 - admin dashboard
 - analytics platform features unless explicitly added later
 
 ---
 
-## 6. Recommended API Shape
+## 7. Recommended API Shape
 
 The MVP backend should expose a simple REST API.
 
-### 6.1 Suggested endpoints
-
+### 7.1 Suggested endpoints
 - `GET /terms`
 - `GET /terms/{id}`
 - `GET /categories`
 
-### 6.2 Suggested query support on `/terms`
-
+### 7.2 Suggested query support on `/terms`
 - `GET /terms?categoryId={id}`
 - `GET /terms?search={query}`
 
-### 6.3 API behavior expectations
-
+### 7.3 API behavior expectations
 - stable JSON responses
 - consistent field names
 - predictable empty-result behavior
@@ -121,13 +142,12 @@ The MVP backend should expose a simple REST API.
 
 ---
 
-## 7. Database MVP Scope
+## 8. Database MVP Scope
 
 The database should store glossary content and category structure.
 
-### 7.1 Terms
+### 8.1 Terms
 Each glossary term should support at least:
-
 - `id`
 - `term`
 - `short_definition`
@@ -139,16 +159,14 @@ Each glossary term should support at least:
 - `created_at`
 - `updated_at`
 
-### 7.2 Categories
+### 8.2 Categories
 Each category should support at least:
-
 - `id`
 - `name`
 - `description`
 
-### 7.3 Optional related terms
+### 8.3 Optional related terms
 This may be included now or later:
-
 - `term_id`
 - `related_term_id`
 
@@ -156,7 +174,7 @@ This is useful if the app later shows related terms on the details screen.
 
 ---
 
-## 8. Search Decision
+## 9. Search Decision
 
 For the MVP, search is **backend-driven**.
 
@@ -170,7 +188,7 @@ The Android app should send the query and display the returned results.
 
 ---
 
-## 9. Offline Strategy
+## 10. Offline Strategy
 
 The MVP is **online-first**.
 
@@ -183,7 +201,7 @@ This keeps the initial system simpler and aligned with the approved scope.
 
 ---
 
-## 10. Content Management Strategy
+## 11. Content Management Strategy
 
 For the MVP, glossary content will be managed manually.
 
@@ -196,7 +214,7 @@ This is the fastest path for the first version.
 
 ---
 
-## 11. Recommended Database Direction
+## 12. Recommended Database Direction
 
 A relational database is the recommended default for this project.
 
@@ -210,16 +228,15 @@ A concrete database choice can be recorded separately once selected.
 
 ---
 
-## 12. Android Integration Strategy
+## 13. Android Integration Strategy
 
 The Android app should not depend directly on raw mock data forever.
 
-### 12.1 Recommended abstraction
+### 13.1 Recommended abstraction
 Use a repository interface such as:
-
 - `GlossaryRepository`
 
-### 12.2 Recommended transition path
+### 13.2 Recommended transition path
 1. Build UI using `MockGlossaryRepository`
 2. Build backend and database in parallel
 3. Replace or supplement with `ApiGlossaryRepository`
@@ -229,7 +246,7 @@ This allows UI work to move forward without waiting for the backend to be comple
 
 ---
 
-## 13. Definition of MVP Success for Backend and Database
+## 14. Definition of MVP Success for Backend and Database
 
 The backend/database portion of the MVP is successful when:
 
@@ -238,19 +255,8 @@ The backend/database portion of the MVP is successful when:
 3. the backend can return categories
 4. the backend can filter by category
 5. the backend can search terms
-6. the database stores glossary content correctly
+6. the database stores AI glossary content correctly
 7. the Android app can consume the backend successfully
-
----
-
-## 14. Next Documents to Create
-
-After this document, the next repo documents should be:
-
-1. `AGENTS.md`
-2. `TASKS.md`
-
-These should use this scope definition as a source of truth.
 
 ---
 
@@ -261,9 +267,10 @@ The approved MVP system is:
 - Android client
 - backend API
 - database-backed glossary content
+- AI-first glossary content
 - online-first
 - no user accounts
-- no chat / AI tools
+- no chat / AI tools inside the app
 - no admin panel
 - manual content management initially
 
