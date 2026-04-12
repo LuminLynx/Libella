@@ -12,28 +12,22 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.foss101.data.repository.GlossaryRepository
 import com.example.foss101.ui.browse.GlossaryTermItem
+import com.example.foss101.viewmodel.SearchViewModel
 
 @Composable
 fun SearchScreen(
     onNavigate: (String) -> Unit,
     repository: GlossaryRepository
 ) {
-    var query by remember { mutableStateOf("") }
-    val results = remember(query, repository) {
-        if (query.isBlank()) {
-            emptyList()
-        } else {
-            repository.searchTerms(query)
-        }
-    }
+    val viewModel: SearchViewModel = viewModel(
+        factory = SearchViewModel.factory(repository)
+    )
+    val uiState = viewModel.uiState
 
     Column(
         modifier = Modifier
@@ -51,15 +45,15 @@ fun SearchScreen(
         )
 
         OutlinedTextField(
-            value = query,
-            onValueChange = { query = it },
+            value = uiState.query,
+            onValueChange = viewModel::onQueryChanged,
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             label = { Text("Search terms") },
             placeholder = { Text("Type a term or keyword") }
         )
 
-        if (query.isBlank()) {
+        if (uiState.query.isBlank()) {
             Text(
                 text = "Enter a search query to see results.",
                 style = MaterialTheme.typography.bodyMedium,
@@ -68,7 +62,16 @@ fun SearchScreen(
             return@Column
         }
 
-        if (results.isEmpty()) {
+        if (uiState.errorMessage != null) {
+            Text(
+                text = uiState.errorMessage,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(top = 16.dp)
+            )
+            return@Column
+        }
+
+        if (uiState.results.isEmpty()) {
             Text(
                 text = "No search results found.",
                 style = MaterialTheme.typography.bodyMedium,
@@ -84,7 +87,7 @@ fun SearchScreen(
             contentPadding = PaddingValues(bottom = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(results) { term ->
+            items(uiState.results) { term ->
                 GlossaryTermItem(
                     term = term,
                     onClick = { onNavigate("details/${term.id}") }

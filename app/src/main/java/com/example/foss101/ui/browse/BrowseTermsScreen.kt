@@ -12,18 +12,22 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.foss101.data.repository.GlossaryRepository
 import com.example.foss101.model.GlossaryTerm
+import com.example.foss101.viewmodel.BrowseTermsViewModel
 
 @Composable
 fun BrowseTermsScreen(
     onNavigate: (String) -> Unit,
     repository: GlossaryRepository
 ) {
-    val terms = remember(repository) { repository.getAllTerms() }
+    val viewModel: BrowseTermsViewModel = viewModel(
+        factory = BrowseTermsViewModel.factory(repository)
+    )
+    val uiState = viewModel.uiState
 
     Column(
         modifier = Modifier
@@ -40,15 +44,33 @@ fun BrowseTermsScreen(
             modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
         )
 
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 8.dp)
-        ) {
-            items(terms) { term ->
-                GlossaryTermItem(
-                    term = term,
-                    onClick = { onNavigate("details/${term.id}") }
+        when {
+            uiState.isLoading -> {
+                Text(
+                    text = "Loading terms...",
+                    style = MaterialTheme.typography.bodyMedium
                 )
+            }
+
+            uiState.errorMessage != null -> {
+                Text(
+                    text = uiState.errorMessage,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+
+            else -> {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 8.dp)
+                ) {
+                    items(uiState.terms) { term ->
+                        GlossaryTermItem(
+                            term = term,
+                            onClick = { onNavigate("details/${term.id}") }
+                        )
+                    }
+                }
             }
         }
     }
