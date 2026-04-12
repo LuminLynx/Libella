@@ -18,14 +18,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.foss101.data.repository.MockGlossaryRepository
+import com.example.foss101.data.repository.GlossaryRepository
 import com.example.foss101.ui.browse.GlossaryTermItem
 
 @Composable
-fun SearchScreen(onNavigate: (String) -> Unit) {
-    val repository = remember { MockGlossaryRepository() }
+fun SearchScreen(
+    onNavigate: (String) -> Unit,
+    repository: GlossaryRepository
+) {
     var query by remember { mutableStateOf("") }
-    val results = remember(query) {
+    val results = remember(query, repository) {
         if (query.isBlank()) {
             emptyList()
         } else {

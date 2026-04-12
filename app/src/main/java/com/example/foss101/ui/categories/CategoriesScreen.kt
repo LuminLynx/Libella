@@ -19,14 +19,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.foss101.data.repository.MockGlossaryRepository
+import com.example.foss101.data.repository.GlossaryRepository
 import com.example.foss101.model.Category
 import com.example.foss101.ui.browse.GlossaryTermItem
 
 @Composable
-fun CategoriesScreen(onNavigate: (String) -> Unit) {
-    val repository = remember { MockGlossaryRepository() }
-    val categories = remember { repository.getAllCategories() }
+fun CategoriesScreen(
+    onNavigate: (String) -> Unit,
+    repository: GlossaryRepository
+) {
+    val categories = remember(repository) { repository.getAllCategories() }
     var selectedCategoryId by remember { mutableStateOf<String?>(null) }
 
     if (categories.isEmpty()) {
@@ -67,7 +69,7 @@ fun CategoriesScreen(onNavigate: (String) -> Unit) {
     }
 
     val selectedCategory = categories.firstOrNull { it.id == selectedCategoryId }
-    val filteredTerms = remember(selectedCategoryId) {
+    val filteredTerms = remember(selectedCategoryId, repository) {
         selectedCategoryId?.let(repository::getTermsByCategory).orEmpty()
     }
 

@@ -11,13 +11,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.foss101.data.repository.MockGlossaryRepository
+import com.example.foss101.data.repository.GlossaryRepository
 import com.example.foss101.ui.components.SectionHeader
 
 @Composable
-fun TermDetailsScreen(termId: String? = null) {
-    val repository = remember { MockGlossaryRepository() }
-    val term = remember(termId) {
+fun TermDetailsScreen(
+    termId: String? = null,
+    repository: GlossaryRepository
+) {
+    val term = remember(termId, repository) {
         termId?.let { repository.getTermById(it) }
     }
 
