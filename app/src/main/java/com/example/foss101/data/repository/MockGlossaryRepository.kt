@@ -7,293 +7,253 @@ class MockGlossaryRepository : GlossaryRepository {
 
     private val categories = listOf(
         Category(
-            id = "foss",
-            name = "FOSS",
-            description = "Free and open source software concepts."
+            id = "ai_fundamentals",
+            name = "AI Fundamentals",
+            description = "Core concepts used across modern AI systems."
         ),
         Category(
-            id = "ai",
-            name = "AI",
-            description = "Artificial intelligence concepts and terms."
+            id = "ml_training",
+            name = "ML and Training",
+            description = "How models learn from data and improve performance."
         ),
         Category(
-            id = "dev",
-            name = "Development",
-            description = "Software development tools and practices."
+            id = "llm_prompting",
+            name = "LLMs and Prompting",
+            description = "Language model concepts, prompting patterns, and response behavior."
         ),
         Category(
-            id = "security",
-            name = "Security",
-            description = "Security-related concepts and practices."
+            id = "safety_eval",
+            name = "Safety and Evaluation",
+            description = "Reliability, quality, and responsible-AI guardrail concepts."
+        ),
+        Category(
+            id = "deployment_ops",
+            name = "Deployment and Ops",
+            description = "Serving, latency, and infrastructure concepts for AI apps."
         )
     )
 
     private val terms = listOf(
         GlossaryTerm(
-            id = "open-source",
-            term = "Open Source",
-            shortDefinition = "Software whose source code is available to inspect, modify, and share.",
-            fullExplanation = "Open source software makes its source code available under a license that allows people to study, modify, and redistribute it.",
-            categoryId = "foss",
-            tags = listOf("license", "software", "community"),
-            relatedTerms = listOf("free-software"),
-            exampleUsage = "Linux is a well-known open source project.",
-            source = null
-        ),
-        GlossaryTerm(
-            id = "free-software",
-            term = "Free Software",
-            shortDefinition = "Software that respects users' freedom to run, study, modify, and share it.",
-            fullExplanation = "Free software emphasizes user freedoms rather than price. It is closely related to open source, though the philosophies are not identical.",
-            categoryId = "foss",
-            tags = listOf("freedom", "license"),
-            relatedTerms = listOf("open-source"),
-            exampleUsage = "GNU is strongly associated with the free software movement.",
+            id = "artificial-intelligence",
+            term = "Artificial Intelligence",
+            shortDefinition = "A field focused on building systems that perform tasks requiring human-like intelligence.",
+            fullExplanation = "Artificial intelligence covers techniques that enable software to reason, predict, generate, and make decisions from data or rules.",
+            categoryId = "ai_fundamentals",
+            tags = listOf("ai", "overview"),
+            relatedTerms = listOf("machine-learning", "model"),
+            exampleUsage = "This app introduces artificial intelligence terms for beginners.",
             source = null
         ),
         GlossaryTerm(
             id = "machine-learning",
             term = "Machine Learning",
-            shortDefinition = "A field of AI where systems learn patterns from data.",
-            fullExplanation = "Machine learning uses data and algorithms to build models that can make predictions or decisions without being explicitly programmed for every rule.",
-            categoryId = "ai",
-            tags = listOf("ai", "models", "data"),
-            relatedTerms = listOf("neural-network"),
-            exampleUsage = "Spam filtering often uses machine learning.",
+            shortDefinition = "A branch of AI where models learn patterns from examples.",
+            fullExplanation = "Machine learning trains mathematical models on data so they can make predictions or decisions without being explicitly programmed for every case.",
+            categoryId = "ml_training",
+            tags = listOf("ai", "training", "models"),
+            relatedTerms = listOf("dataset", "training", "inference"),
+            exampleUsage = "Fraud detection systems often rely on machine learning.",
             source = null
         ),
         GlossaryTerm(
-            id = "neural-network",
-            term = "Neural Network",
-            shortDefinition = "A machine learning model inspired by interconnected processing units.",
-            fullExplanation = "A neural network is a layered model used in machine learning, especially deep learning, to recognize patterns in data.",
-            categoryId = "ai",
-            tags = listOf("deep-learning", "ai"),
-            relatedTerms = listOf("machine-learning"),
-            exampleUsage = "Image recognition systems often use neural networks.",
+            id = "model",
+            term = "Model",
+            shortDefinition = "A learned representation used to produce predictions or generated outputs.",
+            fullExplanation = "In AI, a model is the trained artifact produced from data and algorithms. It is later used during inference to complete a task.",
+            categoryId = "ai_fundamentals",
+            tags = listOf("ai", "prediction"),
+            relatedTerms = listOf("training", "inference"),
+            exampleUsage = "The chatbot sends your prompt to a language model.",
             source = null
         ),
         GlossaryTerm(
-            id = "api",
-            term = "API",
-            shortDefinition = "A defined way for software systems to communicate with each other.",
-            fullExplanation = "An API, or Application Programming Interface, defines how one software component can request or exchange data with another.",
-            categoryId = "dev",
-            tags = listOf("backend", "integration"),
-            relatedTerms = listOf("rest-api"),
-            exampleUsage = "The Android app calls the backend API to fetch glossary terms.",
+            id = "dataset",
+            term = "Dataset",
+            shortDefinition = "A structured collection of examples used for training or evaluation.",
+            fullExplanation = "A dataset contains records such as text, images, or labels that help models learn patterns and support quality measurement.",
+            categoryId = "ml_training",
+            tags = listOf("data", "training"),
+            relatedTerms = listOf("training", "benchmark"),
+            exampleUsage = "The team cleaned the dataset before training the model.",
             source = null
         ),
         GlossaryTerm(
-            id = "rest-api",
-            term = "REST API",
-            shortDefinition = "A web API designed around resources and standard HTTP methods.",
-            fullExplanation = "A REST API commonly uses endpoints, JSON, and HTTP methods like GET, POST, PUT, and DELETE to work with resources.",
-            categoryId = "dev",
-            tags = listOf("http", "json", "backend"),
-            relatedTerms = listOf("api"),
-            exampleUsage = "GET /terms is an example of a REST API endpoint.",
+            id = "training",
+            term = "Training",
+            shortDefinition = "The process of adjusting model parameters using data.",
+            fullExplanation = "Training repeatedly compares model outputs with expected results and updates weights to reduce error over time.",
+            categoryId = "ml_training",
+            tags = listOf("optimization", "learning"),
+            relatedTerms = listOf("fine-tuning", "inference"),
+            exampleUsage = "Training can take hours or days depending on model size.",
             source = null
         ),
         GlossaryTerm(
-            id = "encryption",
-            term = "Encryption",
-            shortDefinition = "The process of converting data into a protected form.",
-            fullExplanation = "Encryption transforms readable data into encoded data so only authorized parties can access the original information.",
-            categoryId = "security",
-            tags = listOf("privacy", "data"),
-            relatedTerms = listOf("authentication"),
-            exampleUsage = "HTTPS uses encryption to protect data in transit.",
+            id = "inference",
+            term = "Inference",
+            shortDefinition = "The stage where a trained model is used to generate predictions.",
+            fullExplanation = "Inference happens after training, when a model receives new input and returns an output such as a classification, score, or generated text.",
+            categoryId = "deployment_ops",
+            tags = listOf("serving", "prediction"),
+            relatedTerms = listOf("model", "latency"),
+            exampleUsage = "Users experience inference each time they ask a question.",
             source = null
         ),
         GlossaryTerm(
-            id = "authentication",
-            term = "Authentication",
-            shortDefinition = "The process of verifying identity.",
-            fullExplanation = "Authentication confirms that a user or system is who it claims to be, often using passwords, tokens, or biometric methods.",
-            categoryId = "security",
-            tags = listOf("identity", "access"),
-            relatedTerms = listOf("encryption"),
-            exampleUsage = "Logging into an app usually requires authentication.",
+            id = "llm",
+            term = "Large Language Model (LLM)",
+            shortDefinition = "A neural network trained on large-scale text to understand and generate language.",
+            fullExplanation = "LLMs learn statistical language patterns from massive corpora and are commonly used for chat, summarization, reasoning, and coding tasks.",
+            categoryId = "llm_prompting",
+            tags = listOf("llm", "language"),
+            relatedTerms = listOf("prompt", "token", "context-window"),
+            exampleUsage = "The assistant uses an LLM to draft explanations.",
             source = null
         ),
         GlossaryTerm(
-        id = "linux",
-        term = "Linux",
-        shortDefinition = "An open source operating system kernel used in many systems.",
-        fullExplanation = "Linux is an open source kernel that powers many operating systems, including servers, desktops, and Android devices.",
-        categoryId = "foss",
-        tags = listOf("kernel", "operating-system", "open-source"),
-        relatedTerms = listOf("open-source"),
-        exampleUsage = "Many web servers run on Linux.",
-        source = null
+            id = "prompt",
+            term = "Prompt",
+            shortDefinition = "The input instruction that guides a model's response.",
+            fullExplanation = "A prompt can include task instructions, examples, constraints, and context that shape model output quality and style.",
+            categoryId = "llm_prompting",
+            tags = listOf("input", "instruction"),
+            relatedTerms = listOf("system-prompt", "temperature"),
+            exampleUsage = "A clear prompt usually gives better responses.",
+            source = null
         ),
         GlossaryTerm(
-        id = "gnu",
-        term = "GNU",
-        shortDefinition = "A free software project and operating system initiative.",
-        fullExplanation = "GNU is a free software project launched to create a Unix-like operating system made entirely of free software components.",
-        categoryId = "foss",
-        tags = listOf("free-software", "project"),
-        relatedTerms = listOf("free-software", "linux"),
-        exampleUsage = "GNU tools are widely used on Linux systems.",
-        source = null
-       ),
-       GlossaryTerm(
-       id = "copyleft",
-       term = "Copyleft",
-       shortDefinition = "A licensing approach that requires derived works to remain under the same license terms.",
-       fullExplanation = "Copyleft uses copyright law to preserve software freedom by requiring modified or redistributed versions to stay under compatible open terms.",
-       categoryId = "foss",
-       tags = listOf("license", "freedom"),
-       relatedTerms = listOf("free-software", "open-source"),
-       exampleUsage = "The GPL is a well-known copyleft license.",
-       source = null
-       ),
-       GlossaryTerm(
-       id = "github",
-       term = "GitHub",
-       shortDefinition = "A platform for hosting and collaborating on Git repositories.",
-       fullExplanation = "GitHub is a widely used platform for source control, code collaboration, pull requests, and issue tracking.",
-       categoryId = "dev",
-       tags = listOf("git", "repository", "collaboration"),
-       relatedTerms = listOf("git"),
-       exampleUsage = "The project source code is hosted on GitHub.",
-       source = null
-       ),
-       GlossaryTerm(
-       id = "git",
-       term = "Git",
-       shortDefinition = "A distributed version control system.",
-       fullExplanation = "Git tracks changes in source code and supports branching, merging, and collaboration across distributed teams.",
-       categoryId = "dev",
-       tags = listOf("version-control", "repository"),
-       relatedTerms = listOf("github"),
-       exampleUsage = "Developers use Git to manage code history.",
-       source = null
+            id = "system-prompt",
+            term = "System Prompt",
+            shortDefinition = "A high-priority instruction that sets assistant behavior.",
+            fullExplanation = "System prompts define role, boundaries, and response expectations before user prompts are applied.",
+            categoryId = "llm_prompting",
+            tags = listOf("instruction-hierarchy", "assistant"),
+            relatedTerms = listOf("prompt", "guardrails"),
+            exampleUsage = "The system prompt can enforce concise output style.",
+            source = null
         ),
         GlossaryTerm(
-        id = "frontend",
-        term = "Frontend",
-        shortDefinition = "The user-facing part of an application.",
-        fullExplanation = "Frontend refers to the interface users interact with directly, such as screens, buttons, forms, and navigation.",
-        categoryId = "dev",
-        tags = listOf("ui", "client"),
-        relatedTerms = listOf("backend"),
-        exampleUsage = "The Android app is the frontend for the glossary system.",
-        source = null
+            id = "token",
+            term = "Token",
+            shortDefinition = "A unit of text processed by language models.",
+            fullExplanation = "Models break text into tokens for training and inference. Token count affects cost, context usage, and response limits.",
+            categoryId = "llm_prompting",
+            tags = listOf("text", "context-window"),
+            relatedTerms = listOf("llm", "context-window"),
+            exampleUsage = "Long prompts consume more tokens.",
+            source = null
         ),
         GlossaryTerm(
-        id = "backend",
-        term = "Backend",
-        shortDefinition = "The server-side part of an application that handles data and logic.",
-        fullExplanation = "The backend manages business logic, APIs, databases, and data flow for the client application.",
-        categoryId = "dev",
-        tags = listOf("server", "api", "database"),
-        relatedTerms = listOf("frontend", "api"),
-        exampleUsage = "The glossary terms are served by the backend API.",
-        source = null
+            id = "context-window",
+            term = "Context Window",
+            shortDefinition = "The maximum amount of tokenized content a model can consider at once.",
+            fullExplanation = "The context window includes system instructions, conversation history, and current input. Exceeding it causes earlier content to be dropped.",
+            categoryId = "llm_prompting",
+            tags = listOf("limits", "tokens"),
+            relatedTerms = listOf("token", "retrieval-augmented-generation"),
+            exampleUsage = "Large context windows help with long documents.",
+            source = null
         ),
         GlossaryTerm(
-        id = "database",
-        term = "Database",
-        shortDefinition = "A system for storing, organizing, and retrieving data.",
-        fullExplanation = "A database stores application data in a structured way so it can be queried, updated, and maintained efficiently.",
-        categoryId = "dev",
-        tags = listOf("storage", "data"),
-        relatedTerms = listOf("backend", "api"),
-        exampleUsage = "The backend reads glossary data from the database.",
-        source = null
+            id = "temperature",
+            term = "Temperature",
+            shortDefinition = "A decoding setting that controls randomness in generated text.",
+            fullExplanation = "Lower temperature tends to make outputs more deterministic, while higher temperature can increase variety and creativity.",
+            categoryId = "llm_prompting",
+            tags = listOf("generation", "decoding"),
+            relatedTerms = listOf("prompt", "inference"),
+            exampleUsage = "Set a lower temperature for repeatable responses.",
+            source = null
         ),
         GlossaryTerm(
-        id = "prompt",
-        term = "Prompt",
-        shortDefinition = "Input given to an AI system to guide its response.",
-        fullExplanation = "A prompt is the instruction or input text provided to an AI model to shape what it generates or how it responds.",
-        categoryId = "ai",
-        tags = listOf("ai", "input"),
-        relatedTerms = listOf("machine-learning"),
-        exampleUsage = "A clear prompt usually leads to better AI output.",
-        source = null
+            id = "hallucination",
+            term = "Hallucination",
+            shortDefinition = "A confident model response that is incorrect or unsupported.",
+            fullExplanation = "Hallucinations happen when a model generates plausible but false content. Mitigation often combines better prompting, retrieval, and validation.",
+            categoryId = "safety_eval",
+            tags = listOf("reliability", "quality"),
+            relatedTerms = listOf("evaluation", "retrieval-augmented-generation"),
+            exampleUsage = "The answer sounded right, but it was a hallucination.",
+            source = null
         ),
         GlossaryTerm(
-        id = "dataset",
-        term = "Dataset",
-        shortDefinition = "A collection of data used for analysis or model training.",
-        fullExplanation = "A dataset is an organized set of examples or records used in software, analytics, or machine learning workflows.",
-        categoryId = "ai",
-        tags = listOf("data", "training"),
-        relatedTerms = listOf("machine-learning"),
-        exampleUsage = "The model was trained on a large dataset.",
-        source = null
+            id = "evaluation",
+            term = "Evaluation",
+            shortDefinition = "The process of measuring model quality against defined criteria.",
+            fullExplanation = "Evaluation can include automated benchmarks, human review, and task-specific metrics to verify usefulness, accuracy, and safety.",
+            categoryId = "safety_eval",
+            tags = listOf("metrics", "quality"),
+            relatedTerms = listOf("benchmark", "hallucination"),
+            exampleUsage = "Each model update requires a fresh evaluation pass.",
+            source = null
         ),
         GlossaryTerm(
-        id = "deep-learning",
-        term = "Deep Learning",
-        shortDefinition = "A subset of machine learning based on multi-layer neural networks.",
-        fullExplanation = "Deep learning uses neural networks with many layers to model complex patterns in data such as images, text, and sound.",
-        categoryId = "ai",
-        tags = listOf("ai", "neural-network"),
-        relatedTerms = listOf("machine-learning", "neural-network"),
-        exampleUsage = "Deep learning is widely used in image recognition.",
-        source = null
+            id = "benchmark",
+            term = "Benchmark",
+            shortDefinition = "A standardized test used to compare model performance.",
+            fullExplanation = "Benchmarks provide repeatable tasks and scoring so teams can track improvements and compare different models under similar conditions.",
+            categoryId = "safety_eval",
+            tags = listOf("testing", "comparison"),
+            relatedTerms = listOf("evaluation", "dataset"),
+            exampleUsage = "The model improved by 8 points on the benchmark.",
+            source = null
         ),
         GlossaryTerm(
-        id = "model",
-        term = "Model",
-        shortDefinition = "A learned representation used by software to make predictions or generate outputs.",
-        fullExplanation = "In AI and machine learning, a model is the result of training on data so it can perform tasks such as classification, prediction, or generation.",
-        categoryId = "ai",
-        tags = listOf("ai", "prediction"),
-        relatedTerms = listOf("machine-learning", "dataset"),
-        exampleUsage = "The app may later call a language model through an API.",
-        source = null
+            id = "guardrails",
+            term = "Guardrails",
+            shortDefinition = "Rules and controls that constrain unsafe or off-policy behavior.",
+            fullExplanation = "Guardrails can include policy prompts, output filters, and routing logic to reduce harmful or non-compliant model responses.",
+            categoryId = "safety_eval",
+            tags = listOf("safety", "policy"),
+            relatedTerms = listOf("system-prompt", "evaluation"),
+            exampleUsage = "The app applies guardrails before showing model output.",
+            source = null
         ),
         GlossaryTerm(
-        id = "authorization",
-        term = "Authorization",
-        shortDefinition = "The process of deciding what an authenticated user is allowed to do.",
-        fullExplanation = "Authorization controls permissions after identity is verified, determining what resources or actions are allowed.",
-        categoryId = "security",
-        tags = listOf("permissions", "access-control"),
-        relatedTerms = listOf("authentication"),
-        exampleUsage = "An admin action may require authorization checks.",
-        source = null
-       ),
-        GlossaryTerm(
-        id = "https",
-        term = "HTTPS",
-        shortDefinition = "A secure version of HTTP that protects data in transit.",
-        fullExplanation = "HTTPS uses TLS encryption to secure communication between clients and servers over the web.",
-        categoryId = "security",
-        tags = listOf("web", "encryption", "tls"),
-        relatedTerms = listOf("encryption"),
-        exampleUsage = "APIs should use HTTPS to protect requests and responses.",
-        source = null
+            id = "retrieval-augmented-generation",
+            term = "Retrieval-Augmented Generation (RAG)",
+            shortDefinition = "A pattern that combines external knowledge retrieval with model generation.",
+            fullExplanation = "RAG retrieves relevant documents at query time and provides them to the model, improving factual grounding and reducing hallucinations.",
+            categoryId = "deployment_ops",
+            tags = listOf("rag", "knowledge", "retrieval"),
+            relatedTerms = listOf("hallucination", "context-window"),
+            exampleUsage = "RAG helps the assistant answer with current internal docs.",
+            source = null
         ),
         GlossaryTerm(
-        id = "token",
-        term = "Token",
-        shortDefinition = "A value used in authentication, authorization, or text processing contexts.",
-        fullExplanation = "A token can represent access rights in security systems or a unit of text in language model processing, depending on context.",
-        categoryId = "security",
-        tags = listOf("authentication", "access"),
-        relatedTerms = listOf("authentication", "authorization"),
-        exampleUsage = "An API may require a token for secure access.",
-        source = null
+            id = "latency",
+            term = "Latency",
+            shortDefinition = "The time delay between a request and the model response.",
+            fullExplanation = "Latency impacts user experience in AI apps and depends on model size, infrastructure, network conditions, and prompt length.",
+            categoryId = "deployment_ops",
+            tags = listOf("performance", "serving"),
+            relatedTerms = listOf("inference", "throughput"),
+            exampleUsage = "Reducing latency makes chat feel more responsive.",
+            source = null
         ),
         GlossaryTerm(
-        id = "vulnerability",
-        term = "Vulnerability",
-        shortDefinition = "A weakness that can be exploited to compromise a system.",
-        fullExplanation = "A vulnerability is a flaw in software, hardware, or configuration that could allow unauthorized access or other harmful actions.",
-        categoryId = "security",
-        tags = listOf("risk", "security"),
-        relatedTerms = listOf("encryption", "authentication"),
-        exampleUsage = "Outdated software may contain known vulnerabilities.",
-        source = null
+            id = "throughput",
+            term = "Throughput",
+            shortDefinition = "The amount of work a system can process in a given time.",
+            fullExplanation = "For AI services, throughput often means requests per second or tokens per second handled while maintaining acceptable latency.",
+            categoryId = "deployment_ops",
+            tags = listOf("scaling", "performance"),
+            relatedTerms = listOf("latency", "inference"),
+            exampleUsage = "The new deployment doubled inference throughput.",
+            source = null
+        ),
+        GlossaryTerm(
+            id = "fine-tuning",
+            term = "Fine-Tuning",
+            shortDefinition = "Additional training of a pre-trained model on specialized data.",
+            fullExplanation = "Fine-tuning adapts a general model to domain-specific tasks or tone by continuing training on targeted examples.",
+            categoryId = "ml_training",
+            tags = listOf("adaptation", "training"),
+            relatedTerms = listOf("training", "dataset"),
+            exampleUsage = "They used fine-tuning for industry-specific terminology.",
+            source = null
         )
-
     )
 
     override fun getAllTerms(): List<GlossaryTerm> = terms
@@ -313,9 +273,9 @@ class MockGlossaryRepository : GlossaryRepository {
 
         return terms.filter { term ->
             term.term.lowercase().contains(normalizedQuery) ||
-                    term.shortDefinition.lowercase().contains(normalizedQuery) ||
-                    term.fullExplanation.lowercase().contains(normalizedQuery) ||
-                    term.tags.any { it.lowercase().contains(normalizedQuery) }
+                term.shortDefinition.lowercase().contains(normalizedQuery) ||
+                term.fullExplanation.lowercase().contains(normalizedQuery) ||
+                term.tags.any { it.lowercase().contains(normalizedQuery) }
         }
     }
 

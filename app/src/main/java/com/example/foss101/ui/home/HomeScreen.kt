@@ -29,7 +29,7 @@ private val HomeRoutes = listOf(
 fun HomeScreen(onNavigate: (String) -> Unit) {
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("FOSS-101") })
+            TopAppBar(title = { Text("AI-101") })
         }
     ) { innerPadding ->
         HomeScreenContent(
@@ -54,7 +54,7 @@ private fun HomeScreenContent(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
-            text = "Learn FOSS and AI terms with simple glossary flows.",
+            text = "Learn AI terms with simple glossary flows.",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

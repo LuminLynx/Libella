@@ -17,6 +17,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.foss101.data.repository.GlossaryRepository
 import com.example.foss101.model.GlossaryTerm
+import com.example.foss101.ui.components.EmptyState
+import com.example.foss101.ui.components.ErrorState
+import com.example.foss101.ui.components.LoadingState
 import com.example.foss101.viewmodel.BrowseTermsViewModel
 
 @Composable
@@ -45,19 +48,11 @@ fun BrowseTermsScreen(
         )
 
         when {
-            uiState.isLoading -> {
-                Text(
-                    text = "Loading terms...",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
+            uiState.isLoading -> LoadingState("Loading terms...")
 
-            uiState.errorMessage != null -> {
-                Text(
-                    text = uiState.errorMessage,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
+            uiState.errorMessage != null -> ErrorState(uiState.errorMessage)
+
+            uiState.terms.isEmpty() -> EmptyState("No glossary terms available.")
 
             else -> {
                 LazyColumn(
