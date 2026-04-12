@@ -2,7 +2,7 @@
 
 ## 1. Purpose
 
-This document defines how AI agents should work on the FOSS-101 project.
+This document defines how AI agents should work on the AI-101 project.
 
 It applies to:
 - Codex
@@ -15,21 +15,31 @@ This file exists to keep implementation aligned with the project roadmap, backen
 
 ## 2. Project Context
 
-FOSS-101 is a native Android glossary app with:
+AI-101 is a native Android glossary app with:
 - an Android client
 - a backend API
 - a database
 
-The MVP is focused on glossary functionality only.
+The app is focused on AI glossary functionality.
 
 Approved MVP constraints:
 1. No user accounts
-2. No chat / AI tools
+2. No chat / AI tools inside the app MVP
 3. No admin panel
 4. Online-first app
 5. Content managed manually at first
 
 Agents must respect these constraints unless the project docs are explicitly updated.
+
+### 2.1 Product direction
+The product direction is now:
+- **AI Terms Glossary**
+- temporary app name: **AI-101**
+
+Important:
+- do **not** rename folders, file paths, package names, or repository names from `FOSS` to `AI` unless explicitly requested
+- content, wording, and app-facing product direction should follow **AI Terms Glossary**
+- internal technical names may remain unchanged for now
 
 ---
 
@@ -41,6 +51,7 @@ Agents should use these documents as source of truth:
 2. `docs/architecture/BACKEND_DATABASE_SCOPE.md`
 3. `docs/workflow/AGENTS.md`
 4. `docs/workflow/TASKS.md`
+5. `docs/workflow/GEMINI_AGENT_ROADMAP.md`
 
 If implementation suggestions conflict with these documents, the docs take priority.
 
@@ -48,19 +59,27 @@ If implementation suggestions conflict with these documents, the docs take prior
 
 ## 4. Core Working Rules
 
-### 4.1 Keep tasks small
-Agents must work in small, reviewable tasks.
+### 4.1 Prefer bounded implementation bundles
+Agents should work in **bounded, reviewable implementation bundles**, not tiny patch tasks.
 
 Preferred task shape:
-- one focused objective
-- small number of changed files
-- clear intent
-- easy manual review
+- one meaningful milestone or app slice
+- multiple related files allowed
+- clear scope boundaries
+- easy PR review
+- no unrelated cleanup
+
+Examples of good task sizes:
+- complete one MVP flow end-to-end
+- complete one architectural milestone
+- complete one backend slice
+- complete one UI/system alignment pass
 
 Avoid:
-- large repo-wide rewrites
+- trivial micro-edits as standalone tasks
+- large repo-wide rewrites without boundaries
 - speculative refactors unrelated to the active task
-- mixing architecture changes with UI polish in one step
+- mixing unrelated architecture and feature work in one PR
 
 ### 4.2 Do not invent scope
 Agents must not add features outside approved scope.
@@ -78,13 +97,21 @@ Agents should favor:
 - separation of concerns
 - repository abstraction
 - reusable composables
-- ViewModel-managed UI state
+- ViewModel-managed UI state where appropriate
 - centralized navigation
 - clear package structure
 
 ### 4.4 Do not treat generated code as validated
 Code proposed by agents is not automatically accepted.
 All meaningful changes must be validated in the correct environment.
+
+### 4.5 Keep app behavior stable unless the task explicitly changes it
+For internal cleanup tasks:
+- preserve visible user behavior
+- preserve navigation behavior
+- preserve working MVP flows
+
+Only change visible behavior when the task explicitly calls for it.
 
 ---
 
@@ -152,14 +179,15 @@ Preferred path:
 - `ApiGlossaryRepository` for real integration
 
 ### 6.3 UI work order
-When building Android UI, agents should follow this order:
+When building Android UI, agents should generally follow this order:
 1. models and repository abstraction
 2. reusable components
 3. screen structure
 4. screen logic
-5. polish later
+5. backend-readiness
+6. polish later
 
-Do not jump to icons or visual polish before layout and structure are settled.
+Do not jump to icons or visual polish before layout and structure are settled unless the task explicitly requests a visible UI alignment pass.
 
 ---
 
@@ -179,12 +207,19 @@ The database should store:
 - categories
 - related-term relationships if used
 
-### 7.3 Out of scope for MVP
+### 7.3 Content direction
+The glossary content direction is:
+- AI terms first
+- supporting adjacent technical terms allowed when useful to explain AI concepts
+
+Do not steer the content back toward a FOSS-focused glossary unless explicitly requested.
+
+### 7.4 Out of scope for MVP
 Do not add unless explicitly approved:
 - accounts
 - auth
 - chat
-- AI answer generation
+- AI answer generation inside the app
 - admin dashboard
 - advanced sync features
 
@@ -199,28 +234,34 @@ Examples:
 - updated API contract
 - major roadmap changes
 - changed MVP scope
+- changed product wording that affects active implementation
 
 Do not silently change architecture without reflecting it in docs.
+
+For now:
+- update only the docs explicitly treated as source-of-truth for active implementation
+- do not perform broad repo-wide documentation cleanup unless explicitly requested
 
 ---
 
 ## 9. Commit and Diff Expectations
 
 Preferred output from agents:
-- small diffs
+- focused diffs
 - clear rationale
 - no unrelated file churn
-- meaningful commit-ready units
+- meaningful PR-ready units
 
 Good examples:
-- create glossary term model and category model
-- add repository interface
-- implement mock repository
-- refactor navigation routes into constants
+- implement one complete MVP flow
+- align one architecture slice across multiple screens
+- implement one backend slice
+- standardize one UI system pass
 
 Bad examples:
-- rewrite multiple screens and architecture at once
-- add polish, features, and refactors in one step
+- rewrite multiple unrelated parts of the app at once
+- add polish, features, and refactors in one step without a bounded task
+- include unrelated cleanup in a feature PR
 
 ---
 
@@ -231,7 +272,7 @@ Agents should prefer:
 - focused classes/files
 - minimal duplication
 - explicit models
-- small composables
+- small composables where practical
 - predictable state flow
 
 Avoid:
@@ -244,17 +285,18 @@ Avoid:
 
 ## 11. Escalation Rule
 
-If a task would require changing approved scope, the agent should not guess.
+If a task would require changing approved scope, renaming internal project structure, or altering product direction beyond the current source-of-truth docs, the agent should not guess.
 Instead, the task should be deferred until the project docs are updated.
 
 ---
 
 ## 12. Summary Rule
 
-For FOSS-101:
+For AI-101:
 - use AI agents heavily
-- keep tasks small
+- prefer larger bounded implementation bundles
 - keep scope disciplined
 - validate Android work in Android Studio
 - validate backend work in the backend environment
 - follow repo docs as source of truth
+- keep internal names/paths unchanged unless explicitly told to rename them
