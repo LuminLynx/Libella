@@ -6,23 +6,21 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.foss101.ui.components.PrimaryActionButton
+import com.example.foss101.ui.components.SectionHeader
 
 private val HomeRoutes = listOf(
     "browse" to "Browse Terms",
     "categories" to "Categories",
     "search" to "Search",
-    "ai_tools" to "AI Tools",
-    "trend_watcher" to "Trend Watcher",
-    "ask_glossary" to "Ask the Glossary",
     "settings" to "Settings"
 )
 
@@ -31,7 +29,7 @@ private val HomeRoutes = listOf(
 fun HomeScreen(onNavigate: (String) -> Unit) {
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("FOSS Glossary") })
+            TopAppBar(title = { Text("FOSS-101") })
         }
     ) { innerPadding ->
         HomeScreenContent(
@@ -52,18 +50,26 @@ private fun HomeScreenContent(
         modifier = Modifier
             .fillMaxSize()
             .padding(contentPadding)
-            .padding(20.dp),
+            .padding(horizontal = 20.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        Text(
+            text = "Learn FOSS and AI terms with simple glossary flows.",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        SectionHeader(
+            title = "Explore",
+            modifier = Modifier.padding(top = 8.dp)
+        )
+
         routes.forEach { (route, label) ->
-            Button(
+            PrimaryActionButton(
+                text = label,
                 onClick = { onNavigate(route) },
-                modifier = Modifier.fillMaxWidth(),
-                contentPadding = PaddingValues(vertical = 20.dp),
-                colors = ButtonDefaults.buttonColors()
-            ) {
-                Text(text = label)
-            }
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }

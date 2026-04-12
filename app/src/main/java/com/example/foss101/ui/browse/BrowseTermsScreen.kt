@@ -23,15 +23,31 @@ fun BrowseTermsScreen(onNavigate: (String) -> Unit) {
     val repository = remember { MockGlossaryRepository() }
     val terms = remember { repository.getAllTerms() }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp)
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
-        items(terms) { term ->
-            GlossaryTermItem(
-                term = term,
-                onClick = { onNavigate("details/${term.id}") }
-            )
+        Text(
+            text = "Browse Terms",
+            style = MaterialTheme.typography.headlineSmall
+        )
+        Text(
+            text = "All glossary terms in one list.",
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
+        )
+
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 8.dp)
+        ) {
+            items(terms) { term ->
+                GlossaryTermItem(
+                    term = term,
+                    onClick = { onNavigate("details/${term.id}") }
+                )
+            }
         }
     }
 }
@@ -44,7 +60,7 @@ fun GlossaryTermItem(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp)
+            .padding(vertical = 6.dp)
             .clickable(onClick = onClick)
     ) {
         Column(

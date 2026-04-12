@@ -35,16 +35,32 @@ fun CategoriesScreen(onNavigate: (String) -> Unit) {
     }
 
     if (selectedCategoryId == null) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 20.dp, vertical = 16.dp)
         ) {
-            items(categories) { category ->
-                CategoryItem(
-                    category = category,
-                    onClick = { selectedCategoryId = category.id }
-                )
+            Text(
+                text = "Categories",
+                style = MaterialTheme.typography.headlineSmall
+            )
+            Text(
+                text = "Explore terms by category.",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
+            )
+
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(categories) { category ->
+                    CategoryItem(
+                        category = category,
+                        onClick = { selectedCategoryId = category.id }
+                    )
+                }
             }
         }
         return
@@ -58,7 +74,7 @@ fun CategoriesScreen(onNavigate: (String) -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
         Text(
             text = selectedCategory?.name ?: "Category",
@@ -74,7 +90,7 @@ fun CategoriesScreen(onNavigate: (String) -> Unit) {
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier
-                .padding(bottom = 16.dp)
+                .padding(bottom = 12.dp)
                 .clickable { selectedCategoryId = null }
         )
 
@@ -83,6 +99,7 @@ fun CategoriesScreen(onNavigate: (String) -> Unit) {
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(filteredTerms) { term ->

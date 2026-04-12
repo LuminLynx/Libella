@@ -17,15 +17,15 @@ import com.example.foss101.ui.components.SectionHeader
 @Composable
 fun TermDetailsScreen(termId: String? = null) {
     val repository = remember { MockGlossaryRepository() }
-    val term = remember(termId) { 
-        termId?.let { repository.getTermById(it) } 
+    val term = remember(termId) {
+        termId?.let { repository.getTermById(it) }
     }
 
     if (term == null) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp)
+                .padding(horizontal = 20.dp, vertical = 16.dp)
         ) {
             Text(
                 text = "Term not found",
@@ -33,6 +33,7 @@ fun TermDetailsScreen(termId: String? = null) {
             )
             Text(
                 text = "The requested term could not be located.",
+                style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(top = 8.dp)
             )
         }
@@ -41,13 +42,13 @@ fun TermDetailsScreen(termId: String? = null) {
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp)
+                .padding(horizontal = 20.dp, vertical = 16.dp)
         ) {
             Text(
                 text = term.term,
                 style = MaterialTheme.typography.headlineLarge
             )
-            
+
             SectionHeader(
                 title = "Short Definition",
                 modifier = Modifier.padding(top = 16.dp)
