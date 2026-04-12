@@ -36,8 +36,18 @@ fun SearchScreen(onNavigate: (String) -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
+        Text(
+            text = "Search",
+            style = MaterialTheme.typography.headlineSmall
+        )
+        Text(
+            text = "Find terms by name or keyword.",
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
+        )
+
         OutlinedTextField(
             value = query,
             onValueChange = { query = it },
@@ -69,7 +79,7 @@ fun SearchScreen(onNavigate: (String) -> Unit) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(top = 16.dp),
-            contentPadding = PaddingValues(bottom = 16.dp),
+            contentPadding = PaddingValues(bottom = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(results) { term ->
