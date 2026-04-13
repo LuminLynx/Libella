@@ -17,6 +17,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.foss101.data.repository.GlossaryRepository
 import com.example.foss101.ui.browse.GlossaryTermItem
+import com.example.foss101.ui.components.EmptyState
+import com.example.foss101.ui.components.ErrorState
 import com.example.foss101.viewmodel.SearchViewModel
 
 @Composable
@@ -54,28 +56,25 @@ fun SearchScreen(
         )
 
         if (uiState.query.isBlank()) {
-            Text(
-                text = "Enter a search query to see results.",
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = 16.dp)
+            EmptyState(
+                message = "Enter a search query to see results.",
+                modifier = Modifier.padding(top = 8.dp)
             )
             return@Column
         }
 
         if (uiState.errorMessage != null) {
-            Text(
-                text = uiState.errorMessage,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = 16.dp)
+            ErrorState(
+                message = uiState.errorMessage,
+                modifier = Modifier.padding(top = 8.dp)
             )
             return@Column
         }
 
         if (uiState.results.isEmpty()) {
-            Text(
-                text = "No search results found.",
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = 16.dp)
+            EmptyState(
+                message = "No search results found.",
+                modifier = Modifier.padding(top = 8.dp)
             )
             return@Column
         }

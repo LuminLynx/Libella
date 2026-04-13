@@ -12,6 +12,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.foss101.data.repository.GlossaryRepository
+import com.example.foss101.ui.components.EmptyState
+import com.example.foss101.ui.components.ErrorState
+import com.example.foss101.ui.components.LoadingState
 import com.example.foss101.ui.components.SectionHeader
 import com.example.foss101.viewmodel.TermDetailsViewModel
 
@@ -32,10 +35,7 @@ fun TermDetailsScreen(
                 .fillMaxSize()
                 .padding(horizontal = 20.dp, vertical = 16.dp)
         ) {
-            Text(
-                text = "Loading term details...",
-                style = MaterialTheme.typography.bodyMedium
-            )
+            LoadingState(message = "Loading term details...")
         }
         return
     }
@@ -46,10 +46,7 @@ fun TermDetailsScreen(
                 .fillMaxSize()
                 .padding(horizontal = 20.dp, vertical = 16.dp)
         ) {
-            Text(
-                text = uiState.errorMessage,
-                style = MaterialTheme.typography.headlineMedium
-            )
+            ErrorState(message = uiState.errorMessage)
         }
         return
     }
@@ -61,15 +58,7 @@ fun TermDetailsScreen(
                 .fillMaxSize()
                 .padding(horizontal = 20.dp, vertical = 16.dp)
         ) {
-            Text(
-                text = "Term not found",
-                style = MaterialTheme.typography.headlineMedium
-            )
-            Text(
-                text = "The requested term could not be located.",
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = 8.dp)
-            )
+            EmptyState(message = "The requested term could not be located.")
         }
         return
     }
