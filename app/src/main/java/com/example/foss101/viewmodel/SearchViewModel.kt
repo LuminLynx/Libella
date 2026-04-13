@@ -5,8 +5,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
 import com.example.foss101.data.repository.GlossaryRepository
 import com.example.foss101.model.GlossaryTerm
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 data class SearchUiState(
     val query: String = "",
@@ -22,24 +26,38 @@ class SearchViewModel(
     var uiState by mutableStateOf(SearchUiState())
         private set
 
+    private var activeSearchJob: Job? = null
+
     fun onQueryChanged(query: String) {
         if (query.isBlank()) {
+            activeSearchJob?.cancel()
             uiState = SearchUiState(query = query)
             return
         }
 
-        uiState = try {
-            SearchUiState(
-                query = query,
-                results = repository.searchTerms(query),
-                isLoading = false
-            )
-        } catch (error: Exception) {
-            SearchUiState(
-                query = query,
-                isLoading = false,
-                errorMessage = "Unable to load search results."
-            )
+        activeSearchJob?.cancel()
+        uiState = uiState.copy(
+            query = query,
+            isLoading = true,
+            errorMessage = null
+        )
+
+        activeSearchJob = viewModelScope.launch {
+            uiState = try {
+                SearchUiState(
+                    query = query,
+                    results = repository.searchTerms(query),
+                    isLoading = false
+                )
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                SearchUiState(
+                    query = query,
+                    isLoading = false,
+                    errorMessage = "Unable to load search results."
+                )
+            }
         }
     }
 
