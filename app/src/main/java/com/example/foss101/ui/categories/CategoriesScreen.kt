@@ -52,7 +52,7 @@ fun CategoriesScreen(
 
         when {
             uiState.isLoading -> LoadingState("Loading categories...")
-            uiState.errorMessage != null -> ErrorState(uiState.errorMessage)
+            uiState.categoriesLoadError != null && uiState.selectedCategoryId == null -> ErrorState(uiState.categoriesLoadError)
             uiState.categories.isEmpty() -> EmptyState("No categories available.")
             uiState.selectedCategoryId == null -> CategoriesList(
                 categories = uiState.categories,
@@ -61,6 +61,7 @@ fun CategoriesScreen(
             else -> SelectedCategoryTerms(
                 category = uiState.categories.firstOrNull { it.id == uiState.selectedCategoryId },
                 termsEmpty = uiState.filteredTerms.isEmpty(),
+                termsError = uiState.selectedCategoryTermsError,
                 onBackToCategories = viewModel::clearSelection,
                 onNavigate = onNavigate,
                 terms = uiState.filteredTerms
@@ -93,6 +94,7 @@ private fun SelectedCategoryTerms(
     category: Category?,
     terms: List<GlossaryTerm>,
     termsEmpty: Boolean,
+    termsError: String?,
     onBackToCategories: () -> Unit,
     onNavigate: (String) -> Unit
 ) {
@@ -115,7 +117,9 @@ private fun SelectedCategoryTerms(
             .clickable { onBackToCategories() }
     )
 
-    if (termsEmpty) {
+    if (termsError != null) {
+        ErrorState(termsError)
+    } else if (termsEmpty) {
         EmptyState("No terms found for this category.")
     } else {
         LazyColumn(

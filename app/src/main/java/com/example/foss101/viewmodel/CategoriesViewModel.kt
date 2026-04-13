@@ -14,7 +14,8 @@ data class CategoriesUiState(
     val categories: List<Category> = emptyList(),
     val selectedCategoryId: String? = null,
     val filteredTerms: List<GlossaryTerm> = emptyList(),
-    val errorMessage: String? = null
+    val categoriesLoadError: String? = null,
+    val selectedCategoryTermsError: String? = null
 )
 
 class CategoriesViewModel(
@@ -37,7 +38,7 @@ class CategoriesViewModel(
         } catch (error: Exception) {
             CategoriesUiState(
                 isLoading = false,
-                errorMessage = "Unable to load categories."
+                categoriesLoadError = "Unable to load categories."
             )
         }
     }
@@ -47,13 +48,13 @@ class CategoriesViewModel(
             uiState.copy(
                 selectedCategoryId = categoryId,
                 filteredTerms = repository.getTermsByCategory(categoryId),
-                errorMessage = null
+                selectedCategoryTermsError = null
             )
         } catch (error: Exception) {
             uiState.copy(
                 selectedCategoryId = categoryId,
                 filteredTerms = emptyList(),
-                errorMessage = "Unable to load terms for this category."
+                selectedCategoryTermsError = "Unable to load terms for this category."
             )
         }
     }
@@ -62,7 +63,7 @@ class CategoriesViewModel(
         uiState = uiState.copy(
             selectedCategoryId = null,
             filteredTerms = emptyList(),
-            errorMessage = null
+            selectedCategoryTermsError = null
         )
     }
 
