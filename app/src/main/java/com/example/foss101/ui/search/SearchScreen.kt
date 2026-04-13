@@ -19,6 +19,7 @@ import com.example.foss101.data.repository.GlossaryRepository
 import com.example.foss101.ui.browse.GlossaryTermItem
 import com.example.foss101.ui.components.EmptyState
 import com.example.foss101.ui.components.ErrorState
+import com.example.foss101.ui.components.LoadingState
 import com.example.foss101.viewmodel.SearchViewModel
 
 @Composable
@@ -58,6 +59,15 @@ fun SearchScreen(
         if (uiState.query.isBlank()) {
             EmptyState(
                 message = "Enter a search query to see results.",
+                modifier = Modifier.padding(top = 8.dp)
+            )
+            return@Column
+        }
+
+
+        if (uiState.isLoading) {
+            LoadingState(
+                message = "Searching terms...",
                 modifier = Modifier.padding(top = 8.dp)
             )
             return@Column

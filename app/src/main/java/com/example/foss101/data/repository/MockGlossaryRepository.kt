@@ -256,15 +256,15 @@ class MockGlossaryRepository : GlossaryRepository {
         )
     )
 
-    override fun getAllTerms(): List<GlossaryTerm> = terms
+    override suspend fun getAllTerms(): List<GlossaryTerm> = terms
 
-    override fun getTermById(id: String): GlossaryTerm? {
+    override suspend fun getTermById(id: String): GlossaryTerm? {
         return terms.find { it.id == id }
     }
 
-    override fun getAllCategories(): List<Category> = categories
+    override suspend fun getAllCategories(): List<Category> = categories
 
-    override fun searchTerms(query: String): List<GlossaryTerm> {
+    override suspend fun searchTerms(query: String): List<GlossaryTerm> {
         val normalizedQuery = query.trim().lowercase()
 
         if (normalizedQuery.isBlank()) {
@@ -279,7 +279,7 @@ class MockGlossaryRepository : GlossaryRepository {
         }
     }
 
-    override fun getTermsByCategory(categoryId: String): List<GlossaryTerm> {
+    override suspend fun getTermsByCategory(categoryId: String): List<GlossaryTerm> {
         return terms.filter { it.categoryId == categoryId }
     }
 }

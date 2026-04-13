@@ -5,15 +5,18 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
 import com.example.foss101.data.repository.GlossaryRepository
 import com.example.foss101.model.Category
 import com.example.foss101.model.GlossaryTerm
+import kotlinx.coroutines.launch
 
 data class CategoriesUiState(
     val isLoading: Boolean = true,
     val categories: List<Category> = emptyList(),
     val selectedCategoryId: String? = null,
     val filteredTerms: List<GlossaryTerm> = emptyList(),
+    val isSelectedCategoryLoading: Boolean = false,
     val categoriesLoadError: String? = null,
     val selectedCategoryTermsError: String? = null
 )
@@ -30,32 +33,48 @@ class CategoriesViewModel(
     }
 
     fun loadCategories() {
-        uiState = try {
-            CategoriesUiState(
-                isLoading = false,
-                categories = repository.getAllCategories()
-            )
-        } catch (error: Exception) {
-            CategoriesUiState(
-                isLoading = false,
-                categoriesLoadError = "Unable to load categories."
-            )
+        uiState = uiState.copy(
+            isLoading = true,
+            categoriesLoadError = null
+        )
+
+        viewModelScope.launch {
+            uiState = try {
+                CategoriesUiState(
+                    isLoading = false,
+                    categories = repository.getAllCategories()
+                )
+            } catch (error: Exception) {
+                CategoriesUiState(
+                    isLoading = false,
+                    categoriesLoadError = "Unable to load categories."
+                )
+            }
         }
     }
 
     fun selectCategory(categoryId: String) {
-        uiState = try {
-            uiState.copy(
-                selectedCategoryId = categoryId,
-                filteredTerms = repository.getTermsByCategory(categoryId),
-                selectedCategoryTermsError = null
-            )
-        } catch (error: Exception) {
-            uiState.copy(
-                selectedCategoryId = categoryId,
-                filteredTerms = emptyList(),
-                selectedCategoryTermsError = "Unable to load terms for this category."
-            )
+        uiState = uiState.copy(
+            selectedCategoryId = categoryId,
+            isSelectedCategoryLoading = true,
+            filteredTerms = emptyList(),
+            selectedCategoryTermsError = null
+        )
+
+        viewModelScope.launch {
+            uiState = try {
+                uiState.copy(
+                    isSelectedCategoryLoading = false,
+                    filteredTerms = repository.getTermsByCategory(categoryId),
+                    selectedCategoryTermsError = null
+                )
+            } catch (error: Exception) {
+                uiState.copy(
+                    isSelectedCategoryLoading = false,
+                    filteredTerms = emptyList(),
+                    selectedCategoryTermsError = "Unable to load terms for this category."
+                )
+            }
         }
     }
 
@@ -63,6 +82,7 @@ class CategoriesViewModel(
         uiState = uiState.copy(
             selectedCategoryId = null,
             filteredTerms = emptyList(),
+            isSelectedCategoryLoading = false,
             selectedCategoryTermsError = null
         )
     }
