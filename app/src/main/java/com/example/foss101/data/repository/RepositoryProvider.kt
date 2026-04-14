@@ -10,7 +10,7 @@ object RepositoryProvider {
         API
     }
 
-    private val repositoryMode = RepositoryMode.MOCK
+    private val repositoryMode = RepositoryMode.API
 
     val glossaryRepository: GlossaryRepository by lazy {
         when (repositoryMode) {
