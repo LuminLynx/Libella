@@ -10,13 +10,13 @@ object RepositoryProvider {
         API
     }
 
-    private val repositoryMode = RepositoryMode.MOCK
+    private val repositoryMode = RepositoryMode.API
 
     val glossaryRepository: GlossaryRepository by lazy {
         when (repositoryMode) {
             RepositoryMode.MOCK -> MockGlossaryRepository()
             RepositoryMode.API -> {
-                val config = ApiConfig(baseUrl = ApiConfig.DEFAULT_BASE_URL)
+                val config = ApiConfig.fromBuildConfig()
                 ApiGlossaryRepository(
                     glossaryApiService = GlossaryApiServiceFactory.create(config)
                 )

@@ -2,6 +2,7 @@ package com.example.foss101.data.repository
 
 import com.example.foss101.data.remote.api.GlossaryApiService
 import com.example.foss101.data.remote.model.toDomain
+import com.example.foss101.data.remote.network.GlossaryApiException
 import com.example.foss101.model.Category
 import com.example.foss101.model.GlossaryTerm
 
@@ -14,7 +15,15 @@ class ApiGlossaryRepository(
     }
 
     override suspend fun getTermById(id: String): GlossaryTerm? {
-        return glossaryApiService.getTermDetails(id).toDomain()
+        return try {
+            glossaryApiService.getTermDetails(id).toDomain()
+        } catch (error: GlossaryApiException) {
+            if (error.code == "TERM_NOT_FOUND") {
+                null
+            } else {
+                throw error
+            }
+        }
     }
 
     override suspend fun getAllCategories(): List<Category> {
