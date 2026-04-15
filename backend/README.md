@@ -38,7 +38,6 @@ Not found shape:
 python -m venv .venv
 source .venv/bin/activate
 pip install -r backend/requirements.txt
-python -m backend.scripts.seed_db --reset
 uvicorn backend.app.main:app --reload
 ```
 
@@ -46,3 +45,9 @@ uvicorn backend.app.main:app --reload
 
 - Scope is MVP-only (no auth, accounts, admin panel, chat, or analytics).
 - Seed data is AI-first and supports browse, categories, search, and details.
+
+## Database initialization and seeding
+
+- On application startup, the backend automatically initializes the schema and seeds data when `categories` or `terms` is empty.
+- This startup seeding is idempotent and safe on redeploys.
+- To force a full reseed locally, run `python -m backend.scripts.seed_db --reset`.
