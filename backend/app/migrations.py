@@ -45,13 +45,18 @@ def run_migrations() -> list[str]:
                 continue
 
             sql = migration_path.read_text(encoding="utf-8")
-            with connection.transaction():
+            try:
                 connection.execute(sql)
                 connection.execute(
                     "INSERT INTO schema_migrations (version) VALUES (%s)",
                     (version,),
                 )
+                connection.commit()
+            except Exception:
+                connection.rollback()
+                raise
 
+            applied.add(version)
             applied_now.append(version)
 
     return applied_now
