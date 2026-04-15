@@ -9,7 +9,7 @@ Minimal backend MVP for glossary data using FastAPI + SQLite.
 - `GET /api/v1/terms/{term_id}`
 - `GET /api/v1/categories`
 - `GET /api/v1/categories/{category_id}/terms`
-- `GET /api/v1/terms/search?q=<query>`
+- `GET /api/v1/search/terms?q=<query>`
 
 All API responses use:
 

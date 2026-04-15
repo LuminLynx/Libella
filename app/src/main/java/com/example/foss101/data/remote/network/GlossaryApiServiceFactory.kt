@@ -45,7 +45,7 @@ private class HttpGlossaryApiService(
 
     override suspend fun searchTerms(query: String): List<RemoteGlossaryTerm> = withContext(Dispatchers.IO) {
         val encodedQuery = URLEncoder.encode(query, Charsets.UTF_8.name())
-        val response = get(path = "api/v1/terms/search?q=$encodedQuery")
+        val response = get(path = "api/v1/search/terms?q=$encodedQuery")
         parseTerms(response)
     }
 

@@ -55,6 +55,6 @@ def get_terms_for_category(category_id: str) -> JSONResponse:
     return JSONResponse({"data": list_terms_by_category(category_id), "error": None})
 
 
-@app.get("/api/v1/terms/search")
+@app.get("/api/v1/search/terms")
 def get_term_search_results(q: str = Query(default="", min_length=0)) -> JSONResponse:
     return JSONResponse({"data": search_terms(q), "error": None})
