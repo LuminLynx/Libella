@@ -9,6 +9,7 @@ android {
     compileSdk = 35
 
     defaultConfig {
+        buildConfigField("String", "API_BASE_URL", "\"https://aware-wholeness-production-d771.up.railway.app/\"")
         applicationId = "com.example.foss101"
         minSdk = 26
         targetSdk = 35

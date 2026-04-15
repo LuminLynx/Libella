@@ -16,7 +16,7 @@ object RepositoryProvider {
         when (repositoryMode) {
             RepositoryMode.MOCK -> MockGlossaryRepository()
             RepositoryMode.API -> {
-                val config = ApiConfig(baseUrl = ApiConfig.DEFAULT_BASE_URL)
+                val config = ApiConfig.fromBuildConfig()
                 ApiGlossaryRepository(
                     glossaryApiService = GlossaryApiServiceFactory.create(config)
                 )
