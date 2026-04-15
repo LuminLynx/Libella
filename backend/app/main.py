@@ -1,7 +1,6 @@
 from fastapi import FastAPI, Query
 from fastapi.responses import JSONResponse
 
-from .db import seed_database
 from .repository import (
     get_term_by_id,
     list_categories,
@@ -11,11 +10,6 @@ from .repository import (
 )
 
 app = FastAPI(title="AI-101 Backend MVP", version="0.1.0")
-
-
-@app.on_event("startup")
-def startup_event() -> None:
-    seed_database()
 
 
 @app.get("/health")
