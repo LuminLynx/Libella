@@ -1,20 +1,19 @@
 import argparse
 
-from backend.app.config import DB_PATH, SEED_PATH
-from backend.app.db import get_connection, initialize_database
+from backend.app.config import DB_PATH
+from backend.app.db import get_connection, initialize_database, seed_database
 
 
 def seed(reset: bool) -> None:
     initialize_database()
 
-    with get_connection() as connection:
-        if reset:
+    if reset:
+        with get_connection() as connection:
             connection.execute("DELETE FROM terms")
             connection.execute("DELETE FROM categories")
+            connection.commit()
 
-        seed_sql = SEED_PATH.read_text(encoding="utf-8")
-        connection.executescript(seed_sql)
-        connection.commit()
+    seed_database(force=reset)
 
 
 if __name__ == "__main__":
