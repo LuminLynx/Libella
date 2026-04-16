@@ -1,9 +1,7 @@
 package com.example.foss101.ui.search
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,9 +15,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.foss101.data.repository.GlossaryRepository
 import com.example.foss101.ui.browse.GlossaryTermItem
+import com.example.foss101.ui.components.AppScreenScaffold
 import com.example.foss101.ui.components.EmptyState
 import com.example.foss101.ui.components.ErrorState
 import com.example.foss101.ui.components.LoadingState
+import com.example.foss101.ui.components.screenContentPadding
 import com.example.foss101.viewmodel.SearchViewModel
 
 @Composable
@@ -32,75 +32,59 @@ fun SearchScreen(
     )
     val uiState = viewModel.uiState
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 20.dp, vertical = 16.dp)
-    ) {
-        Text(
-            text = "Search",
-            style = MaterialTheme.typography.headlineSmall
-        )
-        Text(
-            text = "Find terms by name or keyword.",
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
-        )
-
-        OutlinedTextField(
-            value = uiState.query,
-            onValueChange = viewModel::onQueryChanged,
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            label = { Text("Search terms") },
-            placeholder = { Text("Type a term or keyword") }
-        )
-
-        if (uiState.query.isBlank()) {
-            EmptyState(
-                message = "Enter a search query to see results.",
-                modifier = Modifier.padding(top = 8.dp)
-            )
-            return@Column
-        }
-
-
-        if (uiState.isLoading) {
-            LoadingState(
-                message = "Searching terms...",
-                modifier = Modifier.padding(top = 8.dp)
-            )
-            return@Column
-        }
-
-        if (uiState.errorMessage != null) {
-            ErrorState(
-                message = uiState.errorMessage,
-                modifier = Modifier.padding(top = 8.dp)
-            )
-            return@Column
-        }
-
-        if (uiState.results.isEmpty()) {
-            EmptyState(
-                message = "No search results found.",
-                modifier = Modifier.padding(top = 8.dp)
-            )
-            return@Column
-        }
-
+    AppScreenScaffold(
+        title = "Search",
+        subtitle = "Find AI terms by keyword"
+    ) { contentPadding ->
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = 16.dp),
-            contentPadding = PaddingValues(bottom = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.screenContentPadding(contentPadding),
+            contentPadding = PaddingValues(bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(uiState.results) { term ->
-                GlossaryTermItem(
-                    term = term,
-                    onClick = { onNavigate("details/${term.id}") }
+            item {
+                OutlinedTextField(
+                    value = uiState.query,
+                    onValueChange = viewModel::onQueryChanged,
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    label = { Text("Search glossary") },
+                    placeholder = { Text("Transformer, embedding, RLHF...") }
                 )
+            }
+
+            when {
+                uiState.query.isBlank() -> item {
+                    EmptyState(message = "Enter a term or keyword to search.")
+                }
+
+                uiState.isLoading -> item {
+                    LoadingState(message = "Searching terms...")
+                }
+
+                uiState.errorMessage != null -> item {
+                    ErrorState(message = uiState.errorMessage)
+                }
+
+                uiState.results.isEmpty() -> item {
+                    EmptyState(message = "No results for \"${uiState.query}\". Try broader terms.")
+                }
+
+                else -> {
+                    item {
+                        Text(
+                            text = "${uiState.results.size} results",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+                    items(uiState.results) { term ->
+                        GlossaryTermItem(
+                            term = term,
+                            onClick = { onNavigate("details/${term.id}") }
+                        )
+                    }
+                }
             }
         }
     }

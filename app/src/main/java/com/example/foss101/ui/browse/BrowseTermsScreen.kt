@@ -1,25 +1,21 @@
 package com.example.foss101.ui.browse
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Card
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.foss101.data.repository.GlossaryRepository
 import com.example.foss101.model.GlossaryTerm
+import com.example.foss101.ui.components.AppScreenScaffold
 import com.example.foss101.ui.components.EmptyState
 import com.example.foss101.ui.components.ErrorState
+import com.example.foss101.ui.components.GlossaryTermCard
 import com.example.foss101.ui.components.LoadingState
+import com.example.foss101.ui.components.screenContentPadding
 import com.example.foss101.viewmodel.BrowseTermsViewModel
 
 @Composable
@@ -32,32 +28,31 @@ fun BrowseTermsScreen(
     )
     val uiState = viewModel.uiState
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 20.dp, vertical = 16.dp)
-    ) {
-        Text(
-            text = "Browse Terms",
-            style = MaterialTheme.typography.headlineSmall
-        )
-        Text(
-            text = "All glossary terms in one list.",
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
-        )
-
+    AppScreenScaffold(
+        title = "Browse Terms",
+        subtitle = "All glossary terms in one place"
+    ) { contentPadding ->
         when {
-            uiState.isLoading -> LoadingState("Loading terms...")
+            uiState.isLoading -> LoadingState(
+                "Loading terms...",
+                modifier = Modifier.screenContentPadding(contentPadding)
+            )
 
-            uiState.errorMessage != null -> ErrorState(uiState.errorMessage)
+            uiState.errorMessage != null -> ErrorState(
+                uiState.errorMessage,
+                modifier = Modifier.screenContentPadding(contentPadding)
+            )
 
-            uiState.terms.isEmpty() -> EmptyState("No glossary terms available.")
+            uiState.terms.isEmpty() -> EmptyState(
+                "No glossary terms available right now.",
+                modifier = Modifier.screenContentPadding(contentPadding)
+            )
 
             else -> {
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 8.dp)
+                    modifier = Modifier.screenContentPadding(contentPadding),
+                    contentPadding = PaddingValues(bottom = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(uiState.terms) { term ->
                         GlossaryTermItem(
@@ -76,25 +71,5 @@ fun GlossaryTermItem(
     term: GlossaryTerm,
     onClick: () -> Unit
 ) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 6.dp)
-            .clickable(onClick = onClick)
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-        ) {
-            Text(
-                text = term.term,
-                style = MaterialTheme.typography.titleLarge
-            )
-            Text(
-                text = term.shortDefinition,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = 4.dp)
-            )
-        }
-    }
+    GlossaryTermCard(term = term, onClick = onClick)
 }

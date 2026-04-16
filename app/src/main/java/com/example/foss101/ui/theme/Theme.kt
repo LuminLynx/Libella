@@ -13,8 +13,19 @@ private val LightColors = lightColorScheme(
     onPrimaryContainer = OnPrimaryContainer,
     secondary = Secondary,
     onSecondary = OnSecondary,
+    secondaryContainer = SecondaryContainer,
+    onSecondaryContainer = OnSecondaryContainer,
+    tertiary = Tertiary,
+    onTertiary = OnTertiary,
+    background = Background,
+    onBackground = OnBackground,
     surface = Surface,
-    onSurface = OnSurface
+    surfaceVariant = SurfaceVariant,
+    onSurface = OnSurface,
+    onSurfaceVariant = OnSurfaceVariant,
+    outline = Outline,
+    error = Error,
+    onError = OnError
 )
 
 private val DarkColors = darkColorScheme(
@@ -22,8 +33,21 @@ private val DarkColors = darkColorScheme(
     onPrimary = OnPrimaryContainer,
     primaryContainer = Primary,
     onPrimaryContainer = OnPrimary,
-    secondary = Secondary,
-    onSecondary = OnSecondary
+    secondary = SecondaryContainer,
+    onSecondary = OnSecondaryContainer,
+    secondaryContainer = Secondary,
+    onSecondaryContainer = OnSecondary,
+    tertiary = Tertiary,
+    onTertiary = OnTertiary,
+    background = ColorDarkBackground,
+    onBackground = ColorDarkOnBackground,
+    surface = ColorDarkSurface,
+    surfaceVariant = ColorDarkSurfaceVariant,
+    onSurface = ColorDarkOnSurface,
+    onSurfaceVariant = ColorDarkOnSurfaceVariant,
+    outline = ColorDarkOutline,
+    error = Error,
+    onError = OnError
 )
 
 @Composable
@@ -34,6 +58,15 @@ fun Foss101Theme(
     MaterialTheme(
         colorScheme = if (darkTheme) DarkColors else LightColors,
         typography = AppTypography,
+        shapes = AppShapes,
         content = content
     )
 }
+
+private val ColorDarkBackground = androidx.compose.ui.graphics.Color(0xFF10131C)
+private val ColorDarkOnBackground = androidx.compose.ui.graphics.Color(0xFFE2E8F6)
+private val ColorDarkSurface = androidx.compose.ui.graphics.Color(0xFF10131C)
+private val ColorDarkSurfaceVariant = androidx.compose.ui.graphics.Color(0xFF2A3040)
+private val ColorDarkOnSurface = androidx.compose.ui.graphics.Color(0xFFE2E8F6)
+private val ColorDarkOnSurfaceVariant = androidx.compose.ui.graphics.Color(0xFFC1C8DB)
+private val ColorDarkOutline = androidx.compose.ui.graphics.Color(0xFF8A92A8)
