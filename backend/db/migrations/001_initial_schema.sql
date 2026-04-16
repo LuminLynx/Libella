@@ -1,6 +1,3 @@
--- Legacy schema snapshot.
--- Active schema changes must be added via backend/db/migrations/*.sql.
-
 CREATE TABLE IF NOT EXISTS categories (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL UNIQUE,

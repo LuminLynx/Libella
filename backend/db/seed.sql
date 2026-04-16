@@ -1,11 +1,14 @@
-INSERT OR REPLACE INTO categories (id, name, description) VALUES
+INSERT INTO categories (id, name, description) VALUES
 ('cat-ml-foundations', 'ML Foundations', 'Core concepts that explain how machine learning models learn from data.'),
 ('cat-llm-concepts', 'LLM Concepts', 'Important ideas for understanding large language model behavior and usage.'),
 ('cat-inference-serving', 'Inference & Serving', 'How trained models are run, exposed, and optimized in applications.'),
 ('cat-data-training', 'Data & Training', 'Data-centric and optimization concepts used to train reliable AI systems.'),
-('cat-ai-safety', 'AI Safety', 'Concepts for safer model behavior, risk management, and responsible usage.');
+('cat-ai-safety', 'AI Safety', 'Concepts for safer model behavior, risk management, and responsible usage.')
+ON CONFLICT (id) DO UPDATE SET
+    name = EXCLUDED.name,
+    description = EXCLUDED.description;
 
-INSERT OR REPLACE INTO terms (
+INSERT INTO terms (
     id, term, short_definition, full_explanation, category_id,
     tags, related_terms, example_usage, source, created_at, updated_at
 ) VALUES
@@ -24,4 +27,50 @@ INSERT OR REPLACE INTO terms (
 ('term-evaluation', 'Model Evaluation', 'The process of measuring model quality using defined metrics and tests.', 'Evaluation combines automated metrics and scenario-based checks to assess accuracy, safety, and reliability. It is necessary before and after deployment changes.', 'cat-data-training', 'metrics,benchmarking,quality', 'term-overfitting,term-hallucination', 'Prompt-based regression tests are part of model evaluation.', 'Internal glossary seed', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z'),
 ('term-hallucination', 'Hallucination', 'When a model generates incorrect or fabricated information confidently.', 'Hallucinations are unsupported outputs that appear plausible but are not grounded in reliable evidence. Mitigation includes retrieval, prompt design, and verification workflows.', 'cat-ai-safety', 'safety,reliability,grounding', 'term-rag,term-evaluation', 'Answer verification is important when hallucination risk is high.', 'Internal glossary seed', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z'),
 ('term-guardrails', 'Guardrails', 'Controls that constrain model behavior and outputs.', 'Guardrails include policy filters, system prompts, validation checks, and moderation steps to reduce harmful or non-compliant responses in production systems.', 'cat-ai-safety', 'policy,safety,moderation', 'term-hallucination,term-red-teaming', 'A safety layer can block disallowed output categories.', 'Internal glossary seed', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z'),
-('term-red-teaming', 'Red Teaming', 'Structured adversarial testing of AI systems.', 'Red teaming probes systems with challenging or malicious scenarios to find vulnerabilities in safety, robustness, and policy compliance before broad release.', 'cat-ai-safety', 'safety,testing,robustness', 'term-guardrails,term-evaluation', 'Teams run red-team prompts before model launch.', 'Internal glossary seed', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');
+('term-red-teaming', 'Red Teaming', 'Structured adversarial testing of AI systems.', 'Red teaming probes systems with challenging or malicious scenarios to find vulnerabilities in safety, robustness, and policy compliance before broad release.', 'cat-ai-safety', 'safety,testing,robustness', 'term-guardrails,term-evaluation', 'Teams run red-team prompts before model launch.', 'Internal glossary seed', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')
+ON CONFLICT (id) DO UPDATE SET
+    term = EXCLUDED.term,
+    short_definition = EXCLUDED.short_definition,
+    full_explanation = EXCLUDED.full_explanation,
+    category_id = EXCLUDED.category_id,
+    tags = EXCLUDED.tags,
+    related_terms = EXCLUDED.related_terms,
+    example_usage = EXCLUDED.example_usage,
+    source = EXCLUDED.source,
+    created_at = EXCLUDED.created_at,
+    updated_at = EXCLUDED.updated_at;
+
+INSERT INTO term_relations (term_id, related_term_id) VALUES
+('term-transformer', 'term-attention'),
+('term-transformer', 'term-token'),
+('term-attention', 'term-transformer'),
+('term-attention', 'term-token'),
+('term-token', 'term-context-window'),
+('term-token', 'term-transformer'),
+('term-context-window', 'term-token'),
+('term-context-window', 'term-rag'),
+('term-rag', 'term-embedding'),
+('term-rag', 'term-vector-database'),
+('term-embedding', 'term-vector-database'),
+('term-embedding', 'term-rag'),
+('term-vector-database', 'term-embedding'),
+('term-vector-database', 'term-rag'),
+('term-inference', 'term-quantization'),
+('term-inference', 'term-latency'),
+('term-quantization', 'term-inference'),
+('term-quantization', 'term-latency'),
+('term-latency', 'term-inference'),
+('term-latency', 'term-quantization'),
+('term-fine-tuning', 'term-overfitting'),
+('term-fine-tuning', 'term-evaluation'),
+('term-overfitting', 'term-fine-tuning'),
+('term-overfitting', 'term-evaluation'),
+('term-evaluation', 'term-overfitting'),
+('term-evaluation', 'term-hallucination'),
+('term-hallucination', 'term-rag'),
+('term-hallucination', 'term-evaluation'),
+('term-guardrails', 'term-hallucination'),
+('term-guardrails', 'term-red-teaming'),
+('term-red-teaming', 'term-guardrails'),
+('term-red-teaming', 'term-evaluation')
+ON CONFLICT (term_id, related_term_id) DO NOTHING;

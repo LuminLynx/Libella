@@ -14,7 +14,7 @@ def list_terms() -> list[dict[str, Any]]:
         SELECT id, term, short_definition, full_explanation, category_id,
                tags, related_terms, example_usage, source, created_at, updated_at
         FROM terms
-        ORDER BY term COLLATE NOCASE ASC
+        ORDER BY LOWER(term) ASC
     """
     with get_connection() as connection:
         rows = connection.execute(query).fetchall()
@@ -26,7 +26,7 @@ def get_term_by_id(term_id: str) -> dict[str, Any] | None:
         SELECT id, term, short_definition, full_explanation, category_id,
                tags, related_terms, example_usage, source, created_at, updated_at
         FROM terms
-        WHERE id = ?
+        WHERE id = %s
     """
     with get_connection() as connection:
         row = connection.execute(query, (term_id,)).fetchone()
@@ -37,7 +37,7 @@ def list_categories() -> list[dict[str, Any]]:
     query = """
         SELECT id, name, description
         FROM categories
-        ORDER BY name COLLATE NOCASE ASC
+        ORDER BY LOWER(name) ASC
     """
     with get_connection() as connection:
         rows = connection.execute(query).fetchall()
@@ -49,8 +49,8 @@ def list_terms_by_category(category_id: str) -> list[dict[str, Any]]:
         SELECT id, term, short_definition, full_explanation, category_id,
                tags, related_terms, example_usage, source, created_at, updated_at
         FROM terms
-        WHERE category_id = ?
-        ORDER BY term COLLATE NOCASE ASC
+        WHERE category_id = %s
+        ORDER BY LOWER(term) ASC
     """
     with get_connection() as connection:
         rows = connection.execute(query, (category_id,)).fetchall()
@@ -67,11 +67,11 @@ def search_terms(raw_query: str) -> list[dict[str, Any]]:
         SELECT id, term, short_definition, full_explanation, category_id,
                tags, related_terms, example_usage, source, created_at, updated_at
         FROM terms
-        WHERE term LIKE ? COLLATE NOCASE
-           OR short_definition LIKE ? COLLATE NOCASE
-           OR full_explanation LIKE ? COLLATE NOCASE
-           OR tags LIKE ? COLLATE NOCASE
-        ORDER BY term COLLATE NOCASE ASC
+        WHERE term ILIKE %s
+           OR short_definition ILIKE %s
+           OR full_explanation ILIKE %s
+           OR tags ILIKE %s
+        ORDER BY LOWER(term) ASC
     """
     params = (search_value, search_value, search_value, search_value)
     with get_connection() as connection:
