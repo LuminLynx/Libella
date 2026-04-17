@@ -4,6 +4,7 @@ import json
 from typing import Any, Literal
 
 import httpx
+from fastapi.encoders import jsonable_encoder
 
 from .config import (
     AI_MODEL,
@@ -35,7 +36,7 @@ class AIService:
         ]
         if term_context:
             context_lines.append("Focused term context:")
-            context_lines.append(json.dumps(term_context))
+            context_lines.append(json.dumps(jsonable_encoder(term_context)))
 
         response_schema = {
             "type": "object",
@@ -59,6 +60,8 @@ class AIService:
         )
 
     def generate_artifact(self, term: dict[str, Any], artifact_type: ArtifactType) -> dict[str, Any]:
+        serialized_term = json.dumps(jsonable_encoder(term))
+
         if artifact_type == "scenario":
             schema = {
                 "type": "object",
@@ -70,12 +73,19 @@ class AIService:
                     "tasks": {"type": "array", "items": {"type": "string"}},
                     "reflectionQuestions": {"type": "array", "items": {"type": "string"}},
                 },
-                "required": ["title", "difficulty", "context", "objective", "tasks", "reflectionQuestions"],
+                "required": [
+                    "title",
+                    "difficulty",
+                    "context",
+                    "objective",
+                    "tasks",
+                    "reflectionQuestions",
+                ],
                 "additionalProperties": False,
             }
             user_prompt = (
                 "Create a hands-on learning scenario for this glossary term. "
-                "Term JSON: " + json.dumps(term)
+                "Term JSON: " + serialized_term
             )
         else:
             schema = {
@@ -92,7 +102,7 @@ class AIService:
             }
             user_prompt = (
                 "Create a practical learner challenge for this glossary term. "
-                "Term JSON: " + json.dumps(term)
+                "Term JSON: " + serialized_term
             )
 
         return self._chat_json(
@@ -138,7 +148,11 @@ class AIService:
 
         try:
             with httpx.Client(timeout=30.0) as client:
-                response = client.post(f"{AI_PROVIDER_BASE_URL}/chat/completions", headers=headers, json=payload)
+                response = client.post(
+                    f"{AI_PROVIDER_BASE_URL}/chat/completions",
+                    headers=headers,
+                    json=payload,
+                )
         except httpx.HTTPError as error:
             raise AIUnavailableError("Failed to reach AI provider.") from error
 
