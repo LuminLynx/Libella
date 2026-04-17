@@ -3,8 +3,12 @@ package com.example.foss101.data.repository
 import com.example.foss101.data.remote.api.GlossaryApiService
 import com.example.foss101.data.remote.model.toDomain
 import com.example.foss101.data.remote.network.GlossaryApiException
+import com.example.foss101.model.AskGlossaryResponse
 import com.example.foss101.model.Category
+import com.example.foss101.model.GeneratedArtifactResult
 import com.example.foss101.model.GlossaryTerm
+import com.example.foss101.model.LearningChallenge
+import com.example.foss101.model.LearningScenario
 
 class ApiGlossaryRepository(
     private val glossaryApiService: GlossaryApiService
@@ -36,5 +40,25 @@ class ApiGlossaryRepository(
 
     override suspend fun getTermsByCategory(categoryId: String): List<GlossaryTerm> {
         return glossaryApiService.getTermsByCategory(categoryId).map { it.toDomain() }
+    }
+
+    override suspend fun askGlossary(question: String, termId: String?): AskGlossaryResponse {
+        return glossaryApiService.askGlossary(question = question, termId = termId).toDomain()
+    }
+
+    override suspend fun generateScenario(
+        termId: String,
+        forceRefresh: Boolean
+    ): GeneratedArtifactResult<LearningScenario> {
+        return glossaryApiService.generateScenario(termId = termId, forceRefresh = forceRefresh)
+            .toDomain { it.toDomain() }
+    }
+
+    override suspend fun generateChallenge(
+        termId: String,
+        forceRefresh: Boolean
+    ): GeneratedArtifactResult<LearningChallenge> {
+        return glossaryApiService.generateChallenge(termId = termId, forceRefresh = forceRefresh)
+            .toDomain { it.toDomain() }
     }
 }

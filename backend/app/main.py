@@ -1,16 +1,36 @@
+from __future__ import annotations
+
+from datetime import timedelta
+from typing import Any
+
 from fastapi import FastAPI, Query
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field
 
+from .ai_service import AIServiceError, AIUnavailableError, ai_service, ai_service_metadata
+from .migrations import run_migrations
 from .repository import (
+    build_term_context,
+    get_cached_generated_content,
     get_term_by_id,
     list_categories,
     list_terms,
     list_terms_by_category,
     search_terms,
+    upsert_generated_content,
 )
 
-app = FastAPI(title="AI-101 Backend MVP", version="0.1.0")
+app = FastAPI(title="AI-101 Backend", version="0.2.0")
+
+
+class AskGlossaryRequest(BaseModel):
+    question: str = Field(min_length=3, max_length=2000)
+    termId: str | None = None
+
+
+class GenerateArtifactRequest(BaseModel):
+    forceRefresh: bool = False
 
 
 def _envelope_response(*, data, error=None, status_code: int = 200) -> JSONResponse:
@@ -18,9 +38,20 @@ def _envelope_response(*, data, error=None, status_code: int = 200) -> JSONRespo
     return JSONResponse(content=jsonable_encoder(payload), status_code=status_code)
 
 
+@app.on_event("startup")
+def on_startup() -> None:
+    run_migrations()
+
+
 @app.get("/health")
-def health() -> dict:
-    return {"status": "ok"}
+def health() -> dict[str, Any]:
+    return {
+        "status": "ok",
+        "ai": {
+            "provider": ai_service_metadata()["provider"],
+            "model": ai_service_metadata()["model"],
+        },
+    }
 
 
 @app.get("/api/v1/terms")
@@ -56,3 +87,87 @@ def get_terms_for_category(category_id: str) -> JSONResponse:
 @app.get("/api/v1/search/terms")
 def get_term_search_results(q: str = Query(default="", min_length=0)) -> JSONResponse:
     return _envelope_response(data=search_terms(q))
+
+
+@app.post("/api/v1/ai/ask-glossary")
+def post_ask_glossary(request: AskGlossaryRequest) -> JSONResponse:
+    term_context = None
+    if request.termId:
+        term_context = build_term_context(request.termId)
+        if term_context is None:
+            return _envelope_response(
+                status_code=404,
+                data=None,
+                error={"code": "TERM_NOT_FOUND", "message": "Term context was not found."},
+            )
+
+    try:
+        result = ai_service.ask_glossary(question=request.question, term_context=term_context)
+    except AIUnavailableError as error:
+        return _envelope_response(
+            status_code=503,
+            data=None,
+            error={"code": error.code, "message": str(error)},
+        )
+    except AIServiceError as error:
+        return _envelope_response(
+            status_code=502,
+            data=None,
+            error={"code": error.code, "message": str(error)},
+        )
+
+    return _envelope_response(data=result)
+
+
+@app.post("/api/v1/ai/terms/{term_id}/scenario")
+def post_generate_scenario(term_id: str, request: GenerateArtifactRequest) -> JSONResponse:
+    return _generate_term_artifact(term_id=term_id, artifact_type="scenario", force_refresh=request.forceRefresh)
+
+
+@app.post("/api/v1/ai/terms/{term_id}/challenge")
+def post_generate_challenge(term_id: str, request: GenerateArtifactRequest) -> JSONResponse:
+    return _generate_term_artifact(term_id=term_id, artifact_type="challenge", force_refresh=request.forceRefresh)
+
+
+def _generate_term_artifact(term_id: str, artifact_type: str, force_refresh: bool) -> JSONResponse:
+    term = get_term_by_id(term_id)
+    if term is None:
+        return _envelope_response(
+            status_code=404,
+            data=None,
+            error={"code": "TERM_NOT_FOUND", "message": "Term context was not found."},
+        )
+
+    if not force_refresh:
+        cached = get_cached_generated_content(
+            term_id=term_id,
+            content_type=artifact_type,
+            max_age=timedelta(days=14),
+        )
+        if cached is not None:
+            return _envelope_response(data={"artifact": cached, "cached": True})
+
+    try:
+        artifact = ai_service.generate_artifact(term=term, artifact_type=artifact_type)  # type: ignore[arg-type]
+    except AIUnavailableError as error:
+        return _envelope_response(
+            status_code=503,
+            data=None,
+            error={"code": error.code, "message": str(error)},
+        )
+    except AIServiceError as error:
+        return _envelope_response(
+            status_code=502,
+            data=None,
+            error={"code": error.code, "message": str(error)},
+        )
+
+    metadata = ai_service_metadata()
+    upsert_generated_content(
+        term_id=term_id,
+        content_type=artifact_type,
+        content_json=artifact,
+        provider=metadata["provider"] or "unknown",
+        model_name=metadata["model"],
+    )
+    return _envelope_response(data={"artifact": artifact, "cached": False})

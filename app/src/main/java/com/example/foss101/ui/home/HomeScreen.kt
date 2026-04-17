@@ -18,6 +18,8 @@ import com.example.foss101.ui.components.PrimaryActionButton
 import com.example.foss101.ui.components.SectionHeader
 
 private val HomeRoutes = listOf(
+    "ai_tools" to "AI Learning Layer",
+    "ask_glossary" to "Ask Glossary",
     "browse" to "Browse Terms",
     "categories" to "Categories",
     "search" to "Search",
@@ -54,7 +56,7 @@ private fun HomeScreenContent(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
-            text = "Learn AI terms with simple glossary flows.",
+            text = "Learn AI terms with glossary-backed AI tutoring, scenarios, and challenges.",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
