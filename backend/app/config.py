@@ -23,6 +23,11 @@ else:
 APP_HOST = os.getenv("APP_HOST", "0.0.0.0")
 APP_PORT = int(os.getenv("APP_PORT", "8000"))
 
+AI_PROVIDER = os.getenv("AI_PROVIDER", "openai")
+AI_PROVIDER_BASE_URL = os.getenv("AI_PROVIDER_BASE_URL", "https://api.openai.com/v1")
+AI_PROVIDER_API_KEY = os.getenv("AI_PROVIDER_API_KEY", "")
+AI_MODEL = os.getenv("AI_MODEL", "gpt-4.1-mini")
+
 
 def masked_database_url() -> str:
     split = urlsplit(RESOLVED_DATABASE_URL)

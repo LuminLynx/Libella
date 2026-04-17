@@ -57,10 +57,10 @@ fun AppNav() {
                 repository = glossaryRepository
             )
         }
-        composable("ai_tools") { AiToolsScreen() }
+        composable("ai_tools") { AiToolsScreen(onNavigate = { route -> navController.navigate(route) }) }
         composable("trend_watcher") { TrendWatcherScreen() }
-        composable("ask_glossary") { ChatScreen() }
-        composable("chat") { ChatScreen() }
+        composable("ask_glossary") { ChatScreen(repository = glossaryRepository) }
+        composable("chat") { ChatScreen(repository = glossaryRepository) }
         composable("settings") { SettingsScreen() }
     }
 }

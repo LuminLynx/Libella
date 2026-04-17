@@ -1,8 +1,12 @@
 package com.example.foss101.data.remote.network
 
 import com.example.foss101.data.remote.api.GlossaryApiService
+import com.example.foss101.data.remote.model.RemoteAskGlossaryResponse
 import com.example.foss101.data.remote.model.RemoteCategory
+import com.example.foss101.data.remote.model.RemoteGeneratedArtifactResult
 import com.example.foss101.data.remote.model.RemoteGlossaryTerm
+import com.example.foss101.data.remote.model.RemoteLearningChallenge
+import com.example.foss101.data.remote.model.RemoteLearningScenario
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -49,16 +53,60 @@ private class HttpGlossaryApiService(
         parseTerms(response)
     }
 
-    private fun get(path: String): JSONObject {
+    override suspend fun askGlossary(question: String, termId: String?): RemoteAskGlossaryResponse = withContext(Dispatchers.IO) {
+        val payload = JSONObject().put("question", question)
+        if (!termId.isNullOrBlank()) {
+            payload.put("termId", termId)
+        }
+        val response = post(path = "api/v1/ai/ask-glossary", payload = payload)
+        parseAskGlossary(response)
+    }
+
+    override suspend fun generateScenario(
+        termId: String,
+        forceRefresh: Boolean
+    ): RemoteGeneratedArtifactResult<RemoteLearningScenario> = withContext(Dispatchers.IO) {
+        val encodedId = URLEncoder.encode(termId, Charsets.UTF_8.name())
+        val response = post(
+            path = "api/v1/ai/terms/$encodedId/scenario",
+            payload = JSONObject().put("forceRefresh", forceRefresh)
+        )
+        parseGeneratedScenario(response)
+    }
+
+    override suspend fun generateChallenge(
+        termId: String,
+        forceRefresh: Boolean
+    ): RemoteGeneratedArtifactResult<RemoteLearningChallenge> = withContext(Dispatchers.IO) {
+        val encodedId = URLEncoder.encode(termId, Charsets.UTF_8.name())
+        val response = post(
+            path = "api/v1/ai/terms/$encodedId/challenge",
+            payload = JSONObject().put("forceRefresh", forceRefresh)
+        )
+        parseGeneratedChallenge(response)
+    }
+
+    private fun get(path: String): JSONObject = request("GET", path, null)
+
+    private fun post(path: String, payload: JSONObject): JSONObject = request("POST", path, payload)
+
+    private fun request(method: String, path: String, payload: JSONObject?): JSONObject {
         val requestUrl = URL(config.baseUrl.trimEnd('/') + "/" + path)
         val connection = (requestUrl.openConnection() as HttpURLConnection).apply {
-            requestMethod = "GET"
+            requestMethod = method
             connectTimeout = config.connectTimeoutMillis.toInt()
             readTimeout = config.readTimeoutMillis.toInt()
             setRequestProperty("Accept", "application/json")
+            if (payload != null) {
+                doOutput = true
+                setRequestProperty("Content-Type", "application/json")
+            }
         }
 
         return try {
+            if (payload != null) {
+                connection.outputStream.bufferedWriter().use { it.write(payload.toString()) }
+            }
             val responseCode = connection.responseCode
             val responseText = when {
                 responseCode in 200..299 -> connection.inputStream.bufferedReader().use { it.readText() }
@@ -116,6 +164,51 @@ private class HttpGlossaryApiService(
         return List(data.length()) { index ->
             data.getJSONObject(index).toRemoteCategory()
         }
+    }
+
+    private fun parseAskGlossary(envelope: JSONObject): RemoteAskGlossaryResponse {
+        val data = envelope.optJSONObject("data")
+            ?: throw GlossaryApiException(message = "Ask Glossary response was empty.")
+        return RemoteAskGlossaryResponse(
+            answer = data.getString("answer"),
+            summary = data.getString("summary"),
+            relatedTermIds = data.optJsonArray("relatedTermIds")
+        )
+    }
+
+    private fun parseGeneratedScenario(envelope: JSONObject): RemoteGeneratedArtifactResult<RemoteLearningScenario> {
+        val data = envelope.optJSONObject("data")
+            ?: throw GlossaryApiException(message = "Scenario response was empty.")
+        val artifact = data.optJSONObject("artifact")
+            ?: throw GlossaryApiException(message = "Scenario artifact is missing.")
+        return RemoteGeneratedArtifactResult(
+            artifact = RemoteLearningScenario(
+                title = artifact.getString("title"),
+                difficulty = artifact.getString("difficulty"),
+                context = artifact.getString("context"),
+                objective = artifact.getString("objective"),
+                tasks = artifact.optJsonArray("tasks"),
+                reflectionQuestions = artifact.optJsonArray("reflectionQuestions")
+            ),
+            cached = data.optBoolean("cached", false)
+        )
+    }
+
+    private fun parseGeneratedChallenge(envelope: JSONObject): RemoteGeneratedArtifactResult<RemoteLearningChallenge> {
+        val data = envelope.optJSONObject("data")
+            ?: throw GlossaryApiException(message = "Challenge response was empty.")
+        val artifact = data.optJSONObject("artifact")
+            ?: throw GlossaryApiException(message = "Challenge artifact is missing.")
+        return RemoteGeneratedArtifactResult(
+            artifact = RemoteLearningChallenge(
+                title = artifact.getString("title"),
+                difficulty = artifact.getString("difficulty"),
+                prompt = artifact.getString("prompt"),
+                successCriteria = artifact.optJsonArray("successCriteria"),
+                hint = artifact.getString("hint")
+            ),
+            cached = data.optBoolean("cached", false)
+        )
     }
 }
 

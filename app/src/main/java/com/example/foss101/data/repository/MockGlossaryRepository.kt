@@ -1,7 +1,11 @@
 package com.example.foss101.data.repository
 
+import com.example.foss101.model.AskGlossaryResponse
 import com.example.foss101.model.Category
+import com.example.foss101.model.GeneratedArtifactResult
 import com.example.foss101.model.GlossaryTerm
+import com.example.foss101.model.LearningChallenge
+import com.example.foss101.model.LearningScenario
 
 class MockGlossaryRepository : GlossaryRepository {
 
@@ -282,4 +286,51 @@ class MockGlossaryRepository : GlossaryRepository {
     override suspend fun getTermsByCategory(categoryId: String): List<GlossaryTerm> {
         return terms.filter { it.categoryId == categoryId }
     }
+
+
+    override suspend fun askGlossary(question: String, termId: String?): AskGlossaryResponse {
+        val term = termId?.let { getTermById(it) }
+        val prefix = term?.let { "For ${it.term}: " } ?: ""
+        return AskGlossaryResponse(
+            answer = prefix + "${question.trim()} -> Start with the short definition, then connect to an example.",
+            summary = "Use glossary definitions and examples to ground your understanding.",
+            relatedTermIds = term?.relatedTerms ?: emptyList()
+        )
+    }
+
+    override suspend fun generateScenario(
+        termId: String,
+        forceRefresh: Boolean
+    ): GeneratedArtifactResult<LearningScenario> {
+        val term = getTermById(termId) ?: error("Missing term")
+        return GeneratedArtifactResult(
+            artifact = LearningScenario(
+                title = "Scenario: ${term.term} in product planning",
+                difficulty = "beginner",
+                context = "You are evaluating an AI feature for a customer support product.",
+                objective = "Explain ${term.term} and how it changes design choices.",
+                tasks = listOf("Define ${term.term}", "Identify one risk", "Propose one mitigation"),
+                reflectionQuestions = listOf("What would fail without this concept?", "How would you measure success?")
+            ),
+            cached = !forceRefresh
+        )
+    }
+
+    override suspend fun generateChallenge(
+        termId: String,
+        forceRefresh: Boolean
+    ): GeneratedArtifactResult<LearningChallenge> {
+        val term = getTermById(termId) ?: error("Missing term")
+        return GeneratedArtifactResult(
+            artifact = LearningChallenge(
+                title = "Challenge: apply ${term.term}",
+                difficulty = "beginner",
+                prompt = "Write a short plan that applies ${term.term} in a real app.",
+                successCriteria = listOf("Uses correct definition", "Includes an example", "Mentions one tradeoff"),
+                hint = "Anchor your answer in the glossary definition and one production scenario."
+            ),
+            cached = !forceRefresh
+        )
+    }
+
 }
