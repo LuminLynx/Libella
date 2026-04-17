@@ -13,8 +13,19 @@ private val LightColors = lightColorScheme(
     onPrimaryContainer = OnPrimaryContainer,
     secondary = Secondary,
     onSecondary = OnSecondary,
+    secondaryContainer = SecondaryContainer,
+    onSecondaryContainer = OnSecondaryContainer,
+    tertiary = Tertiary,
+    onTertiary = OnTertiary,
+    background = Background,
+    onBackground = OnBackground,
     surface = Surface,
-    onSurface = OnSurface
+    surfaceVariant = SurfaceVariant,
+    onSurface = OnSurface,
+    onSurfaceVariant = OnSurfaceVariant,
+    outline = Outline,
+    error = Error,
+    onError = OnError
 )
 
 private val DarkColors = darkColorScheme(
@@ -22,8 +33,21 @@ private val DarkColors = darkColorScheme(
     onPrimary = OnPrimaryContainer,
     primaryContainer = Primary,
     onPrimaryContainer = OnPrimary,
-    secondary = Secondary,
-    onSecondary = OnSecondary
+    secondary = SecondaryContainer,
+    onSecondary = OnSecondaryContainer,
+    secondaryContainer = Secondary,
+    onSecondaryContainer = OnSecondary,
+    tertiary = Tertiary,
+    onTertiary = OnTertiary,
+    background = ColorDarkBackground,
+    onBackground = ColorDarkOnBackground,
+    surface = ColorDarkSurface,
+    surfaceVariant = ColorDarkSurfaceVariant,
+    onSurface = ColorDarkOnSurface,
+    onSurfaceVariant = ColorDarkOnSurfaceVariant,
+    outline = ColorDarkOutline,
+    error = Error,
+    onError = OnError
 )
 
 @Composable
@@ -34,6 +58,7 @@ fun Foss101Theme(
     MaterialTheme(
         colorScheme = if (darkTheme) DarkColors else LightColors,
         typography = AppTypography,
+        shapes = AppShapes,
         content = content
     )
 }

@@ -1,6 +1,5 @@
 package com.example.foss101.ui.categories
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -9,7 +8,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,9 +21,11 @@ import com.example.foss101.data.repository.GlossaryRepository
 import com.example.foss101.model.Category
 import com.example.foss101.model.GlossaryTerm
 import com.example.foss101.ui.browse.GlossaryTermItem
+import com.example.foss101.ui.components.AppScreenScaffold
 import com.example.foss101.ui.components.EmptyState
 import com.example.foss101.ui.components.ErrorState
 import com.example.foss101.ui.components.LoadingState
+import com.example.foss101.ui.components.screenContentPadding
 import com.example.foss101.viewmodel.CategoriesViewModel
 
 @Composable
@@ -35,29 +38,28 @@ fun CategoriesScreen(
     )
     val uiState = viewModel.uiState
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 20.dp, vertical = 16.dp)
-    ) {
-        Text(
-            text = "Categories",
-            style = MaterialTheme.typography.headlineSmall
-        )
-        Text(
-            text = "Explore AI terms by category.",
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
-        )
-
+    AppScreenScaffold(
+        title = "Categories",
+        subtitle = "Explore terms by focused topic"
+    ) { contentPadding ->
         when {
-            uiState.isLoading -> LoadingState("Loading categories...")
-            uiState.categoriesLoadError != null && uiState.selectedCategoryId == null -> ErrorState(uiState.categoriesLoadError)
-            uiState.categories.isEmpty() -> EmptyState("No categories available.")
+            uiState.isLoading -> LoadingState("Loading categories...", Modifier.screenContentPadding(contentPadding))
+            uiState.categoriesLoadError != null && uiState.selectedCategoryId == null -> ErrorState(
+                uiState.categoriesLoadError,
+                Modifier.screenContentPadding(contentPadding)
+            )
+
+            uiState.categories.isEmpty() -> EmptyState(
+                "No categories available.",
+                Modifier.screenContentPadding(contentPadding)
+            )
+
             uiState.selectedCategoryId == null -> CategoriesList(
                 categories = uiState.categories,
-                onCategorySelected = viewModel::selectCategory
+                onCategorySelected = viewModel::selectCategory,
+                contentPadding = contentPadding
             )
+
             else -> SelectedCategoryTerms(
                 category = uiState.categories.firstOrNull { it.id == uiState.selectedCategoryId },
                 termsEmpty = uiState.filteredTerms.isEmpty(),
@@ -65,7 +67,8 @@ fun CategoriesScreen(
                 termsError = uiState.selectedCategoryTermsError,
                 onBackToCategories = viewModel::clearSelection,
                 onNavigate = onNavigate,
-                terms = uiState.filteredTerms
+                terms = uiState.filteredTerms,
+                contentPadding = contentPadding
             )
         }
     }
@@ -74,12 +77,13 @@ fun CategoriesScreen(
 @Composable
 private fun CategoriesList(
     categories: List<Category>,
-    onCategorySelected: (String) -> Unit
+    onCategorySelected: (String) -> Unit,
+    contentPadding: PaddingValues
 ) {
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        modifier = Modifier.screenContentPadding(contentPadding),
+        contentPadding = PaddingValues(bottom = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(categories) { category ->
             CategoryItem(
@@ -98,44 +102,53 @@ private fun SelectedCategoryTerms(
     isLoadingTerms: Boolean,
     termsError: String?,
     onBackToCategories: () -> Unit,
-    onNavigate: (String) -> Unit
+    onNavigate: (String) -> Unit,
+    contentPadding: PaddingValues
 ) {
-    Text(
-        text = category?.name ?: "Category",
-        style = MaterialTheme.typography.titleLarge,
-        modifier = Modifier.padding(top = 4.dp)
-    )
-    Text(
-        text = category?.description.orEmpty(),
-        style = MaterialTheme.typography.bodyMedium,
-        modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
-    )
-    Text(
-        text = "Back to categories",
-        style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier
-            .padding(bottom = 12.dp)
-            .clickable { onBackToCategories() }
-    )
-
-    if (isLoadingTerms) {
-        LoadingState("Loading terms...")
-    } else if (termsError != null) {
-        ErrorState(termsError)
-    } else if (category != null && termsEmpty) {
-        EmptyState("No terms found for this category.")
-    } else {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+    Column(
+        modifier = Modifier.screenContentPadding(contentPadding),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
         ) {
-            items(terms) { term ->
-                GlossaryTermItem(
-                    term = term,
-                    onClick = { onNavigate("details/${term.id}") }
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = category?.name ?: "Category",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
+                Text(
+                    text = category?.description.orEmpty(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+        }
+
+        Button(onClick = onBackToCategories, modifier = Modifier.fillMaxWidth()) {
+            Text("Back to all categories")
+        }
+
+        if (isLoadingTerms) {
+            LoadingState("Loading terms...")
+        } else if (termsError != null) {
+            ErrorState(termsError)
+        } else if (category != null && termsEmpty) {
+            EmptyState("No terms found for this category.")
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(terms) { term ->
+                    GlossaryTermItem(
+                        term = term,
+                        onClick = { onNavigate("details/${term.id}") }
+                    )
+                }
             }
         }
     }
@@ -148,10 +161,12 @@ private fun CategoryItem(
 ) {
     Card(
         modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .fillMaxWidth(),
+        onClick = onClick,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
                 text = category.name,
                 style = MaterialTheme.typography.titleMedium
@@ -159,7 +174,7 @@ private fun CategoryItem(
             Text(
                 text = category.description,
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = 4.dp)
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
