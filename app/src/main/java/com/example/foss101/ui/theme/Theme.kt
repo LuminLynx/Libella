@@ -62,11 +62,3 @@ fun Foss101Theme(
         content = content
     )
 }
-
-private val ColorDarkBackground = androidx.compose.ui.graphics.Color(0xFF10131C)
-private val ColorDarkOnBackground = androidx.compose.ui.graphics.Color(0xFFE2E8F6)
-private val ColorDarkSurface = androidx.compose.ui.graphics.Color(0xFF10131C)
-private val ColorDarkSurfaceVariant = androidx.compose.ui.graphics.Color(0xFF2A3040)
-private val ColorDarkOnSurface = androidx.compose.ui.graphics.Color(0xFFE2E8F6)
-private val ColorDarkOnSurfaceVariant = androidx.compose.ui.graphics.Color(0xFFC1C8DB)
-private val ColorDarkOutline = androidx.compose.ui.graphics.Color(0xFF8A92A8)

@@ -2,9 +2,12 @@ package com.example.foss101.ui.details
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AssistChip
@@ -15,9 +18,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.foss101.data.repository.GlossaryRepository
+import com.example.foss101.model.GlossaryTerm
 import com.example.foss101.ui.components.AppScreenScaffold
 import com.example.foss101.ui.components.EmptyState
 import com.example.foss101.ui.components.ErrorState
@@ -62,10 +67,11 @@ fun TermDetailsScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun TermDetailsContent(
     contentPadding: PaddingValues,
-    term: com.example.foss101.model.GlossaryTerm
+    term: GlossaryTerm
 ) {
     Column(
         modifier = Modifier
@@ -75,22 +81,36 @@ private fun TermDetailsContent(
     ) {
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer
+            )
         ) {
-            Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(
+                modifier = Modifier.padding(18.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
                 Text(
                     text = term.term,
                     style = MaterialTheme.typography.headlineMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
+
                 Text(
                     text = term.shortDefinition,
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
+
                 AssistChip(
                     onClick = { },
-                    label = { Text("Category: ${term.categoryId}") },
+                    label = {
+                        Text(
+                            text = "Category: ${displayCategoryName(term.categoryId)}",
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    },
                     colors = AssistChipDefaults.assistChipColors(
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                         labelColor = MaterialTheme.colorScheme.onSecondaryContainer
@@ -102,22 +122,39 @@ private fun TermDetailsContent(
         if (term.tags.isNotEmpty()) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 SectionHeader(title = "Tags")
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    term.tags.chunked(3).forEach { rowTags ->
-                        androidx.compose.foundation.layout.Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            rowTags.forEach { tag ->
-                                AssistChip(onClick = { }, label = { Text(tag) })
+
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    term.tags.forEach { tag ->
+                        AssistChip(
+                            onClick = { },
+                            modifier = Modifier.widthIn(max = 220.dp),
+                            label = {
+                                Text(
+                                    text = tag,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis
+                                )
                             }
-                        }
+                        )
                     }
                 }
             }
         }
 
-        DetailSectionCard(title = "Full Explanation", content = term.fullExplanation)
+        DetailSectionCard(
+            title = "Full Explanation",
+            content = term.fullExplanation
+        )
 
         if (term.exampleUsage != null) {
-            DetailSectionCard(title = "Example Usage", content = term.exampleUsage)
+            DetailSectionCard(
+                title = "Example Usage",
+                content = term.exampleUsage
+            )
         }
     }
 }
@@ -129,18 +166,32 @@ private fun DetailSectionCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             SectionHeader(title = title)
+
             Text(
                 text = content,
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+    }
+}
+
+private fun displayCategoryName(categoryId: String): String {
+    return when (categoryId) {
+        "cat-ml-foundations" -> "ML Foundations"
+        "cat-llm-concepts" -> "LLM Concepts"
+        "cat-inference-serving" -> "Inference & Serving"
+        "cat-data-training" -> "Data & Training"
+        "cat-ai-safety" -> "AI Safety"
+        else -> categoryId
     }
 }
