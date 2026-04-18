@@ -32,6 +32,21 @@ Not found shape:
 }
 ```
 
+## Canonical term contract
+
+Term payloads returned by term endpoints are normalized server-side and include canonical fields:
+
+- `slug`
+- `term`
+- `definition`
+- `explanation`
+- `humor`
+- `seeAlso`
+- `tags`
+- `controversyLevel` (constrained to 0-3)
+
+Legacy compatibility aliases are still present for existing Android consumers (`shortDefinition`, `fullExplanation`, `relatedTerms`).
+
 ## Runtime configuration
 
 Configuration is environment-driven.
@@ -95,7 +110,13 @@ Run smoke verification against a real PostgreSQL instance:
 python -m backend.scripts.verify_postgres_api
 ```
 
-This checks browse, categories, details, category-filtered browse, search (`/api/v1/search/terms`), and not-found behavior using the stable `{ data, error }` envelope.
+Run schema audit checks against persisted term data:
+
+```bash
+python -m backend.scripts.audit_term_schema
+```
+
+This checks browse, categories, details, category-filtered browse, search (`/api/v1/search/terms`), and not-found behavior using the stable `{ data, error }` envelope, plus canonical-term data integrity guards.
 
 ## Railway deployment steps
 
@@ -122,5 +143,5 @@ uvicorn backend.app.main:app --host 0.0.0.0 --port ${PORT:-8000}
 ## Notes
 
 - Scope is MVP-only (no auth, accounts, admin panel, chat, or analytics).
-- `term_relations` is currently schema-only and not used by API responses/endpoints.
+- `term_relations` powers normalized `seeAlso`/`relatedTerms` serialization in term responses.
 - Do not commit real credentials.
