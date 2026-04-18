@@ -12,6 +12,10 @@ data class RemoteGlossaryTerm(
     val relatedTerms: List<String> = emptyList(),
     val exampleUsage: String? = null,
     val source: String? = null,
+    val slug: String? = null,
+    val humor: String? = null,
+    val seeAlso: List<String> = emptyList(),
+    val controversyLevel: Int = 0,
     val createdAt: String,
     val updatedAt: String
 )
@@ -26,6 +30,10 @@ fun RemoteGlossaryTerm.toDomain(): GlossaryTerm {
         tags = tags,
         relatedTerms = relatedTerms,
         exampleUsage = exampleUsage,
-        source = source
+        source = source,
+        slug = slug,
+        humor = humor,
+        seeAlso = seeAlso,
+        controversyLevel = controversyLevel
     )
 }

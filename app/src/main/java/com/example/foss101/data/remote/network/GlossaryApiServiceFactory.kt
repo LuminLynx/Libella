@@ -213,16 +213,25 @@ private class HttpGlossaryApiService(
 }
 
 private fun JSONObject.toRemoteGlossaryTerm(): RemoteGlossaryTerm {
+    val canonicalDefinition = optNullableString("definition")
+    val legacyDefinition = optNullableString("shortDefinition")
+    val canonicalExplanation = optNullableString("explanation")
+    val legacyExplanation = optNullableString("fullExplanation")
+
     return RemoteGlossaryTerm(
         id = getString("id"),
         term = getString("term"),
-        shortDefinition = getString("shortDefinition"),
-        fullExplanation = getString("fullExplanation"),
+        shortDefinition = canonicalDefinition ?: legacyDefinition ?: "",
+        fullExplanation = canonicalExplanation ?: legacyExplanation ?: "",
         categoryId = getString("categoryId"),
         tags = optJsonArray("tags"),
         relatedTerms = optJsonArray("relatedTerms"),
         exampleUsage = optNullableString("exampleUsage"),
         source = optNullableString("source"),
+        slug = optNullableString("slug"),
+        humor = optNullableString("humor"),
+        seeAlso = optJsonArray("seeAlso"),
+        controversyLevel = optInt("controversyLevel", 0),
         createdAt = getString("createdAt"),
         updatedAt = getString("updatedAt")
     )

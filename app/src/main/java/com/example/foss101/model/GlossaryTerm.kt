@@ -9,5 +9,12 @@ data class GlossaryTerm (
     val tags: List<String> = emptyList(),
     val relatedTerms: List<String> = emptyList(),
     val exampleUsage: String? = null,
-    val source: String? = null
-)
+    val source: String? = null,
+    val slug: String? = null,
+    val humor: String? = null,
+    val seeAlso: List<String> = emptyList(),
+    val controversyLevel: Int = 0
+) {
+    val definition: String
+        get() = shortDefinition
+}
