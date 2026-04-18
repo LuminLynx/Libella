@@ -6,6 +6,59 @@ from typing import Any
 
 from .db import get_connection
 
+TERM_SELECT_BASE = """
+    SELECT
+        t.id,
+        t.slug,
+        t.term,
+        t.definition,
+        t.explanation,
+        t.humor,
+        t.controversy_level,
+        t.short_definition,
+        t.full_explanation,
+        t.category_id,
+        t.tags,
+        t.related_terms,
+        t.example_usage,
+        t.source,
+        t.created_at,
+        t.updated_at,
+        COALESCE(
+            ARRAY_AGG(related.slug ORDER BY related.term)
+            FILTER (WHERE related.slug IS NOT NULL),
+            '{}'::TEXT[]
+        ) AS see_also,
+        COALESCE(
+            ARRAY_AGG(related.id ORDER BY related.term)
+            FILTER (WHERE related.id IS NOT NULL),
+            '{}'::TEXT[]
+        ) AS related_term_ids
+    FROM terms t
+    LEFT JOIN term_relations relation ON relation.term_id = t.id
+    LEFT JOIN terms related ON related.id = relation.related_term_id
+"""
+
+TERM_GROUP_BY = """
+    GROUP BY
+        t.id,
+        t.slug,
+        t.term,
+        t.definition,
+        t.explanation,
+        t.humor,
+        t.controversy_level,
+        t.short_definition,
+        t.full_explanation,
+        t.category_id,
+        t.tags,
+        t.related_terms,
+        t.example_usage,
+        t.source,
+        t.created_at,
+        t.updated_at
+"""
+
 
 def _parse_csv(value: str | None) -> list[str]:
     if not value:
@@ -13,12 +66,19 @@ def _parse_csv(value: str | None) -> list[str]:
     return [item.strip() for item in value.split(",") if item.strip()]
 
 
+def _to_list(value: Any) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return [str(item).strip() for item in value if str(item).strip()]
+    return _parse_csv(str(value))
+
+
 def list_terms() -> list[dict[str, Any]]:
-    query = """
-        SELECT id, term, short_definition, full_explanation, category_id,
-               tags, related_terms, example_usage, source, created_at, updated_at
-        FROM terms
-        ORDER BY LOWER(term) ASC
+    query = f"""
+        {TERM_SELECT_BASE}
+        {TERM_GROUP_BY}
+        ORDER BY LOWER(t.term) ASC
     """
     with get_connection() as connection:
         rows = connection.execute(query).fetchall()
@@ -26,11 +86,10 @@ def list_terms() -> list[dict[str, Any]]:
 
 
 def get_term_by_id(term_id: str) -> dict[str, Any] | None:
-    query = """
-        SELECT id, term, short_definition, full_explanation, category_id,
-               tags, related_terms, example_usage, source, created_at, updated_at
-        FROM terms
-        WHERE id = %s
+    query = f"""
+        {TERM_SELECT_BASE}
+        WHERE t.id = %s
+        {TERM_GROUP_BY}
     """
     with get_connection() as connection:
         row = connection.execute(query, (term_id,)).fetchone()
@@ -49,12 +108,11 @@ def list_categories() -> list[dict[str, Any]]:
 
 
 def list_terms_by_category(category_id: str) -> list[dict[str, Any]]:
-    query = """
-        SELECT id, term, short_definition, full_explanation, category_id,
-               tags, related_terms, example_usage, source, created_at, updated_at
-        FROM terms
-        WHERE category_id = %s
-        ORDER BY LOWER(term) ASC
+    query = f"""
+        {TERM_SELECT_BASE}
+        WHERE t.category_id = %s
+        {TERM_GROUP_BY}
+        ORDER BY LOWER(t.term) ASC
     """
     with get_connection() as connection:
         rows = connection.execute(query, (category_id,)).fetchall()
@@ -67,17 +125,17 @@ def search_terms(raw_query: str) -> list[dict[str, Any]]:
         return []
 
     search_value = f"%{query}%"
-    sql = """
-        SELECT id, term, short_definition, full_explanation, category_id,
-               tags, related_terms, example_usage, source, created_at, updated_at
-        FROM terms
-        WHERE term ILIKE %s
-           OR short_definition ILIKE %s
-           OR full_explanation ILIKE %s
-           OR tags ILIKE %s
-        ORDER BY LOWER(term) ASC
+    sql = f"""
+        {TERM_SELECT_BASE}
+        WHERE t.term ILIKE %s
+           OR t.definition ILIKE %s
+           OR t.explanation ILIKE %s
+           OR t.tags ILIKE %s
+           OR t.slug ILIKE %s
+        {TERM_GROUP_BY}
+        ORDER BY LOWER(t.term) ASC
     """
-    params = (search_value, search_value, search_value, search_value)
+    params = (search_value, search_value, search_value, search_value, search_value)
     with get_connection() as connection:
         rows = connection.execute(sql, params).fetchall()
     return [_map_term_row(row) for row in rows]
@@ -145,14 +203,25 @@ def upsert_generated_content(
 
 
 def _map_term_row(row: Any) -> dict[str, Any]:
+    normalized_tags = _parse_csv(row["tags"])
+    normalized_see_also = _to_list(row["see_also"])
+    normalized_related_ids = _to_list(row["related_term_ids"])
+
     return {
         "id": row["id"],
+        "slug": row["slug"],
         "term": row["term"],
-        "shortDefinition": row["short_definition"],
-        "fullExplanation": row["full_explanation"],
+        "definition": row["definition"],
+        "explanation": row["explanation"],
+        "humor": row["humor"],
+        "seeAlso": normalized_see_also,
+        "tags": normalized_tags,
+        "controversyLevel": row["controversy_level"],
+        # Backward-compatible aliases for existing Android consumers.
+        "shortDefinition": row["definition"],
+        "fullExplanation": row["explanation"],
+        "relatedTerms": normalized_related_ids,
         "categoryId": row["category_id"],
-        "tags": _parse_csv(row["tags"]),
-        "relatedTerms": _parse_csv(row["related_terms"]),
         "exampleUsage": row["example_usage"],
         "source": row["source"],
         "createdAt": row["created_at"],

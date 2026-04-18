@@ -9,9 +9,32 @@ from backend.app.main import app
 from backend.scripts.seed_db import seed
 
 
+EXPECTED_CANONICAL_FIELDS = {
+    "slug",
+    "term",
+    "definition",
+    "explanation",
+    "humor",
+    "seeAlso",
+    "tags",
+    "controversyLevel",
+}
+
+
 def assert_envelope(payload: dict) -> None:
     assert "data" in payload
     assert "error" in payload
+
+
+def assert_canonical_term_shape(term: dict) -> None:
+    assert EXPECTED_CANONICAL_FIELDS.issubset(term.keys())
+    assert isinstance(term["slug"], str) and term["slug"]
+    assert isinstance(term["tags"], list)
+    assert term["tags"] == sorted(set(term["tags"]))
+    assert isinstance(term["seeAlso"], list)
+    assert all(isinstance(item, str) and item for item in term["seeAlso"])
+    assert isinstance(term["controversyLevel"], int)
+    assert 0 <= term["controversyLevel"] <= 3
 
 
 def run_verification() -> None:
@@ -33,6 +56,7 @@ def run_verification() -> None:
         assert len(categories_payload["data"]) > 0
 
         sample_term = browse_payload["data"][0]
+        assert_canonical_term_shape(sample_term)
         term_id = sample_term["id"]
         category_id = sample_term["categoryId"]
 
@@ -41,6 +65,7 @@ def run_verification() -> None:
         details_payload = details_resp.json()
         assert_envelope(details_payload)
         assert details_payload["data"]["id"] == term_id
+        assert_canonical_term_shape(details_payload["data"])
 
         by_category_resp = client.get(f"/api/v1/categories/{category_id}/terms")
         assert by_category_resp.status_code == 200
@@ -48,6 +73,7 @@ def run_verification() -> None:
         assert_envelope(by_category_payload)
         assert isinstance(by_category_payload["data"], list)
         assert len(by_category_payload["data"]) > 0
+        assert all(term["categoryId"] == category_id for term in by_category_payload["data"])
 
         term_token = sample_term["term"].split()[0]
         search_resp = client.get("/api/v1/search/terms", params={"q": term_token})
@@ -56,6 +82,7 @@ def run_verification() -> None:
         assert_envelope(search_payload)
         assert isinstance(search_payload["data"], list)
         assert any(item["id"] == term_id for item in search_payload["data"])
+        assert all("slug" in item for item in search_payload["data"])
 
         not_found_resp = client.get("/api/v1/terms/term-does-not-exist")
         assert not_found_resp.status_code == 404
