@@ -16,6 +16,7 @@ import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -115,11 +116,6 @@ private fun TermDetailsContent(
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
                 Text(
-                    text = term.definition,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-                Text(
                     text = "Slug: ${term.slug}",
                     style = MaterialTheme.typography.labelMedium,
                     fontFamily = FontFamily.Monospace,
@@ -136,6 +132,8 @@ private fun TermDetailsContent(
             }
         }
 
+        DetailSectionCard(title = "Definition", content = term.definition)
+
         DetailSectionCard(title = "Explanation", content = term.explanation)
 
         term.humor?.takeIf { it.isNotBlank() }?.let { humorText ->
@@ -150,18 +148,7 @@ private fun TermDetailsContent(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     term.seeAlso.forEach { relatedSlug ->
-                        AssistChip(
-                            onClick = { },
-                            modifier = Modifier.widthIn(max = 220.dp),
-                            label = {
-                                Text(
-                                    text = relatedSlug,
-                                    maxLines = 1,
-                                    softWrap = false,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                        )
+                        MetadataPill(text = relatedSlug)
                     }
                 }
             }
@@ -176,18 +163,7 @@ private fun TermDetailsContent(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     term.tags.forEach { tag ->
-                        AssistChip(
-                            onClick = { },
-                            modifier = Modifier.widthIn(max = 220.dp),
-                            label = {
-                                Text(
-                                    text = tag,
-                                    maxLines = 1,
-                                    softWrap = false,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                        )
+                        MetadataPill(text = tag)
                     }
                 }
             }
@@ -298,6 +274,25 @@ private fun DetailSectionCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+    }
+}
+
+@Composable
+private fun MetadataPill(text: String) {
+    Surface(
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.secondaryContainer
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier
+                .widthIn(max = 320.dp)
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSecondaryContainer,
+            softWrap = true,
+            overflow = TextOverflow.Clip
+        )
     }
 }
 

@@ -40,6 +40,41 @@ ON CONFLICT (id) DO UPDATE SET
     created_at = EXCLUDED.created_at,
     updated_at = EXCLUDED.updated_at;
 
+-- Canonical content fidelity pass:
+-- Ensure canonical columns are populated from structured source content and that
+-- humor/controversy data is explicitly present for detail rendering parity.
+UPDATE terms
+SET
+    definition = short_definition,
+    explanation = full_explanation,
+    humor = CASE id
+        WHEN 'term-transformer' THEN 'Transformers replaced recurrence and never looked back.'
+        WHEN 'term-attention' THEN 'Attention is the model way of saying: "this part matters."'
+        WHEN 'term-token' THEN 'Tokens are tiny, but your billing statement notices every one.'
+        WHEN 'term-context-window' THEN 'When context runs out, models get selective amnesia.'
+        WHEN 'term-rag' THEN 'RAG is basically "open book exam mode" for LLMs.'
+        WHEN 'term-embedding' THEN 'Embeddings turn meaning into math coordinates.'
+        WHEN 'term-vector-database' THEN 'Needles in haystacks, found by cosine similarity.'
+        WHEN 'term-inference' THEN 'Inference is where training bragging meets production traffic.'
+        WHEN 'term-quantization' THEN 'Quantization: same idea, fewer bits, faster bills.'
+        WHEN 'term-latency' THEN 'Users call anything over a second "forever."'
+        WHEN 'term-fine-tuning' THEN 'Fine-tuning is teaching a valedictorian your house style.'
+        WHEN 'term-overfitting' THEN 'Great on homework, confused by the final exam.'
+        WHEN 'term-evaluation' THEN 'If you cannot measure it, you are just vibe-checking.'
+        WHEN 'term-hallucination' THEN 'Confidently incorrect is still incorrect.'
+        WHEN 'term-guardrails' THEN 'Guardrails keep demos from becoming incident reports.'
+        WHEN 'term-red-teaming' THEN 'Red teaming asks the spicy questions before the internet does.'
+        ELSE humor
+    END,
+    controversy_level = CASE id
+        WHEN 'term-hallucination' THEN 2
+        WHEN 'term-guardrails' THEN 2
+        WHEN 'term-red-teaming' THEN 2
+        WHEN 'term-rag' THEN 1
+        WHEN 'term-fine-tuning' THEN 1
+        ELSE 0
+    END;
+
 INSERT INTO term_relations (term_id, related_term_id) VALUES
 ('term-transformer', 'term-attention'),
 ('term-transformer', 'term-token'),
