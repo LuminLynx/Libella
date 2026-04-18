@@ -51,8 +51,8 @@ fun TermDetailsScreen(
     val uiState = viewModel.uiState
 
     AppScreenScaffold(
-        title = "Term Details",
-        subtitle = "Canonical glossary entry"
+        title = uiState.term?.term ?: "AI Terms Glossary",
+        subtitle = if (uiState.term == null) "Glossary term" else "Canonical term entry"
     ) { contentPadding ->
         when {
             uiState.isLoading -> LoadingState(
@@ -134,8 +134,6 @@ private fun TermDetailsContent(
 
         DetailSectionCard(title = "Definition", content = term.definition)
 
-        DetailSectionCard(title = "Explanation", content = term.explanation)
-
         term.humor?.takeIf { it.isNotBlank() }?.let { humorText ->
             DetailSectionCard(title = "Humor", content = humorText)
         }
@@ -169,17 +167,57 @@ private fun TermDetailsContent(
             }
         }
 
-        ScenarioSection(
-            state = scenarioState,
-            onGenerate = onGenerateScenario,
-            onRefresh = onRefreshScenario
+        AuxiliaryLearningSection(
+            scenarioState = scenarioState,
+            challengeState = challengeState,
+            onGenerateScenario = onGenerateScenario,
+            onRefreshScenario = onRefreshScenario,
+            onGenerateChallenge = onGenerateChallenge,
+            onRefreshChallenge = onRefreshChallenge
         )
+    }
+}
 
-        ChallengeSection(
-            state = challengeState,
-            onGenerate = onGenerateChallenge,
-            onRefresh = onRefreshChallenge
-        )
+@Composable
+private fun AuxiliaryLearningSection(
+    scenarioState: ArtifactUiState<LearningScenario>,
+    challengeState: ArtifactUiState<LearningChallenge>,
+    onGenerateScenario: () -> Unit,
+    onRefreshScenario: () -> Unit,
+    onGenerateChallenge: () -> Unit,
+    onRefreshChallenge: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text(
+                text = "AI Learning (Optional)",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = "These tools help you practice the term. They are separate from the canonical glossary definition.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            ScenarioSection(
+                state = scenarioState,
+                onGenerate = onGenerateScenario,
+                onRefresh = onRefreshScenario
+            )
+
+            ChallengeSection(
+                state = challengeState,
+                onGenerate = onGenerateChallenge,
+                onRefresh = onRefreshChallenge
+            )
+        }
     }
 }
 
