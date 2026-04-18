@@ -4,28 +4,30 @@ import com.example.foss101.model.GlossaryTerm
 
 data class RemoteGlossaryTerm(
     val id: String,
+    val slug: String,
     val term: String,
-    val shortDefinition: String,
-    val fullExplanation: String,
-    val categoryId: String,
+    val definition: String,
+    val explanation: String,
+    val humor: String?,
+    val seeAlso: List<String> = emptyList(),
     val tags: List<String> = emptyList(),
-    val relatedTerms: List<String> = emptyList(),
-    val exampleUsage: String? = null,
-    val source: String? = null,
-    val createdAt: String,
-    val updatedAt: String
+    val controversyLevel: Int = 0,
+    val categoryId: String? = null,
+    val relatedTermIds: List<String> = emptyList()
 )
 
 fun RemoteGlossaryTerm.toDomain(): GlossaryTerm {
     return GlossaryTerm(
         id = id,
+        slug = slug,
         term = term,
-        shortDefinition = shortDefinition,
-        fullExplanation = fullExplanation,
-        categoryId = categoryId,
+        definition = definition,
+        explanation = explanation,
+        humor = humor,
+        seeAlso = seeAlso,
         tags = tags,
-        relatedTerms = relatedTerms,
-        exampleUsage = exampleUsage,
-        source = source
+        controversyLevel = controversyLevel,
+        categoryId = categoryId,
+        relatedTermIds = relatedTermIds
     )
 }

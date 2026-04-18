@@ -277,8 +277,8 @@ class MockGlossaryRepository : GlossaryRepository {
 
         return terms.filter { term ->
             term.term.lowercase().contains(normalizedQuery) ||
-                term.shortDefinition.lowercase().contains(normalizedQuery) ||
-                term.fullExplanation.lowercase().contains(normalizedQuery) ||
+                term.definition.lowercase().contains(normalizedQuery) ||
+                term.explanation.lowercase().contains(normalizedQuery) ||
                 term.tags.any { it.lowercase().contains(normalizedQuery) }
         }
     }
@@ -292,9 +292,9 @@ class MockGlossaryRepository : GlossaryRepository {
         val term = termId?.let { getTermById(it) }
         val prefix = term?.let { "For ${it.term}: " } ?: ""
         return AskGlossaryResponse(
-            answer = prefix + "${question.trim()} -> Start with the short definition, then connect to an example.",
+            answer = prefix + "${question.trim()} -> Start with the definition, then connect to an example.",
             summary = "Use glossary definitions and examples to ground your understanding.",
-            relatedTermIds = term?.relatedTerms ?: emptyList()
+            relatedTermIds = term?.relatedTermIds ?: emptyList()
         )
     }
 

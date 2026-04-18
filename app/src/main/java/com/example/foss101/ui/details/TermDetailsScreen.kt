@@ -19,6 +19,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -50,7 +51,7 @@ fun TermDetailsScreen(
 
     AppScreenScaffold(
         title = "Term Details",
-        subtitle = "Deep dive and usage context"
+        subtitle = "Canonical glossary entry"
     ) { contentPadding ->
         when {
             uiState.isLoading -> LoadingState(
@@ -102,9 +103,7 @@ private fun TermDetailsContent(
     ) {
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer
-            )
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
         ) {
             Column(
                 modifier = Modifier.padding(18.dp),
@@ -115,28 +114,56 @@ private fun TermDetailsContent(
                     style = MaterialTheme.typography.headlineMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
-
                 Text(
-                    text = term.shortDefinition,
+                    text = term.definition,
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
-
+                Text(
+                    text = "Slug: ${term.slug}",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontFamily = FontFamily.Monospace,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
+                )
                 AssistChip(
                     onClick = { },
-                    label = {
-                        Text(
-                            text = "Category: ${displayCategoryName(term.categoryId)}",
-                            maxLines = 1,
-                            softWrap = false,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    },
+                    label = { Text(text = controversyLabel(term.controversyLevel)) },
                     colors = AssistChipDefaults.assistChipColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        containerColor = controversyContainerColor(term.controversyLevel),
                         labelColor = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                 )
+            }
+        }
+
+        DetailSectionCard(title = "Explanation", content = term.explanation)
+
+        term.humor?.takeIf { it.isNotBlank() }?.let { humorText ->
+            DetailSectionCard(title = "Humor", content = humorText)
+        }
+
+        if (term.seeAlso.isNotEmpty()) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                SectionHeader(title = "See Also")
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    term.seeAlso.forEach { relatedSlug ->
+                        AssistChip(
+                            onClick = { },
+                            modifier = Modifier.widthIn(max = 220.dp),
+                            label = {
+                                Text(
+                                    text = relatedSlug,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        )
+                    }
+                }
             }
         }
 
@@ -164,18 +191,6 @@ private fun TermDetailsContent(
                     }
                 }
             }
-        }
-
-        DetailSectionCard(
-            title = "Full Explanation",
-            content = term.fullExplanation
-        )
-
-        if (term.exampleUsage != null) {
-            DetailSectionCard(
-                title = "Example Usage",
-                content = term.exampleUsage
-            )
         }
 
         ScenarioSection(
@@ -270,16 +285,13 @@ private fun DetailSectionCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             SectionHeader(title = title)
-
             Text(
                 text = content,
                 style = MaterialTheme.typography.bodyLarge,
@@ -289,13 +301,18 @@ private fun DetailSectionCard(
     }
 }
 
-private fun displayCategoryName(categoryId: String): String {
-    return when (categoryId) {
-        "cat-ml-foundations" -> "ML Foundations"
-        "cat-llm-concepts" -> "LLM Concepts"
-        "cat-inference-serving" -> "Inference & Serving"
-        "cat-data-training" -> "Data & Training"
-        "cat-ai-safety" -> "AI Safety"
-        else -> categoryId
-    }
+@Composable
+private fun controversyContainerColor(level: Int) = when (level) {
+    0 -> MaterialTheme.colorScheme.secondaryContainer
+    1 -> MaterialTheme.colorScheme.tertiaryContainer
+    2 -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.45f)
+    else -> MaterialTheme.colorScheme.errorContainer
+}
+
+private fun controversyLabel(level: Int): String = when (level) {
+    0 -> "Controversy: Low"
+    1 -> "Controversy: Moderate"
+    2 -> "Controversy: Elevated"
+    3 -> "Controversy: High"
+    else -> "Controversy: Unknown"
 }

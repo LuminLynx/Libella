@@ -215,16 +215,16 @@ private class HttpGlossaryApiService(
 private fun JSONObject.toRemoteGlossaryTerm(): RemoteGlossaryTerm {
     return RemoteGlossaryTerm(
         id = getString("id"),
+        slug = optNonBlankString("slug") ?: getString("id"),
         term = getString("term"),
-        shortDefinition = getString("shortDefinition"),
-        fullExplanation = getString("fullExplanation"),
-        categoryId = getString("categoryId"),
+        definition = optNonBlankString("definition") ?: getString("shortDefinition"),
+        explanation = optNonBlankString("explanation") ?: getString("fullExplanation"),
+        humor = optNullableString("humor"),
+        seeAlso = optJsonArray("seeAlso"),
         tags = optJsonArray("tags"),
-        relatedTerms = optJsonArray("relatedTerms"),
-        exampleUsage = optNullableString("exampleUsage"),
-        source = optNullableString("source"),
-        createdAt = getString("createdAt"),
-        updatedAt = getString("updatedAt")
+        controversyLevel = optInt("controversyLevel", 0),
+        categoryId = optNullableString("categoryId"),
+        relatedTermIds = optJsonArray("relatedTerms")
     )
 }
 
@@ -244,6 +244,10 @@ private fun JSONObject.optJsonArray(field: String): List<String> {
 private fun JSONObject.optNullableString(field: String): String? {
     if (isNull(field)) return null
     return optString(field).takeIf { it.isNotBlank() }
+}
+
+private fun JSONObject.optNonBlankString(field: String): String? {
+    return optNullableString(field)
 }
 
 internal class GlossaryApiException(

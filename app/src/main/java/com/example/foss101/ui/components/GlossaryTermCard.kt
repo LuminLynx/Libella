@@ -42,7 +42,7 @@ fun GlossaryTermCard(
                 style = MaterialTheme.typography.titleLarge
             )
             Text(
-                text = term.shortDefinition,
+                text = term.definition,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 3,
