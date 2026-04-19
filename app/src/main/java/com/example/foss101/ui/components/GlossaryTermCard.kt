@@ -2,7 +2,8 @@ package com.example.foss101.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AssistChip
@@ -17,6 +18,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.foss101.model.GlossaryTerm
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun GlossaryTermCard(
     term: GlossaryTerm,
@@ -49,11 +51,21 @@ fun GlossaryTermCard(
                 overflow = TextOverflow.Ellipsis
             )
             if (term.tags.isNotEmpty()) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    term.tags.take(2).forEach { tag ->
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    term.tags.take(3).forEach { tag ->
                         AssistChip(
                             onClick = onClick,
-                            label = { Text(tag) },
+                            label = {
+                                Text(
+                                    text = tag,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            },
                             colors = AssistChipDefaults.assistChipColors(
                                 containerColor = MaterialTheme.colorScheme.secondaryContainer,
                                 labelColor = MaterialTheme.colorScheme.onSecondaryContainer

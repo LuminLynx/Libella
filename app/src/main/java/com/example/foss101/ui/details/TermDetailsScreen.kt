@@ -9,13 +9,15 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -49,8 +51,8 @@ fun TermDetailsScreen(
     val uiState = viewModel.uiState
 
     AppScreenScaffold(
-        title = uiState.term?.term ?: "Term Details",
-        subtitle = uiState.term?.slug?.let { "Glossary term • $it" } ?: "Glossary term"
+        title = uiState.term?.term ?: "Loading...",
+        subtitle = uiState.term?.slug ?: ""
     ) { contentPadding ->
         when {
             uiState.isLoading -> LoadingState(
@@ -94,6 +96,9 @@ private fun TermDetailsContent(
     onGenerateChallenge: () -> Unit,
     onRefreshChallenge: () -> Unit
 ) {
+    val explanation = term.fullExplanation
+    val humor = term.humor
+
     Column(
         modifier = Modifier
             .screenContentPadding(contentPadding)
@@ -111,12 +116,6 @@ private fun TermDetailsContent(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Text(
-                    text = term.term,
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-
-                Text(
                     text = "Definition",
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -128,45 +127,26 @@ private fun TermDetailsContent(
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
 
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    AssistChip(
-                        onClick = { },
-                        label = {
-                            Text(
-                                text = "Category: ${displayCategoryName(term.categoryId)}",
-                                maxLines = 1,
-                                softWrap = false,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        },
-                        colors = AssistChipDefaults.assistChipColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            labelColor = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
-                    )
-
-                    AssistChip(
-                        onClick = { },
-                        label = {
-                            Text(
-                                text = "Controversy: ${displayControversyLevel(term.controversyLevel)}",
-                                maxLines = 1,
-                                softWrap = false,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    )
-                }
+                AssistChip(
+                    onClick = { },
+                    label = {
+                        Text(text = "Controversy: ${displayControversyLevel(term.controversyLevel)}")
+                    }
+                )
             }
         }
 
-        if (!term.humor.isNullOrBlank()) {
+        if (!explanation.isNullOrBlank()) {
+            DetailSectionCard(
+                title = "Explanation",
+                content = explanation
+            )
+        }
+
+        if (!humor.isNullOrBlank()) {
             DetailSectionCard(
                 title = "Humor",
-                content = term.humor
+                content = humor
             )
         }
 
@@ -179,18 +159,7 @@ private fun TermDetailsContent(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     term.seeAlso.forEach { related ->
-                        AssistChip(
-                            onClick = { },
-                            modifier = Modifier.widthIn(max = 220.dp),
-                            label = {
-                                Text(
-                                    text = related,
-                                    maxLines = 1,
-                                    softWrap = false,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                        )
+                        MetadataPill(text = related)
                     }
                 }
             }
@@ -205,18 +174,7 @@ private fun TermDetailsContent(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     term.tags.forEach { tag ->
-                        AssistChip(
-                            onClick = { },
-                            modifier = Modifier.widthIn(max = 220.dp),
-                            label = {
-                                Text(
-                                    text = tag,
-                                    maxLines = 1,
-                                    softWrap = false,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                        )
+                        MetadataPill(text = tag)
                     }
                 }
             }
@@ -229,6 +187,25 @@ private fun TermDetailsContent(
             onRefreshScenario = onRefreshScenario,
             onGenerateChallenge = onGenerateChallenge,
             onRefreshChallenge = onRefreshChallenge
+        )
+    }
+}
+
+@Composable
+private fun MetadataPill(text: String) {
+    Surface(
+        shape = RoundedCornerShape(999.dp),
+        color = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        modifier = Modifier.widthIn(max = 280.dp)
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+            style = MaterialTheme.typography.bodyLarge,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }
@@ -367,16 +344,6 @@ private fun DetailSectionCard(
     }
 }
 
-private fun displayCategoryName(categoryId: String): String {
-    return when (categoryId) {
-        "cat-ml-foundations" -> "ML Foundations"
-        "cat-llm-concepts" -> "LLM Concepts"
-        "cat-inference-serving" -> "Inference & Serving"
-        "cat-data-training" -> "Data & Training"
-        "cat-ai-safety" -> "AI Safety"
-        else -> categoryId
-    }
-}
 
 private fun displayControversyLevel(level: Int): String {
     return when (level) {
