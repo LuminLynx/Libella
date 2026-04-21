@@ -28,6 +28,9 @@ import com.example.foss101.data.repository.GlossaryRepository
 import com.example.foss101.ui.components.ErrorState
 import com.example.foss101.ui.components.screenContentPadding
 import com.example.foss101.viewmodel.TermDraftViewModel
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Icon
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,7 +51,10 @@ fun TermDraftScreen(
                 title = { Text("Create Term Draft") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Text("Back")
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back"
+                        )
                     }
                 }
             )
