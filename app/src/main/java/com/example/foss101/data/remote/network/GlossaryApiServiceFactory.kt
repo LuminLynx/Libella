@@ -7,6 +7,8 @@ import com.example.foss101.data.remote.model.RemoteGeneratedArtifactResult
 import com.example.foss101.data.remote.model.RemoteGlossaryTerm
 import com.example.foss101.data.remote.model.RemoteLearningChallenge
 import com.example.foss101.data.remote.model.RemoteLearningScenario
+import com.example.foss101.data.remote.model.RemoteTermDraftSubmission
+import com.example.foss101.data.remote.model.RemoteTermDraftSubmissionResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -84,6 +86,22 @@ private class HttpGlossaryApiService(
             payload = JSONObject().put("forceRefresh", forceRefresh)
         )
         parseGeneratedChallenge(response)
+    }
+
+    override suspend fun submitTermDraft(
+        draft: RemoteTermDraftSubmission
+    ): RemoteTermDraftSubmissionResult = withContext(Dispatchers.IO) {
+        val payload = JSONObject()
+            .put("slug", draft.slug)
+            .put("term", draft.term)
+            .put("definition", draft.definition)
+            .put("explanation", draft.explanation)
+            .put("humor", draft.humor)
+            .put("see_also", JSONArray(draft.seeAlso))
+            .put("tags", JSONArray(draft.tags))
+            .put("controversy_level", draft.controversyLevel)
+        val response = post(path = "api/v1/term-drafts", payload = payload)
+        parseTermDraftSubmission(response)
     }
 
     private fun get(path: String): JSONObject = request("GET", path, null)
@@ -208,6 +226,15 @@ private class HttpGlossaryApiService(
                 hint = artifact.getString("hint")
             ),
             cached = data.optBoolean("cached", false)
+        )
+    }
+
+    private fun parseTermDraftSubmission(envelope: JSONObject): RemoteTermDraftSubmissionResult {
+        val data = envelope.optJSONObject("data")
+            ?: throw GlossaryApiException(message = "Draft submission response was empty.")
+        return RemoteTermDraftSubmissionResult(
+            id = data.optString("id").ifBlank { data.optString("draft_id") },
+            status = data.optString("status", "draft")
         )
     }
 }

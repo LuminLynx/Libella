@@ -6,6 +6,8 @@ import com.example.foss101.data.remote.model.RemoteGeneratedArtifactResult
 import com.example.foss101.data.remote.model.RemoteGlossaryTerm
 import com.example.foss101.data.remote.model.RemoteLearningChallenge
 import com.example.foss101.data.remote.model.RemoteLearningScenario
+import com.example.foss101.data.remote.model.RemoteTermDraftSubmission
+import com.example.foss101.data.remote.model.RemoteTermDraftSubmissionResult
 
 interface GlossaryApiService {
     suspend fun getTerms(): List<RemoteGlossaryTerm>
@@ -16,4 +18,5 @@ interface GlossaryApiService {
     suspend fun askGlossary(question: String, termId: String? = null): RemoteAskGlossaryResponse
     suspend fun generateScenario(termId: String, forceRefresh: Boolean = false): RemoteGeneratedArtifactResult<RemoteLearningScenario>
     suspend fun generateChallenge(termId: String, forceRefresh: Boolean = false): RemoteGeneratedArtifactResult<RemoteLearningChallenge>
+    suspend fun submitTermDraft(draft: RemoteTermDraftSubmission): RemoteTermDraftSubmissionResult
 }

@@ -2,6 +2,7 @@ package com.example.foss101.data.repository
 
 import com.example.foss101.data.remote.api.GlossaryApiService
 import com.example.foss101.data.remote.model.toDomain
+import com.example.foss101.data.remote.model.toRemote
 import com.example.foss101.data.remote.network.GlossaryApiException
 import com.example.foss101.model.AskGlossaryResponse
 import com.example.foss101.model.Category
@@ -9,6 +10,8 @@ import com.example.foss101.model.GeneratedArtifactResult
 import com.example.foss101.model.GlossaryTerm
 import com.example.foss101.model.LearningChallenge
 import com.example.foss101.model.LearningScenario
+import com.example.foss101.model.TermDraftSubmission
+import com.example.foss101.model.TermDraftSubmissionResult
 
 class ApiGlossaryRepository(
     private val glossaryApiService: GlossaryApiService
@@ -60,5 +63,9 @@ class ApiGlossaryRepository(
     ): GeneratedArtifactResult<LearningChallenge> {
         return glossaryApiService.generateChallenge(termId = termId, forceRefresh = forceRefresh)
             .toDomain { it.toDomain() }
+    }
+
+    override suspend fun submitTermDraft(draft: TermDraftSubmission): TermDraftSubmissionResult {
+        return glossaryApiService.submitTermDraft(draft.toRemote()).toDomain()
     }
 }
