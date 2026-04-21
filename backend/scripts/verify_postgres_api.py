@@ -84,6 +84,63 @@ def run_verification() -> None:
         assert any(item["id"] == term_id for item in search_payload["data"])
         assert all("slug" in item for item in search_payload["data"])
 
+        # Log repeated missing queries and verify aggregation.
+        for query in ["Mixture of Experts", "mixture    of experts", "Agentic Retrieval"]:
+            resp = client.get("/api/v1/search/terms", params={"q": query})
+            assert resp.status_code == 200
+
+        missing_resp = client.get("/api/v1/search/missing-queries", params={"days": 90, "limit": 5})
+        assert missing_resp.status_code == 200
+        missing_payload = missing_resp.json()
+        assert_envelope(missing_payload)
+        missing_rows = missing_payload["data"]
+        assert any(row["normalizedQuery"] == "mixture of experts" for row in missing_rows)
+        moe_row = next(row for row in missing_rows if row["normalizedQuery"] == "mixture of experts")
+        assert moe_row["searchCount"] >= 2
+
+        draft_payload = {
+            "term": "Mixture of Experts",
+            "definition": "A sparse architecture where only selected sub-models are active per input.",
+            "explanation": "Mixture-of-experts routes each token or input through a small subset of specialist expert networks, improving scale efficiency.",
+            "humor": "Like calling only the right specialists into the meeting.",
+            "seeAlso": ["transformer", "attention mechanism"],
+            "tags": ["Architecture", "Sparse Models", "architecture"],
+            "controversyLevel": 1,
+            "status": "draft",
+            "categoryId": "cat-ml-foundations",
+            "sourceType": "manual",
+            "sourceReference": "verification",
+        }
+        create_draft_resp = client.post("/api/v1/term-drafts", json=draft_payload)
+        assert create_draft_resp.status_code == 201
+        create_draft_payload = create_draft_resp.json()
+        assert_envelope(create_draft_payload)
+        draft = create_draft_payload["data"]
+        assert draft["slug"] == "mixture-of-experts"
+        assert draft["tags"] == ["architecture", "sparse-models"]
+        assert draft["status"] == "draft"
+
+        approve_resp = client.post(f"/api/v1/term-drafts/{draft['id']}/status", json={"status": "approved"})
+        assert approve_resp.status_code == 200
+        approve_payload = approve_resp.json()
+        assert approve_payload["data"]["status"] == "approved"
+
+        publish_resp = client.post(f"/api/v1/term-drafts/{draft['id']}/publish")
+        assert publish_resp.status_code == 200
+        publish_payload = publish_resp.json()
+        assert_envelope(publish_payload)
+        assert publish_payload["data"]["draft"]["status"] == "published"
+        published_term = publish_payload["data"]["term"]
+        assert published_term["slug"] == "mixture-of-experts"
+        assert_canonical_term_shape(published_term)
+        assert published_term["tags"] == ["architecture", "sparse-models"]
+        assert "transformer" in published_term["seeAlso"]
+
+        search_new_term_resp = client.get("/api/v1/search/terms", params={"q": "Mixture of Experts"})
+        assert search_new_term_resp.status_code == 200
+        search_new_term_payload = search_new_term_resp.json()
+        assert any(item["slug"] == "mixture-of-experts" for item in search_new_term_payload["data"])
+
         not_found_resp = client.get("/api/v1/terms/term-does-not-exist")
         assert not_found_resp.status_code == 404
         not_found_payload = not_found_resp.json()

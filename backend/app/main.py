@@ -12,16 +12,20 @@ from .ai_service import AIServiceError, AIUnavailableError, ai_service, ai_servi
 from .migrations import run_migrations
 from .repository import (
     build_term_context,
+    create_term_draft,
     get_cached_generated_content,
     get_term_by_id,
+    get_top_missing_queries,
     list_categories,
     list_terms,
     list_terms_by_category,
+    publish_term_draft,
     search_terms,
+    update_draft_status,
     upsert_generated_content,
 )
 
-app = FastAPI(title="AI-101 Backend", version="0.2.0")
+app = FastAPI(title="AI-101 Backend", version="0.3.0")
 
 
 class AskGlossaryRequest(BaseModel):
@@ -31,6 +35,25 @@ class AskGlossaryRequest(BaseModel):
 
 class GenerateArtifactRequest(BaseModel):
     forceRefresh: bool = False
+
+
+class TermDraftRequest(BaseModel):
+    slug: str | None = None
+    term: str = Field(min_length=1)
+    definition: str = Field(min_length=1)
+    explanation: str = Field(min_length=1)
+    humor: str = ""
+    seeAlso: list[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
+    controversyLevel: int = Field(default=0, ge=0, le=3)
+    sourceType: str = "manual"
+    sourceReference: str | None = None
+    status: str = "draft"
+    categoryId: str | None = None
+
+
+class DraftStatusRequest(BaseModel):
+    status: str
 
 
 def _envelope_response(*, data, error=None, status_code: int = 200) -> JSONResponse:
@@ -87,6 +110,82 @@ def get_terms_for_category(category_id: str) -> JSONResponse:
 @app.get("/api/v1/search/terms")
 def get_term_search_results(q: str = Query(default="", min_length=0)) -> JSONResponse:
     return _envelope_response(data=search_terms(q))
+
+
+@app.get("/api/v1/search/missing-queries")
+def get_missing_queries(days: int = Query(default=30, ge=1, le=365), limit: int = Query(default=20, ge=1, le=100)) -> JSONResponse:
+    return _envelope_response(data=get_top_missing_queries(days=days, limit=limit))
+
+
+@app.post("/api/v1/term-drafts")
+def post_term_draft(request: TermDraftRequest) -> JSONResponse:
+    payload = {
+        "slug": request.slug,
+        "term": request.term,
+        "definition": request.definition,
+        "explanation": request.explanation,
+        "humor": request.humor,
+        "see_also": request.seeAlso,
+        "tags": request.tags,
+        "controversy_level": request.controversyLevel,
+        "source_type": request.sourceType,
+        "source_reference": request.sourceReference,
+        "status": request.status,
+        "category_id": request.categoryId,
+    }
+
+    try:
+        draft = create_term_draft(payload)
+    except ValueError as error:
+        return _envelope_response(
+            status_code=400,
+            data=None,
+            error={"code": "INVALID_DRAFT", "message": str(error)},
+        )
+
+    return _envelope_response(status_code=201, data=draft)
+
+
+@app.post("/api/v1/term-drafts/{draft_id}/status")
+def post_term_draft_status(draft_id: int, request: DraftStatusRequest) -> JSONResponse:
+    try:
+        draft = update_draft_status(draft_id, request.status)
+    except ValueError as error:
+        return _envelope_response(
+            status_code=400,
+            data=None,
+            error={"code": "INVALID_DRAFT_STATUS", "message": str(error)},
+        )
+
+    if draft is None:
+        return _envelope_response(
+            status_code=404,
+            data=None,
+            error={"code": "DRAFT_NOT_FOUND", "message": f"No draft found for id '{draft_id}'."},
+        )
+
+    return _envelope_response(data=draft)
+
+
+@app.post("/api/v1/term-drafts/{draft_id}/publish")
+def post_publish_term_draft(draft_id: int) -> JSONResponse:
+    try:
+        result = publish_term_draft(draft_id)
+    except ValueError as error:
+        return _envelope_response(
+            status_code=400,
+            data=None,
+            error={"code": "PUBLISH_VALIDATION_FAILED", "message": str(error)},
+        )
+
+    if result is None:
+        return _envelope_response(
+            status_code=404,
+            data=None,
+            error={"code": "DRAFT_NOT_FOUND", "message": f"No draft found for id '{draft_id}'."},
+        )
+
+    return _envelope_response(data=result)
 
 
 @app.post("/api/v1/ai/ask-glossary")
