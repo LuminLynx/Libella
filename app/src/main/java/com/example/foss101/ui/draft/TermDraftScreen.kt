@@ -101,13 +101,17 @@ fun TermDraftScreen(
                 OutlinedTextField(
                     value = uiState.form.explanation,
                     onValueChange = viewModel::onExplanationChanged,
-                    label = { Text("Explanation (optional)") },
+                    label = { Text("Explanation") },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3,
+                    isError = uiState.validationErrors.containsKey("explanation"),
                     keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
                         capitalization = KeyboardCapitalization.Sentences
                     )
                 )
+                uiState.validationErrors["explanation"]?.let {
+                    Text(text = it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                }
             }
 
             item {

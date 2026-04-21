@@ -81,7 +81,7 @@ class TermDraftViewModel(
                         .ifBlank { null },
                     term = form.term.trim(),
                     definition = form.definition.trim(),
-                    explanation = form.explanation.trim().ifBlank { null },
+                    explanation = form.explanation.trim(),
                     humor = form.humor.trim().ifBlank { null },
                     tags = parseTags(form.tagsInput)
                 )
@@ -118,6 +118,9 @@ class TermDraftViewModel(
         if (form.definition.trim().length < 10) {
             errors["definition"] = "Definition should be at least 10 characters."
         }
+        if (form.explanation.trim().length < 10) {
+            errors["explanation"] = "Explanation should be at least 10 characters."
+        }
 
         return errors
     }
@@ -129,7 +132,7 @@ class TermDraftViewModel(
             successMessage = null,
             submitErrorMessage = null,
             validationErrors = uiState.validationErrors
-                .filterKeys { it != "term" && it != "definition" }
+                .filterKeys { it != "term" && it != "definition" && it != "explanation" }
         )
     }
 
