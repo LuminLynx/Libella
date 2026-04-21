@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -59,6 +60,8 @@ TERM_GROUP_BY = """
         t.updated_at
 """
 
+DRAFT_STATUSES = {"draft", "reviewed", "approved", "rejected", "published"}
+
 
 def _parse_csv(value: str | None) -> list[str]:
     if not value:
@@ -72,6 +75,86 @@ def _to_list(value: Any) -> list[str]:
     if isinstance(value, list):
         return [str(item).strip() for item in value if str(item).strip()]
     return _parse_csv(str(value))
+
+
+def _normalize_spaces(value: str) -> str:
+    return re.sub(r"\s+", " ", value.strip())
+
+
+def normalize_query(value: str) -> str:
+    return _normalize_spaces(value).lower()
+
+
+def slugify(value: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
+    if not slug:
+        raise ValueError("slug must contain at least one alphanumeric character")
+    return slug
+
+
+def _normalize_tag(value: str) -> str:
+    token = re.sub(r"[^a-z0-9]+", "-", value.strip().lower()).strip("-")
+    return token
+
+
+def normalize_tags(values: list[str]) -> list[str]:
+    normalized = sorted({_normalize_tag(value) for value in values if _normalize_tag(value)})
+    return normalized
+
+
+def _term_id_from_slug(slug: str) -> str:
+    return slug if slug.startswith("term-") else f"term-{slug}"
+
+
+def _validate_controversy_level(controversy_level: int) -> None:
+    if controversy_level < 0 or controversy_level > 3:
+        raise ValueError("controversy_level must be between 0 and 3")
+
+
+def validate_draft_payload(draft: dict[str, Any]) -> dict[str, Any]:
+    term = _normalize_spaces(str(draft.get("term", "")))
+    definition = _normalize_spaces(str(draft.get("definition", "")))
+    explanation = _normalize_spaces(str(draft.get("explanation", "")))
+    humor = _normalize_spaces(str(draft.get("humor", "")))
+
+    if not term:
+        raise ValueError("term is required")
+    if not definition:
+        raise ValueError("definition is required")
+    if not explanation:
+        raise ValueError("explanation is required")
+
+    slug_input = str(draft.get("slug") or term)
+    normalized_slug = slugify(slug_input)
+
+    controversy_level = int(draft.get("controversy_level", 0))
+    _validate_controversy_level(controversy_level)
+
+    see_also = [slugify(item) for item in _to_list(draft.get("see_also"))]
+    tags = normalize_tags(_to_list(draft.get("tags")))
+
+    category_id = draft.get("category_id")
+    if category_id is not None:
+        category_id = str(category_id).strip() or None
+
+    status = str(draft.get("status", "draft")).strip().lower()
+    if status not in DRAFT_STATUSES:
+        raise ValueError(f"status must be one of: {', '.join(sorted(DRAFT_STATUSES))}")
+
+    return {
+        "slug": normalized_slug,
+        "term": term,
+        "definition": definition,
+        "explanation": explanation,
+        "humor": humor,
+        "see_also": sorted(set(see_also)),
+        "tags": tags,
+        "controversy_level": controversy_level,
+        "source_type": str(draft.get("source_type", "manual")).strip() or "manual",
+        "source_reference": str(draft.get("source_reference", "")).strip() or None,
+        "status": status,
+        "category_id": category_id,
+    }
 
 
 def list_terms() -> list[dict[str, Any]]:
@@ -121,9 +204,6 @@ def list_terms_by_category(category_id: str) -> list[dict[str, Any]]:
 
 def search_terms(raw_query: str) -> list[dict[str, Any]]:
     query = raw_query.strip()
-    if not query:
-        return []
-
     search_value = f"%{query}%"
     sql = f"""
         {TERM_SELECT_BASE}
@@ -136,9 +216,268 @@ def search_terms(raw_query: str) -> list[dict[str, Any]]:
         ORDER BY LOWER(t.term) ASC
     """
     params = (search_value, search_value, search_value, search_value, search_value)
+
     with get_connection() as connection:
         rows = connection.execute(sql, params).fetchall()
+
+        exact_match_row = connection.execute(
+            """
+            SELECT id
+            FROM terms
+            WHERE LOWER(term) = LOWER(%s)
+               OR slug = %s
+            LIMIT 1
+            """,
+            (query, slugify(query) if query else ""),
+        ).fetchone()
+
+        had_exact_match = exact_match_row is not None
+        matched_term_id = exact_match_row["id"] if exact_match_row else None
+
+        connection.execute(
+            """
+            INSERT INTO term_search_events (
+                query,
+                normalized_query,
+                matched_term_id,
+                had_exact_match
+            ) VALUES (%s, %s, %s, %s)
+            """,
+            (raw_query, normalize_query(raw_query), matched_term_id, had_exact_match),
+        )
+        connection.commit()
+
     return [_map_term_row(row) for row in rows]
+
+
+def get_top_missing_queries(*, days: int = 30, limit: int = 20) -> list[dict[str, Any]]:
+    bounded_days = max(1, min(days, 365))
+    bounded_limit = max(1, min(limit, 100))
+
+    with get_connection() as connection:
+        rows = connection.execute(
+            """
+            SELECT
+                normalized_query,
+                COUNT(*)::INT AS search_count,
+                MAX(created_at) AS last_seen_at,
+                MIN(created_at) AS first_seen_at,
+                ARRAY_AGG(query ORDER BY created_at DESC) FILTER (WHERE query IS NOT NULL) AS recent_queries
+            FROM term_search_events
+            WHERE had_exact_match = FALSE
+              AND normalized_query <> ''
+              AND created_at >= NOW() - (%s * INTERVAL '1 day')
+            GROUP BY normalized_query
+            ORDER BY search_count DESC, last_seen_at DESC
+            LIMIT %s
+            """,
+            (bounded_days, bounded_limit),
+        ).fetchall()
+
+    return [
+        {
+            "normalizedQuery": row["normalized_query"],
+            "searchCount": row["search_count"],
+            "firstSeenAt": row["first_seen_at"],
+            "lastSeenAt": row["last_seen_at"],
+            "sampleQueries": [item for item in (row["recent_queries"] or [])[:3]],
+        }
+        for row in rows
+    ]
+
+
+def create_term_draft(payload: dict[str, Any]) -> dict[str, Any]:
+    draft = validate_draft_payload(payload)
+    with get_connection() as connection:
+        row = connection.execute(
+            """
+            INSERT INTO term_drafts (
+                slug,
+                term,
+                definition,
+                explanation,
+                humor,
+                see_also,
+                tags,
+                controversy_level,
+                source_type,
+                source_reference,
+                status,
+                category_id
+            ) VALUES (%s, %s, %s, %s, %s, %s::jsonb, %s::jsonb, %s, %s, %s, %s, %s)
+            RETURNING *
+            """,
+            (
+                draft["slug"],
+                draft["term"],
+                draft["definition"],
+                draft["explanation"],
+                draft["humor"],
+                json.dumps(draft["see_also"]),
+                json.dumps(draft["tags"]),
+                draft["controversy_level"],
+                draft["source_type"],
+                draft["source_reference"],
+                draft["status"],
+                draft["category_id"],
+            ),
+        ).fetchone()
+        connection.commit()
+
+    return _map_draft_row(row)
+
+
+def update_draft_status(draft_id: int, status: str) -> dict[str, Any] | None:
+    normalized_status = status.strip().lower()
+    if normalized_status not in DRAFT_STATUSES:
+        raise ValueError(f"status must be one of: {', '.join(sorted(DRAFT_STATUSES))}")
+
+    with get_connection() as connection:
+        row = connection.execute(
+            """
+            UPDATE term_drafts
+            SET status = %s,
+                updated_at = NOW()
+            WHERE id = %s
+            RETURNING *
+            """,
+            (normalized_status, draft_id),
+        ).fetchone()
+        connection.commit()
+
+    return _map_draft_row(row) if row else None
+
+
+def publish_term_draft(draft_id: int) -> dict[str, Any] | None:
+    with get_connection() as connection:
+        draft_row = connection.execute(
+            "SELECT * FROM term_drafts WHERE id = %s FOR UPDATE",
+            (draft_id,),
+        ).fetchone()
+
+        if not draft_row:
+            return None
+
+        draft = validate_draft_payload(dict(draft_row))
+        if draft_row["status"] != "approved":
+            raise ValueError("draft must have status 'approved' before publishing")
+
+        existing_term = connection.execute(
+            "SELECT id, category_id, created_at FROM terms WHERE slug = %s",
+            (draft["slug"],),
+        ).fetchone()
+
+        category_id = draft["category_id"] or (existing_term["category_id"] if existing_term else None)
+        if not category_id:
+            raise ValueError("category_id is required to publish a new term draft")
+
+        category_exists = connection.execute(
+            "SELECT 1 FROM categories WHERE id = %s",
+            (category_id,),
+        ).fetchone()
+        if not category_exists:
+            raise ValueError(f"category_id '{category_id}' does not exist")
+
+        term_id = existing_term["id"] if existing_term else _term_id_from_slug(draft["slug"])
+        related_rows = connection.execute(
+            """
+            SELECT id, slug
+            FROM terms
+            WHERE slug = ANY(%s)
+            """,
+            (draft["see_also"],),
+        ).fetchall()
+        related_term_ids = sorted(
+            {row["id"] for row in related_rows if row["id"] != term_id}
+        )
+
+        source = draft["source_type"]
+        if draft["source_reference"]:
+            source = f"{source}:{draft['source_reference']}"
+
+        connection.execute(
+            """
+            INSERT INTO terms (
+                id,
+                slug,
+                term,
+                definition,
+                explanation,
+                humor,
+                controversy_level,
+                short_definition,
+                full_explanation,
+                category_id,
+                tags,
+                related_terms,
+                source,
+                created_at,
+                updated_at
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
+            ON CONFLICT (slug)
+            DO UPDATE SET
+                term = EXCLUDED.term,
+                definition = EXCLUDED.definition,
+                explanation = EXCLUDED.explanation,
+                humor = EXCLUDED.humor,
+                controversy_level = EXCLUDED.controversy_level,
+                short_definition = EXCLUDED.short_definition,
+                full_explanation = EXCLUDED.full_explanation,
+                category_id = EXCLUDED.category_id,
+                tags = EXCLUDED.tags,
+                related_terms = EXCLUDED.related_terms,
+                source = EXCLUDED.source,
+                updated_at = NOW()
+            """,
+            (
+                term_id,
+                draft["slug"],
+                draft["term"],
+                draft["definition"],
+                draft["explanation"],
+                draft["humor"],
+                draft["controversy_level"],
+                draft["definition"],
+                draft["explanation"],
+                category_id,
+                ",".join(draft["tags"]),
+                ",".join(related_term_ids),
+                source,
+            ),
+        )
+
+        connection.execute("DELETE FROM term_relations WHERE term_id = %s", (term_id,))
+        for related_id in related_term_ids:
+            connection.execute(
+                """
+                INSERT INTO term_relations(term_id, related_term_id)
+                VALUES (%s, %s)
+                ON CONFLICT (term_id, related_term_id) DO NOTHING
+                """,
+                (term_id, related_id),
+            )
+
+        published_draft_row = connection.execute(
+            """
+            UPDATE term_drafts
+            SET status = 'published',
+                category_id = %s,
+                updated_at = NOW()
+            WHERE id = %s
+            RETURNING *
+            """,
+            (category_id, draft_id),
+        ).fetchone()
+        connection.commit()
+
+    term = get_term_by_id(term_id)
+    if term is None:
+        raise RuntimeError("published term could not be loaded")
+
+    return {
+        "draft": _map_draft_row(published_draft_row),
+        "term": term,
+    }
 
 
 def build_term_context(term_id: str) -> dict[str, Any] | None:
@@ -224,6 +563,26 @@ def _map_term_row(row: Any) -> dict[str, Any]:
         "categoryId": row["category_id"],
         "exampleUsage": row["example_usage"],
         "source": row["source"],
+        "createdAt": row["created_at"],
+        "updatedAt": row["updated_at"],
+    }
+
+
+def _map_draft_row(row: Any) -> dict[str, Any]:
+    return {
+        "id": row["id"],
+        "slug": row["slug"],
+        "term": row["term"],
+        "definition": row["definition"],
+        "explanation": row["explanation"],
+        "humor": row["humor"],
+        "seeAlso": _to_list(row["see_also"]),
+        "tags": _to_list(row["tags"]),
+        "controversyLevel": row["controversy_level"],
+        "sourceType": row["source_type"],
+        "sourceReference": row["source_reference"],
+        "status": row["status"],
+        "categoryId": row["category_id"],
         "createdAt": row["created_at"],
         "updatedAt": row["updated_at"],
     }

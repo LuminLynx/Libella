@@ -12,7 +12,7 @@ def seed(reset: bool) -> None:
     with get_connection() as connection:
         if reset:
             connection.execute(
-                "TRUNCATE TABLE ai_generated_content, term_relations, terms, categories RESTART IDENTITY CASCADE"
+                "TRUNCATE TABLE term_search_events, term_drafts, ai_generated_content, term_relations, terms, categories RESTART IDENTITY CASCADE"
             )
 
         seed_sql = SEED_PATH.read_text(encoding="utf-8")
