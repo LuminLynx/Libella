@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -21,6 +22,7 @@ import com.example.foss101.ui.components.ErrorState
 import com.example.foss101.ui.components.LoadingState
 import com.example.foss101.ui.components.screenContentPadding
 import com.example.foss101.viewmodel.SearchViewModel
+import java.net.URLEncoder
 
 @Composable
 fun SearchScreen(
@@ -52,6 +54,18 @@ fun SearchScreen(
                 )
             }
 
+            if (uiState.query.isNotBlank() && !uiState.isLoading && uiState.errorMessage == null && !uiState.hasExactMatch) {
+                item {
+                    MissingTermCallToAction(
+                        query = uiState.query,
+                        onCreateDraft = {
+                            val encodedQuery = URLEncoder.encode(uiState.query.trim(), Charsets.UTF_8.name())
+                            onNavigate("term_draft?query=$encodedQuery")
+                        }
+                    )
+                }
+            }
+
             when {
                 uiState.query.isBlank() -> item {
                     EmptyState(message = "Enter a term or keyword to search.")
@@ -66,7 +80,7 @@ fun SearchScreen(
                 }
 
                 uiState.results.isEmpty() -> item {
-                    EmptyState(message = "No results for \"${uiState.query}\". Try broader terms.")
+                    EmptyState(message = "No results for \"${uiState.query}\". You can submit it as a draft term.")
                 }
 
                 else -> {
@@ -85,6 +99,42 @@ fun SearchScreen(
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MissingTermCallToAction(
+    query: String,
+    onCreateDraft: () -> Unit
+) {
+    androidx.compose.material3.Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = androidx.compose.material3.CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        androidx.compose.foundation.layout.Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(
+                text = "Can't find an exact match for \"$query\"?",
+                style = MaterialTheme.typography.titleSmall
+            )
+            Text(
+                text = "Create a draft term for editorial review. Drafts are not published automatically.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Button(
+                onClick = onCreateDraft,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Create Term Draft")
             }
         }
     }

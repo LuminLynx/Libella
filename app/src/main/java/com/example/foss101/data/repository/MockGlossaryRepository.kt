@@ -6,6 +6,8 @@ import com.example.foss101.model.GeneratedArtifactResult
 import com.example.foss101.model.GlossaryTerm
 import com.example.foss101.model.LearningChallenge
 import com.example.foss101.model.LearningScenario
+import com.example.foss101.model.TermDraftSubmission
+import com.example.foss101.model.TermDraftSubmissionResult
 
 class MockGlossaryRepository : GlossaryRepository {
 
@@ -330,6 +332,14 @@ class MockGlossaryRepository : GlossaryRepository {
                 hint = "Anchor your answer in the glossary definition and one production scenario."
             ),
             cached = !forceRefresh
+        )
+    }
+
+
+    override suspend fun submitTermDraft(draft: TermDraftSubmission): TermDraftSubmissionResult {
+        return TermDraftSubmissionResult(
+            id = "mock-draft-${System.currentTimeMillis()}",
+            status = "draft"
         )
     }
 

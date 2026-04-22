@@ -16,6 +16,7 @@ data class SearchUiState(
     val query: String = "",
     val results: List<GlossaryTerm> = emptyList(),
     val isLoading: Boolean = false,
+    val hasExactMatch: Boolean = false,
     val errorMessage: String? = null
 )
 
@@ -44,10 +45,12 @@ class SearchViewModel(
 
         activeSearchJob = viewModelScope.launch {
             uiState = try {
+                val results = repository.searchTerms(query)
                 SearchUiState(
                     query = query,
-                    results = repository.searchTerms(query),
-                    isLoading = false
+                    results = results,
+                    isLoading = false,
+                    hasExactMatch = hasExactMatch(query = query, results = results)
                 )
             } catch (error: CancellationException) {
                 throw error
@@ -58,6 +61,14 @@ class SearchViewModel(
                     errorMessage = "Unable to load search results."
                 )
             }
+        }
+    }
+
+    private fun hasExactMatch(query: String, results: List<GlossaryTerm>): Boolean {
+        val normalizedQuery = query.trim().lowercase()
+        return results.any { result ->
+            result.term.trim().lowercase() == normalizedQuery ||
+                result.id.trim().lowercase() == normalizedQuery
         }
     }
 
