@@ -14,6 +14,7 @@ from .repository import (
     build_term_context,
     create_term_draft,
     get_cached_generated_content,
+    get_contributor_summary,
     get_term_by_id,
     get_top_missing_queries,
     list_categories,
@@ -50,6 +51,7 @@ class TermDraftRequest(BaseModel):
     sourceReference: str | None = None
     status: str = "draft"
     categoryId: str | None = None
+    contributorId: str = "anonymous"
 
 
 class DraftStatusRequest(BaseModel):
@@ -132,6 +134,7 @@ def post_term_draft(request: TermDraftRequest) -> JSONResponse:
         "source_reference": request.sourceReference,
         "status": request.status,
         "category_id": request.categoryId,
+        "contributor_id": request.contributorId,
     }
 
     try:
@@ -186,6 +189,23 @@ def post_publish_term_draft(draft_id: int) -> JSONResponse:
         )
 
     return _envelope_response(data=result)
+
+
+@app.get("/api/v1/contributors/{contributor_id}/summary")
+def get_contributor_contribution_summary(
+    contributor_id: str,
+    recentLimit: int = Query(default=10, ge=1, le=50),
+) -> JSONResponse:
+    try:
+        summary = get_contributor_summary(contributor_id, recent_limit=recentLimit)
+    except ValueError as error:
+        return _envelope_response(
+            status_code=400,
+            data=None,
+            error={"code": "INVALID_CONTRIBUTOR", "message": str(error)},
+        )
+
+    return _envelope_response(data=summary)
 
 
 @app.post("/api/v1/ai/ask-glossary")

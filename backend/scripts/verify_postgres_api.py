@@ -110,6 +110,7 @@ def run_verification() -> None:
             "categoryId": "cat-ml-foundations",
             "sourceType": "manual",
             "sourceReference": "verification",
+            "contributorId": "verify-user-1",
         }
         create_draft_resp = client.post("/api/v1/term-drafts", json=draft_payload)
         assert create_draft_resp.status_code == 201
@@ -119,6 +120,7 @@ def run_verification() -> None:
         assert draft["slug"] == "mixture-of-experts"
         assert draft["tags"] == ["architecture", "sparse-models"]
         assert draft["status"] == "draft"
+        assert draft["contributorId"] == "verify-user-1"
 
         approve_resp = client.post(f"/api/v1/term-drafts/{draft['id']}/status", json={"status": "approved"})
         assert approve_resp.status_code == 200
@@ -135,6 +137,20 @@ def run_verification() -> None:
         assert_canonical_term_shape(published_term)
         assert published_term["tags"] == ["architecture", "sparse-models"]
         assert "transformer" in published_term["seeAlso"]
+
+        contributor_summary_resp = client.get("/api/v1/contributors/verify-user-1/summary")
+        assert contributor_summary_resp.status_code == 200
+        contributor_summary_payload = contributor_summary_resp.json()
+        assert_envelope(contributor_summary_payload)
+        summary = contributor_summary_payload["data"]
+        assert summary["contributorId"] == "verify-user-1"
+        assert summary["totalScore"] == 45
+        assert summary["draftStats"]["totalDrafts"] >= 1
+        assert summary["draftStats"]["publishedDrafts"] >= 1
+        event_types = {item["eventType"]: item for item in summary["eventBreakdown"]}
+        assert event_types["draft_submitted"]["count"] >= 1
+        assert event_types["draft_approved"]["count"] >= 1
+        assert event_types["draft_published"]["count"] >= 1
 
         search_new_term_resp = client.get("/api/v1/search/terms", params={"q": "Mixture of Experts"})
         assert search_new_term_resp.status_code == 200

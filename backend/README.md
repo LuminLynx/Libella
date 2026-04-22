@@ -10,6 +10,7 @@ Backend MVP for glossary data using **FastAPI + PostgreSQL**.
 - `GET /api/v1/categories`
 - `GET /api/v1/categories/{category_id}/terms`
 - `GET /api/v1/search/terms?q=<query>`
+- `GET /api/v1/contributors/{contributor_id}/summary`
 
 All API responses use:
 
@@ -144,4 +145,5 @@ uvicorn backend.app.main:app --host 0.0.0.0 --port ${PORT:-8000}
 
 - Scope is MVP-only (no auth, accounts, admin panel, chat, or analytics).
 - `term_relations` powers normalized `seeAlso`/`relatedTerms` serialization in term responses.
+- Term draft submissions support `contributorId` (defaults to `anonymous`) so contribution events and scores can be attributed even before full account auth exists.
 - Do not commit real credentials.
