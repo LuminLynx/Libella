@@ -31,7 +31,6 @@ import com.example.foss101.viewmodel.TermDraftViewModel
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TermDraftScreen(
@@ -84,7 +83,11 @@ fun TermDraftScreen(
                     isError = uiState.validationErrors.containsKey("term")
                 )
                 uiState.validationErrors["term"]?.let {
-                    Text(text = it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        text = it,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             }
 
@@ -99,7 +102,11 @@ fun TermDraftScreen(
                     isError = uiState.validationErrors.containsKey("definition")
                 )
                 uiState.validationErrors["definition"]?.let {
-                    Text(text = it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        text = it,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             }
 
@@ -116,7 +123,30 @@ fun TermDraftScreen(
                     )
                 )
                 uiState.validationErrors["explanation"]?.let {
-                    Text(text = it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        text = it,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+
+            item {
+                OutlinedTextField(
+                    value = uiState.form.categoryId,
+                    onValueChange = viewModel::onCategoryChanged,
+                    label = { Text("Category") },
+                    placeholder = { Text("cat-llm-concepts") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    isError = uiState.validationErrors.containsKey("categoryId")
+                )
+                uiState.validationErrors["categoryId"]?.let {
+                    Text(
+                        text = it,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             }
 

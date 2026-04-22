@@ -16,7 +16,8 @@ data class TermDraftFormState(
     val definition: String = "",
     val explanation: String = "",
     val humor: String = "",
-    val tagsInput: String = ""
+    val tagsInput: String = "",
+    val categoryId: String = ""
 )
 
 data class TermDraftUiState(
@@ -59,10 +60,17 @@ class TermDraftViewModel(
         updateForm { copy(tagsInput = value) }
     }
 
+    fun onCategoryChanged(value: String) {
+        updateForm { copy(categoryId = value) }
+    }
+
     fun submitDraft() {
         val validationErrors = validate(uiState.form)
         if (validationErrors.isNotEmpty()) {
-            uiState = uiState.copy(validationErrors = validationErrors, submitErrorMessage = null)
+            uiState = uiState.copy(
+                validationErrors = validationErrors,
+                submitErrorMessage = null
+            )
             return
         }
 
@@ -77,15 +85,22 @@ class TermDraftViewModel(
             uiState = try {
                 val form = uiState.form
                 val draft = TermDraftSubmission(
-                    slug = form.term.trim().lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-')
+                    slug = form.term
+                        .trim()
+                        .lowercase()
+                        .replace(Regex("[^a-z0-9]+"), "-")
+                        .trim('-')
                         .ifBlank { null },
                     term = form.term.trim(),
                     definition = form.definition.trim(),
                     explanation = form.explanation.trim(),
                     humor = form.humor.trim().ifBlank { null },
-                    tags = parseTags(form.tagsInput)
+                    tags = parseTags(form.tagsInput),
+                    categoryId = form.categoryId.trim()
                 )
+
                 repository.submitTermDraft(draft)
+
                 uiState.copy(
                     isSubmitting = false,
                     successMessage = "Draft submitted for review. It will not appear in the live glossary until approved."
@@ -115,11 +130,17 @@ class TermDraftViewModel(
         if (form.term.trim().length < 2) {
             errors["term"] = "Term name must be at least 2 characters."
         }
+
         if (form.definition.trim().length < 10) {
             errors["definition"] = "Definition should be at least 10 characters."
         }
+
         if (form.explanation.trim().length < 10) {
             errors["explanation"] = "Explanation should be at least 10 characters."
+        }
+
+        if (form.categoryId.trim().isBlank()) {
+            errors["categoryId"] = "Category is required."
         }
 
         return errors
@@ -131,8 +152,12 @@ class TermDraftViewModel(
             form = updatedForm,
             successMessage = null,
             submitErrorMessage = null,
-            validationErrors = uiState.validationErrors
-                .filterKeys { it != "term" && it != "definition" && it != "explanation" }
+            validationErrors = uiState.validationErrors.filterKeys {
+                it != "term" &&
+                        it != "definition" &&
+                        it != "explanation" &&
+                        it != "categoryId"
+            }
         )
     }
 
@@ -140,6 +165,7 @@ class TermDraftViewModel(
         fun factory(repository: GlossaryRepository, initialTerm: String): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    @Suppress("UNCHECKED_CAST")
                     return TermDraftViewModel(repository, initialTerm) as T
                 }
             }
