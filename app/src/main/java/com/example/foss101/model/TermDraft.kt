@@ -8,7 +8,7 @@ data class TermDraftSubmission(
     val humor: String? = null,
     val seeAlso: List<String> = emptyList(),
     val tags: List<String> = emptyList(),
-    val controversyLevel: Int = 0,
+    val controversyLevel: Int? = null,
     val categoryId: String
 )
 

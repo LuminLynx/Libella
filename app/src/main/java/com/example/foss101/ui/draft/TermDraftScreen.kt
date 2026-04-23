@@ -172,6 +172,36 @@ fun TermDraftScreen(
             }
 
             item {
+                OutlinedTextField(
+                    value = uiState.form.seeAlsoInput,
+                    onValueChange = viewModel::onSeeAlsoInputChanged,
+                    label = { Text("See also (optional)") },
+                    placeholder = { Text("prompt engineering, tokens") },
+                    modifier = Modifier.fillMaxWidth(),
+                    supportingText = { Text("Separate related terms with commas") }
+                )
+            }
+
+            item {
+                OutlinedTextField(
+                    value = uiState.form.controversyLevelInput,
+                    onValueChange = viewModel::onControversyLevelChanged,
+                    label = { Text("Controversy level (optional)") },
+                    placeholder = { Text("0-3") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    isError = uiState.validationErrors.containsKey("controversyLevel")
+                )
+                uiState.validationErrors["controversyLevel"]?.let {
+                    Text(
+                        text = it,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+
+            item {
                 if (uiState.submitErrorMessage != null) {
                     ErrorState(message = uiState.submitErrorMessage)
                 }

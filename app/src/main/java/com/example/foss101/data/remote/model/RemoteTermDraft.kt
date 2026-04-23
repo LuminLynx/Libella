@@ -8,10 +8,10 @@ data class RemoteTermDraftSubmission(
     val term: String,
     val definition: String,
     val explanation: String,
-    val humor: String? = null,
+    val humor: String = "",
     val seeAlso: List<String> = emptyList(),
     val tags: List<String> = emptyList(),
-    val controversyLevel: Int = 0,
+    val controversyLevel: Int? = null,
     val categoryId: String
 )
 
@@ -25,7 +25,7 @@ fun TermDraftSubmission.toRemote(): RemoteTermDraftSubmission = RemoteTermDraftS
     term = term,
     definition = definition,
     explanation = explanation,
-    humor = humor,
+    humor = humor ?: "",
     seeAlso = seeAlso,
     tags = tags,
     controversyLevel = controversyLevel,

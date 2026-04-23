@@ -97,9 +97,10 @@ private class HttpGlossaryApiService(
             .put("definition", draft.definition)
             .put("explanation", draft.explanation)
             .put("humor", draft.humor)
-            .put("see_also", JSONArray(draft.seeAlso))
+            .put("seeAlso", JSONArray(draft.seeAlso))
             .put("tags", JSONArray(draft.tags))
-            .put("controversy_level", draft.controversyLevel)
+            .put("categoryId", draft.categoryId)
+        draft.controversyLevel?.let { payload.put("controversyLevel", it) }
         val response = post(path = "api/v1/term-drafts", payload = payload)
         parseTermDraftSubmission(response)
     }

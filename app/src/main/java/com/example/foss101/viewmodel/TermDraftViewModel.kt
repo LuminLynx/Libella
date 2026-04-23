@@ -16,7 +16,9 @@ data class TermDraftFormState(
     val definition: String = "",
     val explanation: String = "",
     val humor: String = "",
+    val seeAlsoInput: String = "",
     val tagsInput: String = "",
+    val controversyLevelInput: String = "",
     val categoryId: String = ""
 )
 
@@ -60,6 +62,14 @@ class TermDraftViewModel(
         updateForm { copy(tagsInput = value) }
     }
 
+    fun onSeeAlsoInputChanged(value: String) {
+        updateForm { copy(seeAlsoInput = value) }
+    }
+
+    fun onControversyLevelChanged(value: String) {
+        updateForm { copy(controversyLevelInput = value) }
+    }
+
     fun onCategoryChanged(value: String) {
         updateForm { copy(categoryId = value) }
     }
@@ -95,7 +105,9 @@ class TermDraftViewModel(
                     definition = form.definition.trim(),
                     explanation = form.explanation.trim(),
                     humor = form.humor.trim().ifBlank { null },
+                    seeAlso = parseDelimitedList(form.seeAlsoInput),
                     tags = parseTags(form.tagsInput),
+                    controversyLevel = parseControversyLevel(form.controversyLevelInput),
                     categoryId = form.categoryId.trim()
                 )
 
@@ -116,12 +128,18 @@ class TermDraftViewModel(
         }
     }
 
-    private fun parseTags(tagsInput: String): List<String> {
-        return tagsInput
+    private fun parseDelimitedList(value: String): List<String> {
+        return value
             .split(',')
             .map { it.trim() }
             .filter { it.isNotBlank() }
             .distinct()
+    }
+
+    private fun parseTags(tagsInput: String): List<String> = parseDelimitedList(tagsInput)
+
+    private fun parseControversyLevel(value: String): Int? {
+        return value.trim().takeIf { it.isNotEmpty() }?.toInt()
     }
 
     private fun validate(form: TermDraftFormState): Map<String, String> {
@@ -143,6 +161,14 @@ class TermDraftViewModel(
             errors["categoryId"] = "Category is required."
         }
 
+        val normalizedControversyLevel = form.controversyLevelInput.trim()
+        if (normalizedControversyLevel.isNotEmpty()) {
+            val parsedValue = normalizedControversyLevel.toIntOrNull()
+            if (parsedValue == null || parsedValue !in 0..3) {
+                errors["controversyLevel"] = "Controversy level must be a number from 0 to 3."
+            }
+        }
+
         return errors
     }
 
@@ -156,7 +182,8 @@ class TermDraftViewModel(
                 it != "term" &&
                         it != "definition" &&
                         it != "explanation" &&
-                        it != "categoryId"
+                        it != "categoryId" &&
+                        it != "controversyLevel"
             }
         )
     }
