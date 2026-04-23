@@ -7,11 +7,12 @@ data class RemoteTermDraftSubmission(
     val slug: String? = null,
     val term: String,
     val definition: String,
-    val explanation: String? = null,
+    val explanation: String,
     val humor: String? = null,
     val seeAlso: List<String> = emptyList(),
     val tags: List<String> = emptyList(),
-    val controversyLevel: Int = 0
+    val controversyLevel: Int = 0,
+    val categoryId: String
 )
 
 data class RemoteTermDraftSubmissionResult(
@@ -27,7 +28,8 @@ fun TermDraftSubmission.toRemote(): RemoteTermDraftSubmission = RemoteTermDraftS
     humor = humor,
     seeAlso = seeAlso,
     tags = tags,
-    controversyLevel = controversyLevel
+    controversyLevel = controversyLevel,
+    categoryId = categoryId
 )
 
 fun RemoteTermDraftSubmissionResult.toDomain(): TermDraftSubmissionResult = TermDraftSubmissionResult(

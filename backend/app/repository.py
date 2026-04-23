@@ -61,6 +61,16 @@ TERM_GROUP_BY = """
 """
 
 DRAFT_STATUSES = {"draft", "reviewed", "approved", "rejected", "published"}
+CONTRIBUTION_EVENT_POINTS = {
+    "draft_submitted": 5,
+    "draft_reviewed": 0,
+    "draft_approved": 15,
+    "draft_published": 25,
+}
+STATUS_TO_EVENT_TYPE = {
+    "reviewed": "draft_reviewed",
+    "approved": "draft_approved",
+}
 
 
 def _parse_csv(value: str | None) -> list[str]:
@@ -137,6 +147,8 @@ def validate_draft_payload(draft: dict[str, Any]) -> dict[str, Any]:
     if category_id is not None:
         category_id = str(category_id).strip() or None
 
+    contributor_id = _normalize_spaces(str(draft.get("contributor_id", "anonymous"))) or "anonymous"
+
     status = str(draft.get("status", "draft")).strip().lower()
     if status not in DRAFT_STATUSES:
         raise ValueError(f"status must be one of: {', '.join(sorted(DRAFT_STATUSES))}")
@@ -154,6 +166,7 @@ def validate_draft_payload(draft: dict[str, Any]) -> dict[str, Any]:
         "source_reference": str(draft.get("source_reference", "")).strip() or None,
         "status": status,
         "category_id": category_id,
+        "contributor_id": contributor_id,
     }
 
 
@@ -303,8 +316,9 @@ def create_term_draft(payload: dict[str, Any]) -> dict[str, Any]:
                 source_type,
                 source_reference,
                 status,
-                category_id
-            ) VALUES (%s, %s, %s, %s, %s, %s::jsonb, %s::jsonb, %s, %s, %s, %s, %s)
+                category_id,
+                contributor_id
+            ) VALUES (%s, %s, %s, %s, %s, %s::jsonb, %s::jsonb, %s, %s, %s, %s, %s, %s)
             RETURNING *
             """,
             (
@@ -320,8 +334,16 @@ def create_term_draft(payload: dict[str, Any]) -> dict[str, Any]:
                 draft["source_reference"],
                 draft["status"],
                 draft["category_id"],
+                draft["contributor_id"],
             ),
         ).fetchone()
+        _record_contribution_event(
+            connection=connection,
+            contributor_id=draft["contributor_id"],
+            draft_id=row["id"],
+            event_type="draft_submitted",
+            metadata={"status": row["status"]},
+        )
         connection.commit()
 
     return _map_draft_row(row)
@@ -333,6 +355,18 @@ def update_draft_status(draft_id: int, status: str) -> dict[str, Any] | None:
         raise ValueError(f"status must be one of: {', '.join(sorted(DRAFT_STATUSES))}")
 
     with get_connection() as connection:
+        current_draft = connection.execute(
+            """
+            SELECT id, status, contributor_id
+            FROM term_drafts
+            WHERE id = %s
+            FOR UPDATE
+            """,
+            (draft_id,),
+        ).fetchone()
+        if not current_draft:
+            return None
+
         row = connection.execute(
             """
             UPDATE term_drafts
@@ -343,6 +377,19 @@ def update_draft_status(draft_id: int, status: str) -> dict[str, Any] | None:
             """,
             (normalized_status, draft_id),
         ).fetchone()
+
+        event_type = STATUS_TO_EVENT_TYPE.get(normalized_status)
+        if event_type:
+            _record_contribution_event(
+                connection=connection,
+                contributor_id=current_draft["contributor_id"],
+                draft_id=draft_id,
+                event_type=event_type,
+                metadata={
+                    "previousStatus": current_draft["status"],
+                    "newStatus": normalized_status,
+                },
+            )
         connection.commit()
 
     return _map_draft_row(row) if row else None
@@ -468,6 +515,13 @@ def publish_term_draft(draft_id: int) -> dict[str, Any] | None:
             """,
             (category_id, draft_id),
         ).fetchone()
+        _record_contribution_event(
+            connection=connection,
+            contributor_id=draft_row["contributor_id"],
+            draft_id=draft_id,
+            event_type="draft_published",
+            metadata={"termId": term_id, "termSlug": draft["slug"]},
+        )
         connection.commit()
 
     term = get_term_by_id(term_id)
@@ -477,6 +531,90 @@ def publish_term_draft(draft_id: int) -> dict[str, Any] | None:
     return {
         "draft": _map_draft_row(published_draft_row),
         "term": term,
+    }
+
+
+def get_contributor_summary(contributor_id: str, *, recent_limit: int = 10) -> dict[str, Any]:
+    normalized_contributor_id = _normalize_spaces(contributor_id)
+    if not normalized_contributor_id:
+        raise ValueError("contributor_id is required")
+
+    bounded_limit = max(1, min(recent_limit, 50))
+
+    with get_connection() as connection:
+        score_row = connection.execute(
+            """
+            SELECT total_score, updated_at
+            FROM contributor_scores
+            WHERE contributor_id = %s
+            """,
+            (normalized_contributor_id,),
+        ).fetchone()
+
+        event_rows = connection.execute(
+            """
+            SELECT event_type, COUNT(*)::INT AS count, COALESCE(SUM(points_awarded), 0)::INT AS points
+            FROM contribution_events
+            WHERE contributor_id = %s
+            GROUP BY event_type
+            ORDER BY event_type ASC
+            """,
+            (normalized_contributor_id,),
+        ).fetchall()
+
+        draft_stats = connection.execute(
+            """
+            SELECT
+                COUNT(*)::INT AS total_drafts,
+                COUNT(*) FILTER (WHERE status = 'published')::INT AS published_drafts,
+                MAX(updated_at) AS last_draft_activity_at
+            FROM term_drafts
+            WHERE contributor_id = %s
+            """,
+            (normalized_contributor_id,),
+        ).fetchone()
+
+        recent_events = connection.execute(
+            """
+            SELECT id, event_type, points_awarded, draft_id, metadata, created_at
+            FROM contribution_events
+            WHERE contributor_id = %s
+            ORDER BY created_at DESC
+            LIMIT %s
+            """,
+            (normalized_contributor_id, bounded_limit),
+        ).fetchall()
+
+    events = [
+        {
+            "eventType": row["event_type"],
+            "count": row["count"],
+            "points": row["points"],
+        }
+        for row in event_rows
+    ]
+
+    return {
+        "contributorId": normalized_contributor_id,
+        "totalScore": score_row["total_score"] if score_row else 0,
+        "scoreUpdatedAt": score_row["updated_at"] if score_row else None,
+        "draftStats": {
+            "totalDrafts": draft_stats["total_drafts"],
+            "publishedDrafts": draft_stats["published_drafts"],
+            "lastDraftActivityAt": draft_stats["last_draft_activity_at"],
+        },
+        "eventBreakdown": events,
+        "recentEvents": [
+            {
+                "id": row["id"],
+                "eventType": row["event_type"],
+                "points": row["points_awarded"],
+                "draftId": row["draft_id"],
+                "metadata": row["metadata"],
+                "createdAt": row["created_at"],
+            }
+            for row in recent_events
+        ],
     }
 
 
@@ -583,6 +721,55 @@ def _map_draft_row(row: Any) -> dict[str, Any]:
         "sourceReference": row["source_reference"],
         "status": row["status"],
         "categoryId": row["category_id"],
+        "contributorId": row["contributor_id"],
         "createdAt": row["created_at"],
         "updatedAt": row["updated_at"],
     }
+
+
+def _record_contribution_event(
+    *,
+    connection: Any,
+    contributor_id: str,
+    draft_id: int | None,
+    event_type: str,
+    metadata: dict[str, Any] | None = None,
+) -> None:
+    points = CONTRIBUTION_EVENT_POINTS.get(event_type)
+    if points is None:
+        raise ValueError(f"unsupported contribution event_type '{event_type}'")
+
+    inserted_row = connection.execute(
+        """
+        INSERT INTO contribution_events (
+            contributor_id,
+            draft_id,
+            event_type,
+            points_awarded,
+            metadata
+        ) VALUES (%s, %s, %s, %s, %s::jsonb)
+        ON CONFLICT DO NOTHING
+        RETURNING points_awarded
+        """,
+        (
+            contributor_id,
+            draft_id,
+            event_type,
+            points,
+            json.dumps(metadata or {}),
+        ),
+    ).fetchone()
+    if inserted_row is None:
+        return
+
+    connection.execute(
+        """
+        INSERT INTO contributor_scores (contributor_id, total_score, updated_at)
+        VALUES (%s, %s, NOW())
+        ON CONFLICT (contributor_id)
+        DO UPDATE SET
+            total_score = contributor_scores.total_score + EXCLUDED.total_score,
+            updated_at = NOW()
+        """,
+        (contributor_id, inserted_row["points_awarded"]),
+    )
