@@ -24,17 +24,17 @@ class MockGlossaryRepository : GlossaryRepository {
         ),
         Category(
             id = "llm_prompting",
-            name = "LLMs and Prompting",
+            name = "LLM Concepts",
             description = "Language model concepts, prompting patterns, and response behavior."
         ),
         Category(
             id = "safety_eval",
-            name = "Safety and Evaluation",
+            name = "AI Safety",
             description = "Reliability, quality, and responsible-AI guardrail concepts."
         ),
         Category(
             id = "deployment_ops",
-            name = "Deployment and Ops",
+            name = "Inference & Serving",
             description = "Serving, latency, and infrastructure concepts for AI apps."
         )
     )
@@ -42,221 +42,281 @@ class MockGlossaryRepository : GlossaryRepository {
     private val terms = listOf(
         GlossaryTerm(
             id = "artificial-intelligence",
+            slug = "artificial-intelligence",
             term = "Artificial Intelligence",
-            shortDefinition = "A field focused on building systems that perform tasks requiring human-like intelligence.",
-            fullExplanation = "Artificial intelligence covers techniques that enable software to reason, predict, generate, and make decisions from data or rules.",
+            definition = "A field focused on building systems that perform tasks requiring human-like intelligence.",
+            explanation = "Artificial intelligence covers techniques that enable software to reason, predict, generate, and make decisions from data or rules.",
+            humor = "The grand plan to make computers helpful, impressive, and occasionally far too confident.",
             categoryId = "ai_fundamentals",
             tags = listOf("ai", "overview"),
-            relatedTerms = listOf("machine-learning", "model"),
+            seeAlso = listOf("Machine Learning", "Model"),
+            controversyLevel = 0,
             exampleUsage = "This app introduces artificial intelligence terms for beginners.",
             source = null
         ),
         GlossaryTerm(
             id = "machine-learning",
+            slug = "machine-learning",
             term = "Machine Learning",
-            shortDefinition = "A branch of AI where models learn patterns from examples.",
-            fullExplanation = "Machine learning trains mathematical models on data so they can make predictions or decisions without being explicitly programmed for every case.",
+            definition = "A branch of AI where models learn patterns from examples.",
+            explanation = "Machine learning trains mathematical models on data so they can make predictions or decisions without being explicitly programmed for every case.",
+            humor = "Teaching statistics to develop opinions at scale.",
             categoryId = "ml_training",
             tags = listOf("ai", "training", "models"),
-            relatedTerms = listOf("dataset", "training", "inference"),
+            seeAlso = listOf("Dataset", "Training", "Inference"),
+            controversyLevel = 0,
             exampleUsage = "Fraud detection systems often rely on machine learning.",
             source = null
         ),
         GlossaryTerm(
             id = "model",
+            slug = "model",
             term = "Model",
-            shortDefinition = "A learned representation used to produce predictions or generated outputs.",
-            fullExplanation = "In AI, a model is the trained artifact produced from data and algorithms. It is later used during inference to complete a task.",
+            definition = "A learned representation used to produce predictions or generated outputs.",
+            explanation = "In AI, a model is the trained artifact produced from data and algorithms. It is later used during inference to complete a task.",
+            humor = "The part everyone blames when the rest of the system misbehaves.",
             categoryId = "ai_fundamentals",
             tags = listOf("ai", "prediction"),
-            relatedTerms = listOf("training", "inference"),
+            seeAlso = listOf("Training", "Inference"),
+            controversyLevel = 0,
             exampleUsage = "The chatbot sends your prompt to a language model.",
             source = null
         ),
         GlossaryTerm(
             id = "dataset",
+            slug = "dataset",
             term = "Dataset",
-            shortDefinition = "A structured collection of examples used for training or evaluation.",
-            fullExplanation = "A dataset contains records such as text, images, or labels that help models learn patterns and support quality measurement.",
+            definition = "A structured collection of examples used for training or evaluation.",
+            explanation = "A dataset contains records such as text, images, or labels that help models learn patterns and support quality measurement.",
+            humor = "Garbage in, benchmark slides out.",
             categoryId = "ml_training",
             tags = listOf("data", "training"),
-            relatedTerms = listOf("training", "benchmark"),
+            seeAlso = listOf("Training", "Benchmark"),
+            controversyLevel = 0,
             exampleUsage = "The team cleaned the dataset before training the model.",
             source = null
         ),
         GlossaryTerm(
             id = "training",
+            slug = "training",
             term = "Training",
-            shortDefinition = "The process of adjusting model parameters using data.",
-            fullExplanation = "Training repeatedly compares model outputs with expected results and updates weights to reduce error over time.",
+            definition = "The process of adjusting model parameters using data.",
+            explanation = "Training repeatedly compares model outputs with expected results and updates weights to reduce error over time.",
+            humor = "A very expensive way of teaching math to stop being wrong as often.",
             categoryId = "ml_training",
             tags = listOf("optimization", "learning"),
-            relatedTerms = listOf("fine-tuning", "inference"),
+            seeAlso = listOf("Fine-Tuning", "Inference"),
+            controversyLevel = 0,
             exampleUsage = "Training can take hours or days depending on model size.",
             source = null
         ),
         GlossaryTerm(
             id = "inference",
+            slug = "inference",
             term = "Inference",
-            shortDefinition = "The stage where a trained model is used to generate predictions.",
-            fullExplanation = "Inference happens after training, when a model receives new input and returns an output such as a classification, score, or generated text.",
+            definition = "The process of running a trained model to produce outputs.",
+            explanation = "Inference happens after training and can run in batch or real-time systems. Performance factors include model size, hardware, precision, and serving strategy.",
+            humor = "The moment all the expensive training finally has to do something useful.",
             categoryId = "deployment_ops",
-            tags = listOf("serving", "prediction"),
-            relatedTerms = listOf("model", "latency"),
-            exampleUsage = "Users experience inference each time they ask a question.",
+            tags = listOf("inference", "latency", "serving"),
+            seeAlso = listOf("Model", "Latency"),
+            controversyLevel = 0,
+            exampleUsage = "Chat response generation is an inference workload.",
             source = null
         ),
         GlossaryTerm(
             id = "llm",
+            slug = "llm",
             term = "Large Language Model (LLM)",
-            shortDefinition = "A neural network trained on large-scale text to understand and generate language.",
-            fullExplanation = "LLMs learn statistical language patterns from massive corpora and are commonly used for chat, summarization, reasoning, and coding tasks.",
+            definition = "A neural network trained on large-scale text to understand and generate language.",
+            explanation = "LLMs learn statistical language patterns from massive corpora and are commonly used for chat, summarization, reasoning, and coding tasks.",
+            humor = "Autocomplete with ambition, infrastructure, and a PR team.",
             categoryId = "llm_prompting",
             tags = listOf("llm", "language"),
-            relatedTerms = listOf("prompt", "token", "context-window"),
+            seeAlso = listOf("Prompt", "Token", "Context Window"),
+            controversyLevel = 1,
             exampleUsage = "The assistant uses an LLM to draft explanations.",
             source = null
         ),
         GlossaryTerm(
             id = "prompt",
+            slug = "prompt",
             term = "Prompt",
-            shortDefinition = "The input instruction that guides a model's response.",
-            fullExplanation = "A prompt can include task instructions, examples, constraints, and context that shape model output quality and style.",
+            definition = "The input instruction that guides a model's response.",
+            explanation = "A prompt can include task instructions, examples, constraints, and context that shape model output quality and style.",
+            humor = "Half instruction, half wishful thinking.",
             categoryId = "llm_prompting",
             tags = listOf("input", "instruction"),
-            relatedTerms = listOf("system-prompt", "temperature"),
+            seeAlso = listOf("System Prompt", "Temperature"),
+            controversyLevel = 0,
             exampleUsage = "A clear prompt usually gives better responses.",
             source = null
         ),
         GlossaryTerm(
             id = "system-prompt",
+            slug = "system-prompt",
             term = "System Prompt",
-            shortDefinition = "A high-priority instruction that sets assistant behavior.",
-            fullExplanation = "System prompts define role, boundaries, and response expectations before user prompts are applied.",
+            definition = "A high-priority instruction that sets assistant behavior.",
+            explanation = "System prompts define role, boundaries, and response expectations before user prompts are applied.",
+            humor = "The invisible boss note the model is supposed to obey before improvising anyway.",
             categoryId = "llm_prompting",
             tags = listOf("instruction-hierarchy", "assistant"),
-            relatedTerms = listOf("prompt", "guardrails"),
+            seeAlso = listOf("Prompt", "Guardrails"),
+            controversyLevel = 1,
             exampleUsage = "The system prompt can enforce concise output style.",
             source = null
         ),
         GlossaryTerm(
             id = "token",
+            slug = "token",
             term = "Token",
-            shortDefinition = "A unit of text processed by language models.",
-            fullExplanation = "Models break text into tokens for training and inference. Token count affects cost, context usage, and response limits.",
+            definition = "A unit of text processed by language models.",
+            explanation = "Models break text into tokens for training and inference. Token count affects cost, context usage, and response limits.",
+            humor = "A tiny billing unit disguised as language structure.",
             categoryId = "llm_prompting",
             tags = listOf("text", "context-window"),
-            relatedTerms = listOf("llm", "context-window"),
+            seeAlso = listOf("LLM", "Context Window"),
+            controversyLevel = 0,
             exampleUsage = "Long prompts consume more tokens.",
             source = null
         ),
         GlossaryTerm(
             id = "context-window",
+            slug = "context-window",
             term = "Context Window",
-            shortDefinition = "The maximum amount of tokenized content a model can consider at once.",
-            fullExplanation = "The context window includes system instructions, conversation history, and current input. Exceeding it causes earlier content to be dropped.",
+            definition = "The maximum amount of tokenized content a model can consider at once.",
+            explanation = "The context window includes system instructions, conversation history, and current input. Exceeding it causes earlier content to be dropped.",
+            humor = "The model’s memory, except it is very literal and not nearly as generous as people hope.",
             categoryId = "llm_prompting",
-            tags = listOf("limits", "tokens"),
-            relatedTerms = listOf("token", "retrieval-augmented-generation"),
+            tags = listOf("llm", "memory", "tokens"),
+            seeAlso = listOf("Token", "Retrieval-Augmented Generation (RAG)"),
+            controversyLevel = 0,
             exampleUsage = "Large context windows help with long documents.",
             source = null
         ),
         GlossaryTerm(
             id = "temperature",
+            slug = "temperature",
             term = "Temperature",
-            shortDefinition = "A decoding setting that controls randomness in generated text.",
-            fullExplanation = "Lower temperature tends to make outputs more deterministic, while higher temperature can increase variety and creativity.",
+            definition = "A decoding setting that controls randomness in generated text.",
+            explanation = "Lower temperature tends to make outputs more deterministic, while higher temperature can increase variety and creativity.",
+            humor = "The knob people turn when they want either discipline or chaos and pretend it is a science.",
             categoryId = "llm_prompting",
             tags = listOf("generation", "decoding"),
-            relatedTerms = listOf("prompt", "inference"),
+            seeAlso = listOf("Prompt", "Inference"),
+            controversyLevel = 0,
             exampleUsage = "Set a lower temperature for repeatable responses.",
             source = null
         ),
         GlossaryTerm(
             id = "hallucination",
+            slug = "hallucination",
             term = "Hallucination",
-            shortDefinition = "A confident model response that is incorrect or unsupported.",
-            fullExplanation = "Hallucinations happen when a model generates plausible but false content. Mitigation often combines better prompting, retrieval, and validation.",
+            definition = "A confident model response that is incorrect or unsupported.",
+            explanation = "Hallucinations happen when a model generates plausible but false content. Mitigation often combines better prompting, retrieval, and validation.",
+            humor = "The AI equivalent of answering immediately, beautifully, and completely out of its depth.",
             categoryId = "safety_eval",
-            tags = listOf("reliability", "quality"),
-            relatedTerms = listOf("evaluation", "retrieval-augmented-generation"),
+            tags = listOf("grounding", "reliability", "safety"),
+            seeAlso = listOf("Evaluation", "Retrieval-Augmented Generation (RAG)"),
+            controversyLevel = 2,
             exampleUsage = "The answer sounded right, but it was a hallucination.",
             source = null
         ),
         GlossaryTerm(
             id = "evaluation",
+            slug = "evaluation",
             term = "Evaluation",
-            shortDefinition = "The process of measuring model quality against defined criteria.",
-            fullExplanation = "Evaluation can include automated benchmarks, human review, and task-specific metrics to verify usefulness, accuracy, and safety.",
+            definition = "The process of measuring model quality against defined criteria.",
+            explanation = "Evaluation can include automated benchmarks, human review, and task-specific metrics to verify usefulness, accuracy, and safety.",
+            humor = "The part where optimism meets data and usually loses.",
             categoryId = "safety_eval",
             tags = listOf("metrics", "quality"),
-            relatedTerms = listOf("benchmark", "hallucination"),
+            seeAlso = listOf("Benchmark", "Hallucination"),
+            controversyLevel = 1,
             exampleUsage = "Each model update requires a fresh evaluation pass.",
             source = null
         ),
         GlossaryTerm(
             id = "benchmark",
+            slug = "benchmark",
             term = "Benchmark",
-            shortDefinition = "A standardized test used to compare model performance.",
-            fullExplanation = "Benchmarks provide repeatable tasks and scoring so teams can track improvements and compare different models under similar conditions.",
+            definition = "A standardized test used to compare model performance.",
+            explanation = "Benchmarks provide repeatable tasks and scoring so teams can track improvements and compare different models under similar conditions.",
+            humor = "A scoreboard people trust until it disagrees with the demo.",
             categoryId = "safety_eval",
             tags = listOf("testing", "comparison"),
-            relatedTerms = listOf("evaluation", "dataset"),
+            seeAlso = listOf("Evaluation", "Dataset"),
+            controversyLevel = 1,
             exampleUsage = "The model improved by 8 points on the benchmark.",
             source = null
         ),
         GlossaryTerm(
             id = "guardrails",
+            slug = "guardrails",
             term = "Guardrails",
-            shortDefinition = "Rules and controls that constrain unsafe or off-policy behavior.",
-            fullExplanation = "Guardrails can include policy prompts, output filters, and routing logic to reduce harmful or non-compliant model responses.",
+            definition = "Rules and controls that constrain unsafe or off-policy behavior.",
+            explanation = "Guardrails can include policy prompts, output filters, and routing logic to reduce harmful or non-compliant model responses.",
+            humor = "Software trying very hard to stop confidence from outrunning judgment.",
             categoryId = "safety_eval",
             tags = listOf("safety", "policy"),
-            relatedTerms = listOf("system-prompt", "evaluation"),
+            seeAlso = listOf("System Prompt", "Evaluation"),
+            controversyLevel = 1,
             exampleUsage = "The app applies guardrails before showing model output.",
             source = null
         ),
         GlossaryTerm(
             id = "retrieval-augmented-generation",
+            slug = "retrieval-augmented-generation-rag",
             term = "Retrieval-Augmented Generation (RAG)",
-            shortDefinition = "A pattern that combines external knowledge retrieval with model generation.",
-            fullExplanation = "RAG retrieves relevant documents at query time and provides them to the model, improving factual grounding and reducing hallucinations.",
+            definition = "A pattern that retrieves external information before generation so the model stops pretending its frozen weights are a complete library.",
+            explanation = "RAG retrieves relevant documents at query time and supplies them to the model, improving grounding and freshness without retraining the base model.",
+            humor = "A polite way of admitting the model should look things up before speaking.",
             categoryId = "deployment_ops",
             tags = listOf("rag", "knowledge", "retrieval"),
-            relatedTerms = listOf("hallucination", "context-window"),
+            seeAlso = listOf("Hallucination", "Context Window"),
+            controversyLevel = 1,
             exampleUsage = "RAG helps the assistant answer with current internal docs.",
             source = null
         ),
         GlossaryTerm(
             id = "latency",
+            slug = "latency",
             term = "Latency",
-            shortDefinition = "The time delay between a request and the model response.",
-            fullExplanation = "Latency impacts user experience in AI apps and depends on model size, infrastructure, network conditions, and prompt length.",
+            definition = "The time delay between a request and the model response.",
+            explanation = "Latency impacts user experience in AI apps and depends on model size, infrastructure, network conditions, and prompt length.",
+            humor = "The uncomfortable silence between a request and the machine pretending it was thinking the whole time.",
             categoryId = "deployment_ops",
             tags = listOf("performance", "serving"),
-            relatedTerms = listOf("inference", "throughput"),
+            seeAlso = listOf("Inference", "Throughput"),
+            controversyLevel = 0,
             exampleUsage = "Reducing latency makes chat feel more responsive.",
             source = null
         ),
         GlossaryTerm(
             id = "throughput",
+            slug = "throughput",
             term = "Throughput",
-            shortDefinition = "The amount of work a system can process in a given time.",
-            fullExplanation = "For AI services, throughput often means requests per second or tokens per second handled while maintaining acceptable latency.",
+            definition = "The amount of work a system can process in a given time.",
+            explanation = "For AI services, throughput often means requests per second or tokens per second handled while maintaining acceptable latency.",
+            humor = "How many problems per second your infrastructure can survive before everyone starts blaming the model.",
             categoryId = "deployment_ops",
             tags = listOf("scaling", "performance"),
-            relatedTerms = listOf("latency", "inference"),
+            seeAlso = listOf("Latency", "Inference"),
+            controversyLevel = 0,
             exampleUsage = "The new deployment doubled inference throughput.",
             source = null
         ),
         GlossaryTerm(
             id = "fine-tuning",
+            slug = "fine-tuning",
             term = "Fine-Tuning",
-            shortDefinition = "Additional training of a pre-trained model on specialized data.",
-            fullExplanation = "Fine-tuning adapts a general model to domain-specific tasks or tone by continuing training on targeted examples.",
+            definition = "Additional training of a pre-trained model on specialized data.",
+            explanation = "Fine-tuning adapts a general model to domain-specific tasks or tone by continuing training on targeted examples.",
+            humor = "Taking a model that knows too much about everything and teaching it to care about your particular mess.",
             categoryId = "ml_training",
             tags = listOf("adaptation", "training"),
-            relatedTerms = listOf("training", "dataset"),
+            seeAlso = listOf("Training", "Dataset"),
+            controversyLevel = 1,
             exampleUsage = "They used fine-tuning for industry-specific terminology.",
             source = null
         )
@@ -279,9 +339,10 @@ class MockGlossaryRepository : GlossaryRepository {
 
         return terms.filter { term ->
             term.term.lowercase().contains(normalizedQuery) ||
-                term.shortDefinition.lowercase().contains(normalizedQuery) ||
-                term.fullExplanation.lowercase().contains(normalizedQuery) ||
-                term.tags.any { it.lowercase().contains(normalizedQuery) }
+                    term.definition.lowercase().contains(normalizedQuery) ||
+                    term.explanation.lowercase().contains(normalizedQuery) ||
+                    term.tags.any { it.lowercase().contains(normalizedQuery) } ||
+                    term.seeAlso.any { it.lowercase().contains(normalizedQuery) }
         }
     }
 
@@ -289,14 +350,15 @@ class MockGlossaryRepository : GlossaryRepository {
         return terms.filter { it.categoryId == categoryId }
     }
 
-
     override suspend fun askGlossary(question: String, termId: String?): AskGlossaryResponse {
         val term = termId?.let { getTermById(it) }
         val prefix = term?.let { "For ${it.term}: " } ?: ""
         return AskGlossaryResponse(
-            answer = prefix + "${question.trim()} -> Start with the short definition, then connect to an example.",
-            summary = "Use glossary definitions and examples to ground your understanding.",
-            relatedTermIds = term?.relatedTerms ?: emptyList()
+            answer = prefix + "${question.trim()} -> Start with the definition, then connect it to a practical example.",
+            summary = "Use glossary definitions, explanations, and examples to ground your understanding.",
+            relatedTermIds = term?.seeAlso?.map { related ->
+                terms.find { it.term == related }?.id ?: related.lowercase().replace(" ", "-")
+            } ?: emptyList()
         )
     }
 
@@ -312,7 +374,10 @@ class MockGlossaryRepository : GlossaryRepository {
                 context = "You are evaluating an AI feature for a customer support product.",
                 objective = "Explain ${term.term} and how it changes design choices.",
                 tasks = listOf("Define ${term.term}", "Identify one risk", "Propose one mitigation"),
-                reflectionQuestions = listOf("What would fail without this concept?", "How would you measure success?")
+                reflectionQuestions = listOf(
+                    "What would fail without this concept?",
+                    "How would you measure success?"
+                )
             ),
             cached = !forceRefresh
         )
@@ -328,13 +393,16 @@ class MockGlossaryRepository : GlossaryRepository {
                 title = "Challenge: apply ${term.term}",
                 difficulty = "beginner",
                 prompt = "Write a short plan that applies ${term.term} in a real app.",
-                successCriteria = listOf("Uses correct definition", "Includes an example", "Mentions one tradeoff"),
+                successCriteria = listOf(
+                    "Uses correct definition",
+                    "Includes an example",
+                    "Mentions one tradeoff"
+                ),
                 hint = "Anchor your answer in the glossary definition and one production scenario."
             ),
             cached = !forceRefresh
         )
     }
-
 
     override suspend fun submitTermDraft(draft: TermDraftSubmission): TermDraftSubmissionResult {
         return TermDraftSubmissionResult(
@@ -342,5 +410,4 @@ class MockGlossaryRepository : GlossaryRepository {
             status = "draft"
         )
     }
-
 }

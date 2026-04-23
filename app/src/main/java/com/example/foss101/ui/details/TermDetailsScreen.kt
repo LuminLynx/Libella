@@ -49,8 +49,8 @@ fun TermDetailsScreen(
     val uiState = viewModel.uiState
 
     AppScreenScaffold(
-        title = "Term Details",
-        subtitle = "Deep dive and usage context"
+        title = uiState.term?.term ?: "Loading...",
+        subtitle = uiState.term?.slug ?: ""
     ) { contentPadding ->
         when {
             uiState.isLoading -> LoadingState(
@@ -94,6 +94,9 @@ private fun TermDetailsContent(
     onGenerateChallenge: () -> Unit,
     onRefreshChallenge: () -> Unit
 ) {
+    val explanation = term.explanation
+    val humor = term.humor
+
     Column(
         modifier = Modifier
             .screenContentPadding(contentPadding)
@@ -111,32 +114,89 @@ private fun TermDetailsContent(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Text(
-                    text = term.term,
-                    style = MaterialTheme.typography.headlineMedium,
+                    text = "Definition",
+                    style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
 
                 Text(
-                    text = term.shortDefinition,
+                    text = term.definition,
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
 
-                AssistChip(
-                    onClick = { },
-                    label = {
-                        Text(
-                            text = "Category: ${displayCategoryName(term.categoryId)}",
-                            maxLines = 1,
-                            softWrap = false,
-                            overflow = TextOverflow.Ellipsis
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    AssistChip(
+                        onClick = { },
+                        label = {
+                            Text(
+                                text = "Category: ${displayCategoryName(term.categoryId)}",
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        },
+                        colors = AssistChipDefaults.assistChipColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            labelColor = MaterialTheme.colorScheme.onSecondaryContainer
                         )
-                    },
-                    colors = AssistChipDefaults.assistChipColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        labelColor = MaterialTheme.colorScheme.onSecondaryContainer
                     )
-                )
+
+                    AssistChip(
+                        onClick = { },
+                        label = {
+                            Text(
+                                text = "Controversy: ${displayControversyLevel(term.controversyLevel)}",
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    )
+                }
+            }
+        }
+
+        if (!explanation.isNullOrBlank()) {
+            DetailSectionCard(
+                title = "Explanation",
+                content = explanation
+            )
+        }
+
+        if (!humor.isNullOrBlank()) {
+            DetailSectionCard(
+                title = "Humor",
+                content = humor
+            )
+        }
+
+        if (term.seeAlso.isNotEmpty()) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                SectionHeader(title = "See Also")
+
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    term.seeAlso.forEach { related ->
+                        AssistChip(
+                            onClick = { },
+                            modifier = Modifier.widthIn(max = 220.dp),
+                            label = {
+                                Text(
+                                    text = related,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        )
+                    }
+                }
             }
         }
 
@@ -166,29 +226,52 @@ private fun TermDetailsContent(
             }
         }
 
-        DetailSectionCard(
-            title = "Full Explanation",
-            content = term.fullExplanation
+        SecondaryLearningModulesSection(
+            scenarioState = scenarioState,
+            challengeState = challengeState,
+            onGenerateScenario = onGenerateScenario,
+            onRefreshScenario = onRefreshScenario,
+            onGenerateChallenge = onGenerateChallenge,
+            onRefreshChallenge = onRefreshChallenge
         )
+    }
+}
 
-        if (term.exampleUsage != null) {
-            DetailSectionCard(
-                title = "Example Usage",
-                content = term.exampleUsage
+@Composable
+private fun SecondaryLearningModulesSection(
+    scenarioState: ArtifactUiState<LearningScenario>,
+    challengeState: ArtifactUiState<LearningChallenge>,
+    onGenerateScenario: () -> Unit,
+    onRefreshScenario: () -> Unit,
+    onGenerateChallenge: () -> Unit,
+    onRefreshChallenge: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Text(
+                text = "Optional AI Learning Modules",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            ScenarioSection(
+                state = scenarioState,
+                onGenerate = onGenerateScenario,
+                onRefresh = onRefreshScenario
+            )
+
+            ChallengeSection(
+                state = challengeState,
+                onGenerate = onGenerateChallenge,
+                onRefresh = onRefreshChallenge
             )
         }
-
-        ScenarioSection(
-            state = scenarioState,
-            onGenerate = onGenerateScenario,
-            onRefresh = onRefreshScenario
-        )
-
-        ChallengeSection(
-            state = challengeState,
-            onGenerate = onGenerateChallenge,
-            onRefresh = onRefreshChallenge
-        )
     }
 }
 
@@ -206,7 +289,11 @@ private fun ScenarioSection(
         else -> GeneratedScenarioCard(result = state.data, onRefresh = onRefresh)
     }
     if (state.data == null && !state.isLoading) {
-        PrimaryActionButton(text = "Generate Scenario", onClick = onGenerate, modifier = Modifier.fillMaxWidth())
+        PrimaryActionButton(
+            text = "Generate Scenario",
+            onClick = onGenerate,
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }
 
@@ -224,17 +311,30 @@ private fun ChallengeSection(
         else -> GeneratedChallengeCard(result = state.data, onRefresh = onRefresh)
     }
     if (state.data == null && !state.isLoading) {
-        PrimaryActionButton(text = "Generate Challenge", onClick = onGenerate, modifier = Modifier.fillMaxWidth())
+        PrimaryActionButton(
+            text = "Generate Challenge",
+            onClick = onGenerate,
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }
 
 @Composable
-private fun GeneratedScenarioCard(result: GeneratedArtifactResult<LearningScenario>, onRefresh: () -> Unit) {
+private fun GeneratedScenarioCard(
+    result: GeneratedArtifactResult<LearningScenario>,
+    onRefresh: () -> Unit
+) {
     val artifact = result.artifact
     Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(text = artifact.title, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = artifact.title,
+                    style = MaterialTheme.typography.titleMedium
+                )
             }
             Text(text = "Difficulty: ${artifact.difficulty}")
             Text(text = artifact.context)
@@ -242,23 +342,40 @@ private fun GeneratedScenarioCard(result: GeneratedArtifactResult<LearningScenar
             Text(text = "Tasks:\n- ${artifact.tasks.joinToString("\n- ")}")
             Text(text = "Reflect:\n- ${artifact.reflectionQuestions.joinToString("\n- ")}")
             Text(text = if (result.cached) "Loaded from cache" else "Freshly generated")
-            PrimaryActionButton(text = "Regenerate Scenario", onClick = onRefresh, modifier = Modifier.fillMaxWidth())
+            PrimaryActionButton(
+                text = "Regenerate Scenario",
+                onClick = onRefresh,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }
 
 @Composable
-private fun GeneratedChallengeCard(result: GeneratedArtifactResult<LearningChallenge>, onRefresh: () -> Unit) {
+private fun GeneratedChallengeCard(
+    result: GeneratedArtifactResult<LearningChallenge>,
+    onRefresh: () -> Unit
+) {
     val artifact = result.artifact
     Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(text = artifact.title, style = MaterialTheme.typography.titleMedium)
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(
+                text = artifact.title,
+                style = MaterialTheme.typography.titleMedium
+            )
             Text(text = "Difficulty: ${artifact.difficulty}")
             Text(text = artifact.prompt)
             Text(text = "Success criteria:\n- ${artifact.successCriteria.joinToString("\n- ")}")
             Text(text = "Hint: ${artifact.hint}")
             Text(text = if (result.cached) "Loaded from cache" else "Freshly generated")
-            PrimaryActionButton(text = "Regenerate Challenge", onClick = onRefresh, modifier = Modifier.fillMaxWidth())
+            PrimaryActionButton(
+                text = "Regenerate Challenge",
+                onClick = onRefresh,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }
@@ -291,11 +408,26 @@ private fun DetailSectionCard(
 
 private fun displayCategoryName(categoryId: String): String {
     return when (categoryId) {
+        "ai_fundamentals" -> "AI Fundamentals"
+        "llm_prompting" -> "LLM Concepts"
+        "deployment_ops" -> "Inference & Serving"
+        "ml_training" -> "Data & Training"
+        "safety_eval" -> "AI Safety"
         "cat-ml-foundations" -> "ML Foundations"
         "cat-llm-concepts" -> "LLM Concepts"
         "cat-inference-serving" -> "Inference & Serving"
         "cat-data-training" -> "Data & Training"
         "cat-ai-safety" -> "AI Safety"
         else -> categoryId
+    }
+}
+
+private fun displayControversyLevel(level: Int): String {
+    return when (level) {
+        0 -> "Low"
+        1 -> "Moderate"
+        2 -> "High"
+        3 -> "Very High"
+        else -> "Unknown"
     }
 }

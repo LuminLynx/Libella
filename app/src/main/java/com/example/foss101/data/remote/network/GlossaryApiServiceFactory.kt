@@ -55,7 +55,10 @@ private class HttpGlossaryApiService(
         parseTerms(response)
     }
 
-    override suspend fun askGlossary(question: String, termId: String?): RemoteAskGlossaryResponse = withContext(Dispatchers.IO) {
+    override suspend fun askGlossary(
+        question: String,
+        termId: String?
+    ): RemoteAskGlossaryResponse = withContext(Dispatchers.IO) {
         val payload = JSONObject().put("question", question)
         if (!termId.isNullOrBlank()) {
             payload.put("termId", termId)
@@ -169,21 +172,32 @@ private class HttpGlossaryApiService(
 
     private fun parseTerms(envelope: JSONObject): List<RemoteGlossaryTerm> {
         val data = envelope.optJSONArray("data") ?: JSONArray()
-        return List(data.length()) { index ->
-            data.getJSONObject(index).toRemoteGlossaryTerm()
+        return buildList {
+            for (index in 0 until data.length()) {
+                add(parseRemoteGlossaryTerm(data.getJSONObject(index)))
+            }
         }
     }
 
     private fun parseTerm(envelope: JSONObject): RemoteGlossaryTerm {
         val data = envelope.optJSONObject("data")
             ?: throw GlossaryApiException(message = "Term response was empty.")
-        return data.toRemoteGlossaryTerm()
+        return parseRemoteGlossaryTerm(data)
     }
 
     private fun parseCategories(envelope: JSONObject): List<RemoteCategory> {
         val data = envelope.optJSONArray("data") ?: JSONArray()
-        return List(data.length()) { index ->
-            data.getJSONObject(index).toRemoteCategory()
+        return buildList {
+            for (index in 0 until data.length()) {
+                val item = data.getJSONObject(index)
+                add(
+                    RemoteCategory(
+                        id = item.optString("id"),
+                        name = item.optString("name"),
+                        description = item.optString("description")
+                    )
+                )
+            }
         }
     }
 
@@ -191,9 +205,9 @@ private class HttpGlossaryApiService(
         val data = envelope.optJSONObject("data")
             ?: throw GlossaryApiException(message = "Ask Glossary response was empty.")
         return RemoteAskGlossaryResponse(
-            answer = data.getString("answer"),
-            summary = data.getString("summary"),
-            relatedTermIds = data.optJsonArray("relatedTermIds")
+            answer = data.optString("answer"),
+            summary = data.optString("summary"),
+            relatedTermIds = data.optJSONArray("relatedTermIds").toStringList()
         )
     }
 
@@ -202,14 +216,15 @@ private class HttpGlossaryApiService(
             ?: throw GlossaryApiException(message = "Scenario response was empty.")
         val artifact = data.optJSONObject("artifact")
             ?: throw GlossaryApiException(message = "Scenario artifact is missing.")
+
         return RemoteGeneratedArtifactResult(
             artifact = RemoteLearningScenario(
-                title = artifact.getString("title"),
-                difficulty = artifact.getString("difficulty"),
-                context = artifact.getString("context"),
-                objective = artifact.getString("objective"),
-                tasks = artifact.optJsonArray("tasks"),
-                reflectionQuestions = artifact.optJsonArray("reflectionQuestions")
+                title = artifact.optString("title"),
+                difficulty = artifact.optString("difficulty"),
+                context = artifact.optString("context"),
+                objective = artifact.optString("objective"),
+                tasks = artifact.optJSONArray("tasks").toStringList(),
+                reflectionQuestions = artifact.optJSONArray("reflectionQuestions").toStringList()
             ),
             cached = data.optBoolean("cached", false)
         )
@@ -220,13 +235,14 @@ private class HttpGlossaryApiService(
             ?: throw GlossaryApiException(message = "Challenge response was empty.")
         val artifact = data.optJSONObject("artifact")
             ?: throw GlossaryApiException(message = "Challenge artifact is missing.")
+
         return RemoteGeneratedArtifactResult(
             artifact = RemoteLearningChallenge(
-                title = artifact.getString("title"),
-                difficulty = artifact.getString("difficulty"),
-                prompt = artifact.getString("prompt"),
-                successCriteria = artifact.optJsonArray("successCriteria"),
-                hint = artifact.getString("hint")
+                title = artifact.optString("title"),
+                difficulty = artifact.optString("difficulty"),
+                prompt = artifact.optString("prompt"),
+                successCriteria = artifact.optJSONArray("successCriteria").toStringList(),
+                hint = artifact.optString("hint")
             ),
             cached = data.optBoolean("cached", false)
         )
@@ -235,45 +251,62 @@ private class HttpGlossaryApiService(
     private fun parseTermDraftSubmission(envelope: JSONObject): RemoteTermDraftSubmissionResult {
         val data = envelope.optJSONObject("data")
             ?: throw GlossaryApiException(message = "Draft submission response was empty.")
+
         return RemoteTermDraftSubmissionResult(
-            id = data.optString("id").ifBlank { data.optString("draft_id") },
+            id = data.opt("id")?.toString()
+                ?: data.opt("draft_id")?.toString()
+                ?: throw GlossaryApiException(message = "Server returned no draft id."),
             status = data.optString("status", "draft")
+        )
+    }
+
+    private fun parseRemoteGlossaryTerm(item: JSONObject): RemoteGlossaryTerm {
+        val slug = item.optString("slug").takeIf { it.isNotBlank() } ?: item.optString("id")
+        val definition = item.optString("definition").takeIf { it.isNotBlank() }
+            ?: item.optString("shortDefinition")
+        val explanation = item.optString("explanation").takeIf { it.isNotBlank() }
+            ?: item.optString("fullExplanation")
+        val humor = item.optString("humor").takeIf { it.isNotBlank() }
+
+        val categoryId = item.optString("categoryId").takeIf { it.isNotBlank() }
+            ?: item.optString("category_id")
+
+        val seeAlso = item.optJSONArray("seeAlso").toStringList().ifEmpty {
+            item.optJSONArray("see_also").toStringList().ifEmpty {
+                item.optJSONArray("relatedTerms").toStringList()
+            }
+        }
+
+        val controversyLevel = when {
+            item.has("controversyLevel") -> item.optInt("controversyLevel", 0)
+            item.has("controversy_level") -> item.optInt("controversy_level", 0)
+            else -> 0
+        }
+
+        return RemoteGlossaryTerm(
+            id = item.optString("id"),
+            slug = slug,
+            term = item.optString("term"),
+            definition = definition,
+            explanation = explanation,
+            humor = humor,
+            categoryId = categoryId,
+            tags = item.optJSONArray("tags").toStringList(),
+            seeAlso = seeAlso,
+            controversyLevel = controversyLevel,
+            exampleUsage = item.optString("exampleUsage").takeIf { it.isNotBlank() },
+            source = item.optString("source").takeIf { it.isNotBlank() }
         )
     }
 }
 
-private fun JSONObject.toRemoteGlossaryTerm(): RemoteGlossaryTerm {
-    return RemoteGlossaryTerm(
-        id = getString("id"),
-        term = getString("term"),
-        shortDefinition = getString("shortDefinition"),
-        fullExplanation = getString("fullExplanation"),
-        categoryId = getString("categoryId"),
-        tags = optJsonArray("tags"),
-        relatedTerms = optJsonArray("relatedTerms"),
-        exampleUsage = optNullableString("exampleUsage"),
-        source = optNullableString("source"),
-        createdAt = getString("createdAt"),
-        updatedAt = getString("updatedAt")
-    )
-}
-
-private fun JSONObject.toRemoteCategory(): RemoteCategory {
-    return RemoteCategory(
-        id = getString("id"),
-        name = getString("name"),
-        description = getString("description")
-    )
-}
-
-private fun JSONObject.optJsonArray(field: String): List<String> {
-    val array = optJSONArray(field) ?: return emptyList()
-    return List(array.length()) { index -> array.optString(index) }.filter { it.isNotBlank() }
-}
-
-private fun JSONObject.optNullableString(field: String): String? {
-    if (isNull(field)) return null
-    return optString(field).takeIf { it.isNotBlank() }
+private fun JSONArray?.toStringList(): List<String> {
+    if (this == null) return emptyList()
+    return buildList {
+        for (index in 0 until length()) {
+            add(optString(index))
+        }
+    }.filter { it.isNotBlank() }
 }
 
 internal class GlossaryApiException(
