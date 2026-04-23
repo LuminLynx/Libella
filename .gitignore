@@ -8,3 +8,4 @@ local.properties.kotlin/
 local.properties
 
 .venv/
+docs/test.kt
