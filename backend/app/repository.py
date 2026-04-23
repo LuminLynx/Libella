@@ -613,7 +613,7 @@ def get_contributor_summary(contributor_id: str, *, recent_limit: int = 10) -> d
                 "metadata": row["metadata"],
                 "createdAt": row["created_at"],
             }
-            for row in recent_events
+            for row in recent_events_map_term_row
         ],
     }
 
@@ -678,11 +678,33 @@ def upsert_generated_content(
         )
         connection.commit()
 
+def _get_term_title_by_id_or_slug(reference: str) -> str | None:
+    if not reference:
+        return None
+
+    query = """
+        SELECT term
+        FROM terms
+        WHERE id = %s OR slug = %s
+        LIMIT 1
+    """
+    with get_connection() as connection:
+        row = connection.execute(query, (reference, reference)).fetchone()
+        return row["term"] if row else None
+
+
+def _resolve_see_also_display_names(references: list[str]) -> list[str]:
+    resolved: list[str] = []
+    for reference in references:
+        title = _get_term_title_by_id_or_slug(reference)
+        resolved.append(title if title else reference)
+    return resolved
 
 def _map_term_row(row: Any) -> dict[str, Any]:
     normalized_tags = _parse_csv(row["tags"])
-    normalized_see_also = _to_list(row["see_also"])
+    normalized_see_also_refs = _to_list(row["see_also"])
     normalized_related_ids = _to_list(row["related_term_ids"])
+    resolved_see_also = _resolve_see_also_display_names(normalized_see_also_refs)
 
     return {
         "id": row["id"],
@@ -691,7 +713,7 @@ def _map_term_row(row: Any) -> dict[str, Any]:
         "definition": row["definition"],
         "explanation": row["explanation"],
         "humor": row["humor"],
-        "seeAlso": normalized_see_also,
+        "seeAlso": resolved_see_also,
         "tags": normalized_tags,
         "controversyLevel": row["controversy_level"],
         # Backward-compatible aliases for existing Android consumers.
@@ -704,7 +726,6 @@ def _map_term_row(row: Any) -> dict[str, Any]:
         "createdAt": row["created_at"],
         "updatedAt": row["updated_at"],
     }
-
 
 def _map_draft_row(row: Any) -> dict[str, Any]:
     return {
