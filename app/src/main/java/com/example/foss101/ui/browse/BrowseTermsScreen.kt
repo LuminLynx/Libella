@@ -1,10 +1,15 @@
 package com.example.foss101.ui.browse
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -49,16 +54,25 @@ fun BrowseTermsScreen(
             )
 
             else -> {
-                LazyColumn(
-                    modifier = Modifier.screenContentPadding(contentPadding),
-                    contentPadding = PaddingValues(bottom = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .screenContentPadding(contentPadding),
+                    contentAlignment = Alignment.TopCenter
                 ) {
-                    items(uiState.terms) { term ->
-                        GlossaryTermItem(
-                            term = term,
-                            onClick = { onNavigate("details/${term.id}") }
-                        )
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .widthIn(max = 960.dp),
+                        contentPadding = PaddingValues(bottom = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(uiState.terms) { term ->
+                            GlossaryTermItem(
+                                term = term,
+                                onClick = { onNavigate("details/${term.id}") }
+                            )
+                        }
                     }
                 }
             }

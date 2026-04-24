@@ -1,11 +1,13 @@
 package com.example.foss101.ui.details
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
@@ -18,6 +20,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -37,6 +40,8 @@ import com.example.foss101.ui.components.screenContentPadding
 import com.example.foss101.viewmodel.ArtifactUiState
 import com.example.foss101.viewmodel.TermDetailsViewModel
 
+private val TabletContentMaxWidth = 960.dp
+
 @Composable
 fun TermDetailsScreen(
     termId: String? = null,
@@ -53,31 +58,57 @@ fun TermDetailsScreen(
         subtitle = uiState.term?.slug ?: ""
     ) { contentPadding ->
         when {
-            uiState.isLoading -> LoadingState(
-                message = "Loading term details...",
-                modifier = Modifier.screenContentPadding(contentPadding)
-            )
+            uiState.isLoading -> {
+                CenteredDetailsContainer(contentPadding) {
+                    LoadingState(message = "Loading term details...")
+                }
+            }
 
-            uiState.errorMessage != null -> ErrorState(
-                message = uiState.errorMessage,
-                modifier = Modifier.screenContentPadding(contentPadding)
-            )
+            uiState.errorMessage != null -> {
+                CenteredDetailsContainer(contentPadding) {
+                    ErrorState(message = uiState.errorMessage)
+                }
+            }
 
-            uiState.term == null -> EmptyState(
-                message = "The requested term could not be located.",
-                modifier = Modifier.screenContentPadding(contentPadding)
-            )
+            uiState.term == null -> {
+                CenteredDetailsContainer(contentPadding) {
+                    EmptyState(message = "The requested term could not be located.")
+                }
+            }
 
-            else -> TermDetailsContent(
-                contentPadding = contentPadding,
-                term = uiState.term,
-                scenarioState = uiState.scenarioState,
-                challengeState = uiState.challengeState,
-                onGenerateScenario = { viewModel.generateScenario() },
-                onRefreshScenario = { viewModel.generateScenario(forceRefresh = true) },
-                onGenerateChallenge = { viewModel.generateChallenge() },
-                onRefreshChallenge = { viewModel.generateChallenge(forceRefresh = true) }
-            )
+            else -> {
+                TermDetailsContent(
+                    contentPadding = contentPadding,
+                    term = uiState.term,
+                    scenarioState = uiState.scenarioState,
+                    challengeState = uiState.challengeState,
+                    onGenerateScenario = { viewModel.generateScenario() },
+                    onRefreshScenario = { viewModel.generateScenario(forceRefresh = true) },
+                    onGenerateChallenge = { viewModel.generateChallenge() },
+                    onRefreshChallenge = { viewModel.generateChallenge(forceRefresh = true) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CenteredDetailsContainer(
+    contentPadding: PaddingValues,
+    content: @Composable () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .screenContentPadding(contentPadding),
+        contentAlignment = Alignment.TopCenter
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .widthIn(max = TabletContentMaxWidth)
+        ) {
+            content()
         }
     }
 }
@@ -97,143 +128,149 @@ private fun TermDetailsContent(
     val explanation = term.explanation
     val humor = term.humor
 
-    Column(
+    Box(
         modifier = Modifier
-            .screenContentPadding(contentPadding)
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .fillMaxSize()
+            .screenContentPadding(contentPadding),
+        contentAlignment = Alignment.TopCenter
     ) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer
-            )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .widthIn(max = TabletContentMaxWidth)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Column(
-                modifier = Modifier.padding(18.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                )
             ) {
-                Text(
-                    text = "Definition",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-
-                Text(
-                    text = term.definition,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                Column(
+                    modifier = Modifier.padding(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    AssistChip(
-                        onClick = { },
-                        label = {
-                            Text(
-                                text = "Category: ${displayCategoryName(term.categoryId)}",
-                                maxLines = 1,
-                                softWrap = false,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        },
-                        colors = AssistChipDefaults.assistChipColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            labelColor = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
+                    Text(
+                        text = "Definition",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
 
-                    AssistChip(
-                        onClick = { },
-                        label = {
-                            Text(
-                                text = "Controversy: ${displayControversyLevel(term.controversyLevel)}",
-                                maxLines = 1,
-                                softWrap = false,
-                                overflow = TextOverflow.Ellipsis
+                    Text(
+                        text = term.definition,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AssistChip(
+                            onClick = { },
+                            label = {
+                                Text(
+                                    text = "Category: ${displayCategoryName(term.categoryId)}",
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            },
+                            colors = AssistChipDefaults.assistChipColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                labelColor = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        )
+
+                        AssistChip(
+                            onClick = { },
+                            label = {
+                                Text(
+                                    text = "Controversy: ${displayControversyLevel(term.controversyLevel)}",
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        )
+                    }
+                }
+            }
+
+            if (!explanation.isNullOrBlank()) {
+                DetailSectionCard(
+                    title = "Explanation",
+                    content = explanation
+                )
+            }
+
+            if (!humor.isNullOrBlank()) {
+                DetailSectionCard(
+                    title = "Humor",
+                    content = humor
+                )
+            }
+
+            if (term.seeAlso.isNotEmpty()) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SectionHeader(title = "See Also")
+
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        term.seeAlso.forEach { related ->
+                            AssistChip(
+                                onClick = { },
+                                label = {
+                                    Text(
+                                        text = related,
+                                        maxLines = 1,
+                                        softWrap = false,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
                             )
                         }
-                    )
-                }
-            }
-        }
-
-        if (!explanation.isNullOrBlank()) {
-            DetailSectionCard(
-                title = "Explanation",
-                content = explanation
-            )
-        }
-
-        if (!humor.isNullOrBlank()) {
-            DetailSectionCard(
-                title = "Humor",
-                content = humor
-            )
-        }
-
-        if (term.seeAlso.isNotEmpty()) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                SectionHeader(title = "See Also")
-
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    term.seeAlso.forEach { related ->
-                        AssistChip(
-                            onClick = { },
-                            modifier = Modifier.widthIn(max = 220.dp),
-                            label = {
-                                Text(
-                                    text = related,
-                                    maxLines = 1,
-                                    softWrap = false,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                        )
                     }
                 }
             }
-        }
 
-        if (term.tags.isNotEmpty()) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                SectionHeader(title = "Tags")
+            if (term.tags.isNotEmpty()) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SectionHeader(title = "Tags")
 
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    term.tags.forEach { tag ->
-                        AssistChip(
-                            onClick = { },
-                            modifier = Modifier.widthIn(max = 220.dp),
-                            label = {
-                                Text(
-                                    text = tag,
-                                    maxLines = 1,
-                                    softWrap = false,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                        )
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        term.tags.forEach { tag ->
+                            AssistChip(
+                                onClick = { },
+                                label = {
+                                    Text(
+                                        text = tag,
+                                        maxLines = 1,
+                                        softWrap = false,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            )
+                        }
                     }
                 }
             }
-        }
 
-        SecondaryLearningModulesSection(
-            scenarioState = scenarioState,
-            challengeState = challengeState,
-            onGenerateScenario = onGenerateScenario,
-            onRefreshScenario = onRefreshScenario,
-            onGenerateChallenge = onGenerateChallenge,
-            onRefreshChallenge = onRefreshChallenge
-        )
+            SecondaryLearningModulesSection(
+                scenarioState = scenarioState,
+                challengeState = challengeState,
+                onGenerateScenario = onGenerateScenario,
+                onRefreshScenario = onRefreshScenario,
+                onGenerateChallenge = onGenerateChallenge,
+                onRefreshChallenge = onRefreshChallenge
+            )
+        }
     }
 }
 

@@ -1,11 +1,13 @@
 package com.example.foss101.ui.categories
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
@@ -14,7 +16,9 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.foss101.data.repository.GlossaryRepository
@@ -43,7 +47,11 @@ fun CategoriesScreen(
         subtitle = "Explore terms by focused topic"
     ) { contentPadding ->
         when {
-            uiState.isLoading -> LoadingState("Loading categories...", Modifier.screenContentPadding(contentPadding))
+            uiState.isLoading -> LoadingState(
+                "Loading categories...",
+                Modifier.screenContentPadding(contentPadding)
+            )
+
             uiState.categoriesLoadError != null && uiState.selectedCategoryId == null -> ErrorState(
                 uiState.categoriesLoadError,
                 Modifier.screenContentPadding(contentPadding)
@@ -80,16 +88,25 @@ private fun CategoriesList(
     onCategorySelected: (String) -> Unit,
     contentPadding: PaddingValues
 ) {
-    LazyColumn(
-        modifier = Modifier.screenContentPadding(contentPadding),
-        contentPadding = PaddingValues(bottom = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .screenContentPadding(contentPadding),
+        contentAlignment = Alignment.TopCenter
     ) {
-        items(categories) { category ->
-            CategoryItem(
-                category = category,
-                onClick = { onCategorySelected(category.id) }
-            )
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .widthIn(max = 960.dp),
+            contentPadding = PaddingValues(bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            items(categories) { category ->
+                CategoryItem(
+                    category = category,
+                    onClick = { onCategorySelected(category.id) }
+                )
+            }
         }
     }
 }
@@ -105,49 +122,70 @@ private fun SelectedCategoryTerms(
     onNavigate: (String) -> Unit,
     contentPadding: PaddingValues
 ) {
-    Column(
-        modifier = Modifier.screenContentPadding(contentPadding),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .screenContentPadding(contentPadding),
+        contentAlignment = Alignment.TopCenter
     ) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .widthIn(max = 960.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = category?.name ?: "Category",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
-                Text(
-                    text = category?.description.orEmpty(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
-        }
-
-        Button(onClick = onBackToCategories, modifier = Modifier.fillMaxWidth()) {
-            Text("Back to all categories")
-        }
-
-        if (isLoadingTerms) {
-            LoadingState("Loading terms...")
-        } else if (termsError != null) {
-            ErrorState(termsError)
-        } else if (category != null && termsEmpty) {
-            EmptyState("No terms found for this category.")
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(terms) { term ->
-                    GlossaryTermItem(
-                        term = term,
-                        onClick = { onNavigate("details/${term.id}") }
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = category?.name ?: "Category",
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
+                    Text(
+                        text = category?.description.orEmpty(),
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
+
+            Button(
+                onClick = onBackToCategories,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Back to all categories")
+            }
+
+            when {
+                isLoadingTerms -> LoadingState("Loading terms...")
+                termsError != null -> ErrorState(termsError)
+                category != null && termsEmpty -> EmptyState("No terms found for this category.")
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(bottom = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(terms) { term ->
+                            GlossaryTermItem(
+                                term = term,
+                                onClick = { onNavigate("details/${term.id}") }
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -160,19 +198,28 @@ private fun CategoryItem(
     onClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth(),
         onClick = onClick,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Text(
                 text = category.name,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.titleMedium
             )
             Text(
                 text = category.description,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

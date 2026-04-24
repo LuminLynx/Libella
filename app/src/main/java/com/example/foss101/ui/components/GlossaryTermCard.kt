@@ -14,6 +14,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.foss101.model.GlossaryTerm
@@ -36,15 +37,19 @@ fun GlossaryTermCard(
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Text(
                 text = term.term,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.titleLarge
             )
 
             Text(
                 text = term.definition,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 3,
@@ -53,7 +58,8 @@ fun GlossaryTermCard(
 
             if (term.tags.isNotEmpty()) {
                 FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     term.tags.take(3).forEach { tag ->
