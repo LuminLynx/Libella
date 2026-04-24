@@ -700,11 +700,16 @@ def _resolve_see_also_display_names(references: list[str]) -> list[str]:
         resolved.append(title if title else reference)
     return resolved
 
+
 def _map_term_row(row: Any) -> dict[str, Any]:
     normalized_tags = _parse_csv(row["tags"])
     normalized_see_also_refs = _to_list(row["see_also"])
+    normalized_legacy_related_refs = _parse_csv(row["related_terms"])
     normalized_related_ids = _to_list(row["related_term_ids"])
-    resolved_see_also = _resolve_see_also_display_names(normalized_see_also_refs)
+
+    # Prefer relation-table slugs; if absent, fallback to legacy related_terms references.
+    see_also_refs = normalized_see_also_refs if normalized_see_also_refs else normalized_legacy_related_refs
+    resolved_see_also = _resolve_see_also_display_names(see_also_refs)
 
     return {
         "id": row["id"],
