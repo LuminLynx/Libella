@@ -230,7 +230,7 @@ private fun TermDetailsContent(
                                         maxLines = 2,
                                         overflow = TextOverflow.Clip
                                     )
-                                }
+                                },
                                 modifier = Modifier.heightIn(min = 32.dp)
                             )
                         }
