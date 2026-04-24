@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -55,7 +56,7 @@ fun TermDetailsScreen(
 
     AppScreenScaffold(
         title = uiState.term?.term ?: "Loading...",
-        subtitle = uiState.term?.slug ?: ""
+        subtitle = uiState.term?.categoryId?.let(::displayCategoryName) ?: ""
     ) { contentPadding ->
         when {
             uiState.isLoading -> {
@@ -136,7 +137,7 @@ private fun TermDetailsContent(
     ) {
         Column(
             modifier = Modifier
-                .fillMaxWidth(0.9f)
+                .fillMaxWidth()
                 .widthIn(max = TabletContentMaxWidth)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -226,11 +227,11 @@ private fun TermDetailsContent(
                                 label = {
                                     Text(
                                         text = related,
-                                        maxLines = 1,
-                                        softWrap = false,
-                                        overflow = TextOverflow.Ellipsis
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Clip
                                     )
                                 }
+                                modifier = Modifier.heightIn(min = 32.dp)
                             )
                         }
                     }
@@ -251,9 +252,8 @@ private fun TermDetailsContent(
                                 label = {
                                     Text(
                                         text = tag,
-                                        maxLines = 1,
-                                        softWrap = false,
-                                        overflow = TextOverflow.Ellipsis
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Clip
                                     )
                                 }
                             )
@@ -456,6 +456,13 @@ private fun displayCategoryName(categoryId: String): String {
         "cat-data-training" -> "Data & Training"
         "cat-ai-safety" -> "AI Safety"
         else -> categoryId
+            .replace('-', ' ')
+            .replace('_', ' ')
+            .split(" ")
+            .filter { it.isNotBlank() }
+            .joinToString(" ") { token ->
+                token.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+            }
     }
 }
 

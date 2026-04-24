@@ -18,6 +18,7 @@ EXPECTED_CANONICAL_FIELDS = {
     "seeAlso",
     "tags",
     "controversyLevel",
+    "categoryId",
 }
 
 
