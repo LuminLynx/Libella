@@ -52,6 +52,13 @@ BEGIN
 END
 $$;
 
+ALTER TABLE term_drafts
+    DROP CONSTRAINT IF EXISTS term_drafts_status_check;
+
+ALTER TABLE term_drafts
+    ADD CONSTRAINT term_drafts_status_check
+    CHECK (status IN ('draft', 'reviewed', 'submitted', 'approved', 'rejected', 'published'));
+
 UPDATE term_drafts
 SET status = 'submitted'
 WHERE status IN ('draft', 'reviewed');
