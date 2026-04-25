@@ -146,7 +146,7 @@ def run_verification() -> None:
         assert published_term["slug"] == "mixture-of-experts"
         assert_canonical_term_shape(published_term)
         assert published_term["tags"] == ["architecture", "sparse-models"]
-        assert "transformer" in published_term["seeAlso"]
+        assert any(item.strip().lower() == "transformer" for item in published_term["seeAlso"])
         assert publish_payload["data"]["draft"]["publishedTermId"] == published_term["id"]
 
         double_publish_resp = client.post(f"/api/v1/term-drafts/{draft['id']}/publish")

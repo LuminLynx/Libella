@@ -6,7 +6,7 @@ from typing import Any
 from fastapi import FastAPI, Query
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
-from pydantic import AliasChoices, BaseModel, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
 from .ai_service import AIServiceError, AIUnavailableError, ai_service, ai_service_metadata
 from .migrations import run_migrations
@@ -39,6 +39,8 @@ class GenerateArtifactRequest(BaseModel):
 
 
 class TermDraftRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     slug: str | None = None
     term: str = Field(min_length=1)
     definition: str = Field(min_length=1)
