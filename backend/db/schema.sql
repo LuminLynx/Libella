@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS terms (
     related_terms TEXT NOT NULL DEFAULT '',
     example_usage TEXT,
     source TEXT,
+    source_draft_id BIGINT,
     created_at TIMESTAMPTZ NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL,
     CHECK (LENGTH(TRIM(term)) > 0),
@@ -51,6 +52,7 @@ CREATE TABLE IF NOT EXISTS ai_generated_content (
 CREATE INDEX IF NOT EXISTS idx_terms_category_id ON terms(category_id);
 CREATE INDEX IF NOT EXISTS idx_terms_term ON terms(term);
 CREATE INDEX IF NOT EXISTS idx_terms_slug ON terms(slug);
+CREATE INDEX IF NOT EXISTS idx_terms_source_draft_id ON terms(source_draft_id);
 CREATE INDEX IF NOT EXISTS idx_term_relations_term_id ON term_relations(term_id);
 CREATE INDEX IF NOT EXISTS idx_term_relations_related_term_id ON term_relations(related_term_id);
 CREATE INDEX IF NOT EXISTS idx_ai_generated_term_type ON ai_generated_content(term_id, content_type);
@@ -77,9 +79,12 @@ CREATE TABLE IF NOT EXISTS term_drafts (
     controversy_level SMALLINT NOT NULL DEFAULT 0 CHECK (controversy_level BETWEEN 0 AND 3),
     source_type TEXT NOT NULL DEFAULT 'manual',
     source_reference TEXT,
-    status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'reviewed', 'approved', 'rejected', 'published')),
+    status TEXT NOT NULL DEFAULT 'submitted' CHECK (status IN ('submitted', 'approved', 'rejected', 'published')),
     category_id TEXT REFERENCES categories(id) ON DELETE SET NULL,
     contributor_id TEXT NOT NULL DEFAULT 'anonymous',
+    contributor_metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    missing_search_event_id BIGINT REFERENCES term_search_events(id) ON DELETE SET NULL,
+    published_term_id TEXT REFERENCES terms(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CHECK (LENGTH(TRIM(term)) > 0),
@@ -95,12 +100,14 @@ CREATE INDEX IF NOT EXISTS idx_term_drafts_status ON term_drafts(status);
 CREATE INDEX IF NOT EXISTS idx_term_drafts_slug ON term_drafts(slug);
 CREATE INDEX IF NOT EXISTS idx_term_drafts_updated_at ON term_drafts(updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_term_drafts_contributor_id ON term_drafts(contributor_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_term_drafts_missing_search_event ON term_drafts(missing_search_event_id);
+CREATE INDEX IF NOT EXISTS idx_term_drafts_published_term_id ON term_drafts(published_term_id);
 
 CREATE TABLE IF NOT EXISTS contribution_events (
     id BIGSERIAL PRIMARY KEY,
     contributor_id TEXT NOT NULL,
     draft_id BIGINT REFERENCES term_drafts(id) ON DELETE SET NULL,
-    event_type TEXT NOT NULL CHECK (event_type IN ('draft_submitted', 'draft_reviewed', 'draft_approved', 'draft_published')),
+    event_type TEXT NOT NULL CHECK (event_type IN ('draft_submitted', 'draft_approved', 'draft_rejected', 'draft_published')),
     points_awarded INTEGER NOT NULL DEFAULT 0,
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()

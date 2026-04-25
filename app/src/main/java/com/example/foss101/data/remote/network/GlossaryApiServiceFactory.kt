@@ -100,11 +100,11 @@ private class HttpGlossaryApiService(
             .put("definition", draft.definition)
             .put("explanation", draft.explanation)
             .put("humor", draft.humor)
-            .put("see_also", JSONArray(draft.seeAlso))
+            .put("seeAlso", JSONArray(draft.seeAlso))
             .put("tags", JSONArray(draft.tags))
-            .put("category_id", draft.categoryId)
-
-        draft.controversyLevel?.let { payload.put("controversy_level", it) }
+            .put("categoryId", draft.categoryId)
+            .put("controversyLevel", draft.controversyLevel)
+            .put("status", "submitted")
 
         val response = post(path = "api/v1/term-drafts", payload = payload)
         parseTermDraftSubmission(response)
@@ -256,7 +256,7 @@ private class HttpGlossaryApiService(
             id = data.opt("id")?.toString()
                 ?: data.opt("draft_id")?.toString()
                 ?: throw GlossaryApiException(message = "Server returned no draft id."),
-            status = data.optString("status", "draft")
+            status = data.optString("status", "submitted")
         )
     }
 

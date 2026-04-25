@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS term_drafts (
     controversy_level SMALLINT NOT NULL DEFAULT 0,
     source_type TEXT NOT NULL DEFAULT 'manual',
     source_reference TEXT,
-    status TEXT NOT NULL DEFAULT 'draft',
+    status TEXT NOT NULL DEFAULT 'submitted',
     category_id TEXT REFERENCES categories(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS term_drafts (
     CHECK (LENGTH(TRIM(definition)) > 0),
     CHECK (LENGTH(TRIM(explanation)) > 0),
     CHECK (controversy_level BETWEEN 0 AND 3),
-    CHECK (status IN ('draft', 'reviewed', 'approved', 'rejected', 'published')),
+    CHECK (status IN ('submitted', 'approved', 'rejected', 'published')),
     CHECK (jsonb_typeof(see_also) = 'array'),
     CHECK (jsonb_typeof(tags) = 'array')
 );
@@ -76,8 +76,8 @@ BEGIN
         NEW.source_type := 'manual';
     END IF;
 
-    NEW.status := LOWER(TRIM(COALESCE(NEW.status, 'draft')));
-    IF NEW.status NOT IN ('draft', 'reviewed', 'approved', 'rejected', 'published') THEN
+    NEW.status := LOWER(TRIM(COALESCE(NEW.status, 'submitted')));
+    IF NEW.status NOT IN ('submitted', 'approved', 'rejected', 'published') THEN
         RAISE EXCEPTION 'invalid term draft status: %', NEW.status;
     END IF;
 

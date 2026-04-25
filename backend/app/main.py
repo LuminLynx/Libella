@@ -6,7 +6,7 @@ from typing import Any
 from fastapi import FastAPI, Query
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, Field
 
 from .ai_service import AIServiceError, AIUnavailableError, ai_service, ai_service_metadata
 from .migrations import run_migrations
@@ -44,14 +44,22 @@ class TermDraftRequest(BaseModel):
     definition: str = Field(min_length=1)
     explanation: str = Field(min_length=1)
     humor: str = ""
-    seeAlso: list[str] = Field(default_factory=list)
+    seeAlso: list[str] = Field(default_factory=list, validation_alias=AliasChoices("seeAlso", "see_also"))
     tags: list[str] = Field(default_factory=list)
-    controversyLevel: int = Field(default=0, ge=0, le=3)
-    sourceType: str = "manual"
-    sourceReference: str | None = None
-    status: str = "draft"
-    categoryId: str | None = None
-    contributorId: str = "anonymous"
+    controversyLevel: int = Field(default=0, ge=0, le=3, validation_alias=AliasChoices("controversyLevel", "controversy_level"))
+    sourceType: str = Field(default="manual", validation_alias=AliasChoices("sourceType", "source_type"))
+    sourceReference: str | None = Field(default=None, validation_alias=AliasChoices("sourceReference", "source_reference"))
+    status: str = "submitted"
+    categoryId: str = Field(min_length=1, validation_alias=AliasChoices("categoryId", "category_id"))
+    contributorId: str = Field(default="anonymous", validation_alias=AliasChoices("contributorId", "contributor_id"))
+    contributorMetadata: dict[str, Any] = Field(
+        default_factory=dict,
+        validation_alias=AliasChoices("contributorMetadata", "contributor_metadata"),
+    )
+    missingSearchEventId: int | None = Field(
+        default=None,
+        validation_alias=AliasChoices("missingSearchEventId", "missing_search_event_id"),
+    )
 
 
 class DraftStatusRequest(BaseModel):
@@ -121,6 +129,13 @@ def get_missing_queries(days: int = Query(default=30, ge=1, le=365), limit: int 
 
 @app.post("/api/v1/term-drafts")
 def post_term_draft(request: TermDraftRequest) -> JSONResponse:
+    if request.status.strip().lower() != "submitted":
+        return _envelope_response(
+            status_code=400,
+            data=None,
+            error={"code": "INVALID_DRAFT_STATUS", "message": "new drafts must be created with status 'submitted'"},
+        )
+
     payload = {
         "slug": request.slug,
         "term": request.term,
@@ -132,9 +147,11 @@ def post_term_draft(request: TermDraftRequest) -> JSONResponse:
         "controversy_level": request.controversyLevel,
         "source_type": request.sourceType,
         "source_reference": request.sourceReference,
-        "status": request.status,
+        "status": "submitted",
         "category_id": request.categoryId,
         "contributor_id": request.contributorId,
+        "contributor_metadata": request.contributorMetadata,
+        "missing_search_event_id": request.missingSearchEventId,
     }
 
     try:
