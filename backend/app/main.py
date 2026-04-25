@@ -50,10 +50,10 @@ class TermDraftRequest(BaseModel):
     tags: list[str] = Field(default_factory=list)
     controversy_level: int = Field(default=0, ge=0, le=3, alias="controversyLevel")
     source_type: str = Field(default="manual", alias="sourceType")
-    source_reference: str | None = Field(default=None, alias="sourceReference")
+    source_reference: str = Field(default="", alias="sourceReference")
     status: str = "submitted"
-    category_id: str = Field(min_length=1, alias="categoryId")
-    contributor_id: str = Field(default="anonymous", alias="contributorId")
+    category_id: str = Field(alias="categoryId")
+    contributor_id: str | None = Field(default=None, alias="contributorId")
     contributor_metadata: dict[str, Any] = Field(
         default_factory=dict,
         alias="contributorMetadata",
@@ -148,10 +148,10 @@ def post_term_draft(request: TermDraftRequest) -> JSONResponse:
         "tags": request.tags,
         "controversy_level": request.controversy_level,
         "source_type": request.source_type,
-        "source_reference": request.source_reference,
+        "source_reference": request.source_reference or None,
         "status": "submitted",
         "category_id": request.category_id,
-        "contributor_id": request.contributor_id,
+        "contributor_id": request.contributor_id or "anonymous",
         "contributor_metadata": request.contributor_metadata,
         "missing_search_event_id": request.missing_search_event_id,
     }
