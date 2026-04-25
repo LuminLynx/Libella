@@ -5,6 +5,7 @@ Requires DATABASE_URL (or POSTGRES_* fallback env vars) pointing at a reachable 
 
 from fastapi.testclient import TestClient
 
+from backend.app.db import get_connection
 from backend.app.main import app
 from backend.scripts.seed_db import seed
 
@@ -20,6 +21,9 @@ EXPECTED_CANONICAL_FIELDS = {
     "controversyLevel",
     "categoryId",
 }
+VERIFIER_CONTRIBUTORS = ("verify-user-1", "verify-user-2")
+VERIFIER_TERM_SLUGS = ("mixture-of-experts", "prompt-distillation")
+VERIFIER_TERM_IDS = ("term-mixture-of-experts", "term-prompt-distillation")
 
 
 def assert_envelope(payload: dict) -> None:
@@ -38,8 +42,45 @@ def assert_canonical_term_shape(term: dict) -> None:
     assert 0 <= term["controversyLevel"] <= 3
 
 
+def reset_verifier_contribution_data() -> None:
+    with get_connection() as connection:
+        connection.execute(
+            """
+            DELETE FROM contribution_events
+            WHERE contributor_id = ANY(%s)
+            """,
+            (list(VERIFIER_CONTRIBUTORS),),
+        )
+        connection.execute(
+            """
+            DELETE FROM contributor_scores
+            WHERE contributor_id = ANY(%s)
+            """,
+            (list(VERIFIER_CONTRIBUTORS),),
+        )
+        connection.execute(
+            """
+            DELETE FROM term_drafts
+            WHERE contributor_id = ANY(%s)
+               OR slug = ANY(%s)
+            """,
+            (list(VERIFIER_CONTRIBUTORS), list(VERIFIER_TERM_SLUGS)),
+        )
+        connection.execute(
+            """
+            DELETE FROM terms
+            WHERE source = 'manual:verification'
+               OR slug = ANY(%s)
+               OR id = ANY(%s)
+            """,
+            (list(VERIFIER_TERM_SLUGS), list(VERIFIER_TERM_IDS)),
+        )
+        connection.commit()
+
+
 def run_verification() -> None:
     seed(reset=True)
+    reset_verifier_contribution_data()
 
     with TestClient(app) as client:
         browse_resp = client.get("/api/v1/terms")
