@@ -6,7 +6,7 @@ from typing import Any
 from fastapi import FastAPI, Query
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, Field
 
 from .ai_service import AIServiceError, AIUnavailableError, ai_service, ai_service_metadata
 from .migrations import run_migrations
@@ -31,11 +31,11 @@ app = FastAPI(title="AI-101 Backend", version="0.3.0")
 
 class AskGlossaryRequest(BaseModel):
     question: str = Field(min_length=3, max_length=2000)
-    termId: str | None = None
+    term_id: str | None = Field(default=None, validation_alias=AliasChoices("termId", "term_id"), serialization_alias="termId")
 
 
 class GenerateArtifactRequest(BaseModel):
-    forceRefresh: bool = False
+    force_refresh: bool = Field(default=False, validation_alias=AliasChoices("forceRefresh", "force_refresh"), serialization_alias="forceRefresh")
 
 
 class TermDraftRequest(BaseModel):
@@ -44,14 +44,14 @@ class TermDraftRequest(BaseModel):
     definition: str = Field(min_length=1)
     explanation: str = Field(min_length=1)
     humor: str = ""
-    seeAlso: list[str] = Field(default_factory=list)
+    see_also: list[str] = Field(default_factory=list, validation_alias=AliasChoices("seeAlso", "see_also"), serialization_alias="seeAlso")
     tags: list[str] = Field(default_factory=list)
-    controversyLevel: int = Field(default=0, ge=0, le=3)
-    sourceType: str = "manual"
-    sourceReference: str | None = None
+    controversy_level: int = Field(default=0, ge=0, le=3, validation_alias=AliasChoices("controversyLevel", "controversy_level"), serialization_alias="controversyLevel")
+    source_type: str = Field(default="manual", validation_alias=AliasChoices("sourceType", "source_type"), serialization_alias="sourceType")
+    source_reference: str | None = Field(default=None, validation_alias=AliasChoices("sourceReference", "source_reference"), serialization_alias="sourceReference")
     status: str = "draft"
-    categoryId: str | None = None
-    contributorId: str = "anonymous"
+    category_id: str | None = Field(default=None, validation_alias=AliasChoices("categoryId", "category_id"), serialization_alias="categoryId")
+    contributor_id: str = Field(default="anonymous", validation_alias=AliasChoices("contributorId", "contributor_id"), serialization_alias="contributorId")
 
 
 class DraftStatusRequest(BaseModel):
@@ -127,14 +127,14 @@ def post_term_draft(request: TermDraftRequest) -> JSONResponse:
         "definition": request.definition,
         "explanation": request.explanation,
         "humor": request.humor,
-        "see_also": request.seeAlso,
+        "see_also": request.see_also,
         "tags": request.tags,
-        "controversy_level": request.controversyLevel,
-        "source_type": request.sourceType,
-        "source_reference": request.sourceReference,
+        "controversy_level": request.controversy_level,
+        "source_type": request.source_type,
+        "source_reference": request.source_reference,
         "status": request.status,
-        "category_id": request.categoryId,
-        "contributor_id": request.contributorId,
+        "category_id": request.category_id,
+        "contributor_id": request.contributor_id,
     }
 
     try:
@@ -194,10 +194,10 @@ def post_publish_term_draft(draft_id: int) -> JSONResponse:
 @app.get("/api/v1/contributors/{contributor_id}/summary")
 def get_contributor_contribution_summary(
     contributor_id: str,
-    recentLimit: int = Query(default=10, ge=1, le=50),
+    recent_limit: int = Query(default=10, ge=1, le=50, alias="recentLimit"),
 ) -> JSONResponse:
     try:
-        summary = get_contributor_summary(contributor_id, recent_limit=recentLimit)
+        summary = get_contributor_summary(contributor_id, recent_limit=recent_limit)
     except ValueError as error:
         return _envelope_response(
             status_code=400,
@@ -211,8 +211,8 @@ def get_contributor_contribution_summary(
 @app.post("/api/v1/ai/ask-glossary")
 def post_ask_glossary(request: AskGlossaryRequest) -> JSONResponse:
     term_context = None
-    if request.termId:
-        term_context = build_term_context(request.termId)
+    if request.term_id:
+        term_context = build_term_context(request.term_id)
         if term_context is None:
             return _envelope_response(
                 status_code=404,
@@ -240,12 +240,12 @@ def post_ask_glossary(request: AskGlossaryRequest) -> JSONResponse:
 
 @app.post("/api/v1/ai/terms/{term_id}/scenario")
 def post_generate_scenario(term_id: str, request: GenerateArtifactRequest) -> JSONResponse:
-    return _generate_term_artifact(term_id=term_id, artifact_type="scenario", force_refresh=request.forceRefresh)
+    return _generate_term_artifact(term_id=term_id, artifact_type="scenario", force_refresh=request.force_refresh)
 
 
 @app.post("/api/v1/ai/terms/{term_id}/challenge")
 def post_generate_challenge(term_id: str, request: GenerateArtifactRequest) -> JSONResponse:
-    return _generate_term_artifact(term_id=term_id, artifact_type="challenge", force_refresh=request.forceRefresh)
+    return _generate_term_artifact(term_id=term_id, artifact_type="challenge", force_refresh=request.force_refresh)
 
 
 def _generate_term_artifact(term_id: str, artifact_type: str, force_refresh: bool) -> JSONResponse:
