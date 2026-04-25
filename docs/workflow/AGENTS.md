@@ -145,13 +145,16 @@ Examples of commands that must not be run by Codex:
 - `./gradlew lint`
 
 Reason:
-Android build validation for this project is performed manually in Android Studio after PR review and pull.
+Codex's execution environment does not have a working Gradle toolchain for this project, so Gradle invocations there are unreliable and produce noise rather than validation. Authoritative Android build validation is performed manually in Android Studio after PR review and pull.
 
 For Android tasks, Codex should:
 - make code changes only
 - keep changes compile-oriented and minimal
 - rely on static code reasoning and file consistency checks
 - avoid attempting Android build validation in its own environment
+
+Note on other agents:
+Other agents (e.g. Claude) whose execution environment includes a working Gradle toolchain may run `./gradlew` for static and compile-level feedback when network access permits. This is supplementary only — Android Studio remains the authoritative validation environment for all agents (see §5.1). Per-agent capabilities are documented in their own files (e.g. `docs/workflow/CLAUDE_CAPABILITIES.md`).
 
 ---
 
