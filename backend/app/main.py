@@ -6,7 +6,7 @@ from typing import Any
 from fastapi import FastAPI, Query
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
-from pydantic import AliasChoices, BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from .ai_service import AIServiceError, AIUnavailableError, ai_service, ai_service_metadata
 from .migrations import run_migrations
@@ -46,21 +46,21 @@ class TermDraftRequest(BaseModel):
     definition: str = Field(min_length=1)
     explanation: str = Field(min_length=1)
     humor: str = ""
-    seeAlso: list[str] = Field(default_factory=list, validation_alias=AliasChoices("seeAlso", "see_also"))
+    see_also: list[str] = Field(default_factory=list, alias="seeAlso")
     tags: list[str] = Field(default_factory=list)
-    controversyLevel: int = Field(default=0, ge=0, le=3, validation_alias=AliasChoices("controversyLevel", "controversy_level"))
-    sourceType: str = Field(default="manual", validation_alias=AliasChoices("sourceType", "source_type"))
-    sourceReference: str | None = Field(default=None, validation_alias=AliasChoices("sourceReference", "source_reference"))
+    controversy_level: int = Field(default=0, ge=0, le=3, alias="controversyLevel")
+    source_type: str = Field(default="manual", alias="sourceType")
+    source_reference: str | None = Field(default=None, alias="sourceReference")
     status: str = "submitted"
-    categoryId: str = Field(min_length=1, validation_alias=AliasChoices("categoryId", "category_id"))
-    contributorId: str = Field(default="anonymous", validation_alias=AliasChoices("contributorId", "contributor_id"))
-    contributorMetadata: dict[str, Any] = Field(
+    category_id: str = Field(min_length=1, alias="categoryId")
+    contributor_id: str = Field(default="anonymous", alias="contributorId")
+    contributor_metadata: dict[str, Any] = Field(
         default_factory=dict,
-        validation_alias=AliasChoices("contributorMetadata", "contributor_metadata"),
+        alias="contributorMetadata",
     )
-    missingSearchEventId: int | None = Field(
+    missing_search_event_id: int | None = Field(
         default=None,
-        validation_alias=AliasChoices("missingSearchEventId", "missing_search_event_id"),
+        alias="missingSearchEventId",
     )
 
 
@@ -144,16 +144,16 @@ def post_term_draft(request: TermDraftRequest) -> JSONResponse:
         "definition": request.definition,
         "explanation": request.explanation,
         "humor": request.humor,
-        "see_also": request.seeAlso,
+        "see_also": request.see_also,
         "tags": request.tags,
-        "controversy_level": request.controversyLevel,
-        "source_type": request.sourceType,
-        "source_reference": request.sourceReference,
+        "controversy_level": request.controversy_level,
+        "source_type": request.source_type,
+        "source_reference": request.source_reference,
         "status": "submitted",
-        "category_id": request.categoryId,
-        "contributor_id": request.contributorId,
-        "contributor_metadata": request.contributorMetadata,
-        "missing_search_event_id": request.missingSearchEventId,
+        "category_id": request.category_id,
+        "contributor_id": request.contributor_id,
+        "contributor_metadata": request.contributor_metadata,
+        "missing_search_event_id": request.missing_search_event_id,
     }
 
     try:
