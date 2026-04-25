@@ -1,12 +1,10 @@
-from __future__ import annotations
-
 from datetime import timedelta
 from typing import Any
 
 from fastapi import FastAPI, Query
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
-from pydantic import AliasChoices, BaseModel, Field
+from pydantic import BaseModel, Field
 
 from .ai_service import AIServiceError, AIUnavailableError, ai_service, ai_service_metadata
 from .migrations import run_migrations
@@ -31,11 +29,11 @@ app = FastAPI(title="AI-101 Backend", version="0.3.0")
 
 class AskGlossaryRequest(BaseModel):
     question: str = Field(min_length=3, max_length=2000)
-    term_id: str | None = Field(default=None, validation_alias=AliasChoices("termId", "term_id"), serialization_alias="termId")
+    termId: str | None = None
 
 
 class GenerateArtifactRequest(BaseModel):
-    force_refresh: bool = Field(default=False, validation_alias=AliasChoices("forceRefresh", "force_refresh"), serialization_alias="forceRefresh")
+    forceRefresh: bool = False
 
 
 class TermDraftRequest(BaseModel):
@@ -44,14 +42,16 @@ class TermDraftRequest(BaseModel):
     definition: str = Field(min_length=1)
     explanation: str = Field(min_length=1)
     humor: str = ""
-    see_also: list[str] = Field(default_factory=list, validation_alias=AliasChoices("seeAlso", "see_also"), serialization_alias="seeAlso")
+    seeAlso: list[str] = Field(default_factory=list)
     tags: list[str] = Field(default_factory=list)
-    controversy_level: int = Field(default=0, ge=0, le=3, validation_alias=AliasChoices("controversyLevel", "controversy_level"), serialization_alias="controversyLevel")
-    source_type: str = Field(default="manual", validation_alias=AliasChoices("sourceType", "source_type"), serialization_alias="sourceType")
-    source_reference: str | None = Field(default=None, validation_alias=AliasChoices("sourceReference", "source_reference"), serialization_alias="sourceReference")
+    controversyLevel: int = Field(default=0, ge=0, le=3)
+    sourceType: str = "manual"
+    sourceReference: str | None = None
     status: str = "draft"
-    category_id: str | None = Field(default=None, validation_alias=AliasChoices("categoryId", "category_id"), serialization_alias="categoryId")
-    contributor_id: str = Field(default="anonymous", validation_alias=AliasChoices("contributorId", "contributor_id"), serialization_alias="contributorId")
+    categoryId: str | None = None
+    contributorId: str = "anonymous"
+    contributorMetadata: dict[str, Any] = Field(default_factory=dict)
+    missingSearchEventId: int | None = None
 
 
 class DraftStatusRequest(BaseModel):
@@ -115,7 +115,10 @@ def get_term_search_results(q: str = Query(default="", min_length=0)) -> JSONRes
 
 
 @app.get("/api/v1/search/missing-queries")
-def get_missing_queries(days: int = Query(default=30, ge=1, le=365), limit: int = Query(default=20, ge=1, le=100)) -> JSONResponse:
+def get_missing_queries(
+    days: int = Query(default=30, ge=1, le=365),
+    limit: int = Query(default=20, ge=1, le=100),
+) -> JSONResponse:
     return _envelope_response(data=get_top_missing_queries(days=days, limit=limit))
 
 
@@ -127,14 +130,16 @@ def post_term_draft(request: TermDraftRequest) -> JSONResponse:
         "definition": request.definition,
         "explanation": request.explanation,
         "humor": request.humor,
-        "see_also": request.see_also,
+        "see_also": request.seeAlso,
         "tags": request.tags,
-        "controversy_level": request.controversy_level,
-        "source_type": request.source_type,
-        "source_reference": request.source_reference,
+        "controversy_level": request.controversyLevel,
+        "source_type": request.sourceType,
+        "source_reference": request.sourceReference,
         "status": request.status,
-        "category_id": request.category_id,
-        "contributor_id": request.contributor_id,
+        "category_id": request.categoryId,
+        "contributor_id": request.contributorId,
+        "contributor_metadata": request.contributorMetadata,
+        "missing_search_event_id": request.missingSearchEventId,
     }
 
     try:
@@ -194,10 +199,10 @@ def post_publish_term_draft(draft_id: int) -> JSONResponse:
 @app.get("/api/v1/contributors/{contributor_id}/summary")
 def get_contributor_contribution_summary(
     contributor_id: str,
-    recent_limit: int = Query(default=10, ge=1, le=50, alias="recentLimit"),
+    recentLimit: int = Query(default=10, ge=1, le=50),
 ) -> JSONResponse:
     try:
-        summary = get_contributor_summary(contributor_id, recent_limit=recent_limit)
+        summary = get_contributor_summary(contributor_id, recent_limit=recentLimit)
     except ValueError as error:
         return _envelope_response(
             status_code=400,
@@ -211,8 +216,8 @@ def get_contributor_contribution_summary(
 @app.post("/api/v1/ai/ask-glossary")
 def post_ask_glossary(request: AskGlossaryRequest) -> JSONResponse:
     term_context = None
-    if request.term_id:
-        term_context = build_term_context(request.term_id)
+    if request.termId:
+        term_context = build_term_context(request.termId)
         if term_context is None:
             return _envelope_response(
                 status_code=404,
@@ -240,12 +245,20 @@ def post_ask_glossary(request: AskGlossaryRequest) -> JSONResponse:
 
 @app.post("/api/v1/ai/terms/{term_id}/scenario")
 def post_generate_scenario(term_id: str, request: GenerateArtifactRequest) -> JSONResponse:
-    return _generate_term_artifact(term_id=term_id, artifact_type="scenario", force_refresh=request.force_refresh)
+    return _generate_term_artifact(
+        term_id=term_id,
+        artifact_type="scenario",
+        force_refresh=request.forceRefresh,
+    )
 
 
 @app.post("/api/v1/ai/terms/{term_id}/challenge")
 def post_generate_challenge(term_id: str, request: GenerateArtifactRequest) -> JSONResponse:
-    return _generate_term_artifact(term_id=term_id, artifact_type="challenge", force_refresh=request.force_refresh)
+    return _generate_term_artifact(
+        term_id=term_id,
+        artifact_type="challenge",
+        force_refresh=request.forceRefresh,
+    )
 
 
 def _generate_term_artifact(term_id: str, artifact_type: str, force_refresh: bool) -> JSONResponse:
