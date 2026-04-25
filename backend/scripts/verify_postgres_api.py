@@ -5,6 +5,7 @@ Requires DATABASE_URL (or POSTGRES_* fallback env vars) pointing at a reachable 
 
 from fastapi.testclient import TestClient
 
+from backend.app.db import get_connection
 from backend.app.main import app
 from backend.scripts.seed_db import seed
 
@@ -20,6 +21,9 @@ EXPECTED_CANONICAL_FIELDS = {
     "controversyLevel",
     "categoryId",
 }
+VERIFIER_CONTRIBUTORS = ("verify-user-1", "verify-user-2")
+VERIFIER_TERM_SLUGS = ("mixture-of-experts", "prompt-distillation")
+VERIFIER_TERM_IDS = ("term-mixture-of-experts", "term-prompt-distillation")
 
 
 def assert_envelope(payload: dict) -> None:
@@ -38,8 +42,45 @@ def assert_canonical_term_shape(term: dict) -> None:
     assert 0 <= term["controversyLevel"] <= 3
 
 
+def reset_verifier_contribution_data() -> None:
+    with get_connection() as connection:
+        connection.execute(
+            """
+            DELETE FROM contribution_events
+            WHERE contributor_id = ANY(%s)
+            """,
+            (list(VERIFIER_CONTRIBUTORS),),
+        )
+        connection.execute(
+            """
+            DELETE FROM contributor_scores
+            WHERE contributor_id = ANY(%s)
+            """,
+            (list(VERIFIER_CONTRIBUTORS),),
+        )
+        connection.execute(
+            """
+            DELETE FROM term_drafts
+            WHERE contributor_id = ANY(%s)
+               OR slug = ANY(%s)
+            """,
+            (list(VERIFIER_CONTRIBUTORS), list(VERIFIER_TERM_SLUGS)),
+        )
+        connection.execute(
+            """
+            DELETE FROM terms
+            WHERE source = 'manual:verification'
+               OR slug = ANY(%s)
+               OR id = ANY(%s)
+            """,
+            (list(VERIFIER_TERM_SLUGS), list(VERIFIER_TERM_IDS)),
+        )
+        connection.commit()
+
+
 def run_verification() -> None:
     seed(reset=True)
+    reset_verifier_contribution_data()
 
     with TestClient(app) as client:
         browse_resp = client.get("/api/v1/terms")
@@ -107,11 +148,13 @@ def run_verification() -> None:
             "seeAlso": ["transformer", "attention mechanism"],
             "tags": ["Architecture", "Sparse Models", "architecture"],
             "controversyLevel": 1,
-            "status": "draft",
+            "status": "submitted",
             "categoryId": "cat-ml-foundations",
             "sourceType": "manual",
             "sourceReference": "verification",
             "contributorId": "verify-user-1",
+            "contributorMetadata": {"displayName": "Verifier One"},
+            "missingSearchEventId": None,
         }
         create_draft_resp = client.post("/api/v1/term-drafts", json=draft_payload)
         assert create_draft_resp.status_code == 201
@@ -120,13 +163,20 @@ def run_verification() -> None:
         draft = create_draft_payload["data"]
         assert draft["slug"] == "mixture-of-experts"
         assert draft["tags"] == ["architecture", "sparse-models"]
-        assert draft["status"] == "draft"
+        assert draft["status"] == "submitted"
         assert draft["contributorId"] == "verify-user-1"
+        assert draft["contributorMetadata"]["displayName"] == "Verifier One"
+
+        pre_publish_search_resp = client.get("/api/v1/search/terms", params={"q": "Mixture of Experts"})
+        assert pre_publish_search_resp.status_code == 200
+        pre_publish_search_payload = pre_publish_search_resp.json()
+        assert not any(item["slug"] == "mixture-of-experts" for item in pre_publish_search_payload["data"])
 
         approve_resp = client.post(f"/api/v1/term-drafts/{draft['id']}/status", json={"status": "approved"})
         assert approve_resp.status_code == 200
         approve_payload = approve_resp.json()
         assert approve_payload["data"]["status"] == "approved"
+        assert approve_payload["data"]["contributorMetadata"]["displayName"] == "Verifier One"
 
         publish_resp = client.post(f"/api/v1/term-drafts/{draft['id']}/publish")
         assert publish_resp.status_code == 200
@@ -137,7 +187,36 @@ def run_verification() -> None:
         assert published_term["slug"] == "mixture-of-experts"
         assert_canonical_term_shape(published_term)
         assert published_term["tags"] == ["architecture", "sparse-models"]
-        assert "transformer" in published_term["seeAlso"]
+        assert any(item.strip().lower() == "transformer" for item in published_term["seeAlso"])
+        assert publish_payload["data"]["draft"]["publishedTermId"] == published_term["id"]
+
+        double_publish_resp = client.post(f"/api/v1/term-drafts/{draft['id']}/publish")
+        assert double_publish_resp.status_code == 400
+        double_publish_payload = double_publish_resp.json()
+        assert_envelope(double_publish_payload)
+        assert double_publish_payload["error"]["code"] == "PUBLISH_VALIDATION_FAILED"
+
+        rejected_draft_payload = {
+            "term": "Prompt Distillation",
+            "definition": "Compressing prompts while preserving behavior.",
+            "explanation": "A rejected test draft to verify rejected drafts cannot be published.",
+            "categoryId": "cat-ml-foundations",
+            "status": "submitted",
+            "contributorId": "verify-user-2",
+        }
+        rejected_create_resp = client.post("/api/v1/term-drafts", json=rejected_draft_payload)
+        assert rejected_create_resp.status_code == 201
+        rejected_draft_id = rejected_create_resp.json()["data"]["id"]
+
+        reject_resp = client.post(f"/api/v1/term-drafts/{rejected_draft_id}/status", json={"status": "rejected"})
+        assert reject_resp.status_code == 200
+        assert reject_resp.json()["data"]["status"] == "rejected"
+
+        rejected_publish_resp = client.post(f"/api/v1/term-drafts/{rejected_draft_id}/publish")
+        assert rejected_publish_resp.status_code == 400
+        rejected_publish_payload = rejected_publish_resp.json()
+        assert_envelope(rejected_publish_payload)
+        assert rejected_publish_payload["error"]["code"] == "PUBLISH_VALIDATION_FAILED"
 
         contributor_summary_resp = client.get("/api/v1/contributors/verify-user-1/summary")
         assert contributor_summary_resp.status_code == 200
@@ -152,6 +231,7 @@ def run_verification() -> None:
         assert event_types["draft_submitted"]["count"] >= 1
         assert event_types["draft_approved"]["count"] >= 1
         assert event_types["draft_published"]["count"] >= 1
+        assert len(summary["recentEvents"]) >= 3
 
         search_new_term_resp = client.get("/api/v1/search/terms", params={"q": "Mixture of Experts"})
         assert search_new_term_resp.status_code == 200

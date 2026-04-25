@@ -15,8 +15,8 @@ CREATE TABLE IF NOT EXISTS contribution_events (
     CHECK (
         event_type IN (
             'draft_submitted',
-            'draft_reviewed',
             'draft_approved',
+            'draft_rejected',
             'draft_published'
         )
     )

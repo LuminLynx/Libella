@@ -60,16 +60,22 @@ TERM_GROUP_BY = """
         t.updated_at
 """
 
-DRAFT_STATUSES = {"draft", "reviewed", "approved", "rejected", "published"}
+DRAFT_STATUSES = {"submitted", "approved", "rejected", "published"}
+ALLOWED_STATUS_TRANSITIONS: dict[str, set[str]] = {
+    "submitted": {"approved", "rejected"},
+    "approved": {"published"},
+    "rejected": set(),
+    "published": set(),
+}
 CONTRIBUTION_EVENT_POINTS = {
     "draft_submitted": 5,
-    "draft_reviewed": 0,
     "draft_approved": 15,
+    "draft_rejected": 0,
     "draft_published": 25,
 }
 STATUS_TO_EVENT_TYPE = {
-    "reviewed": "draft_reviewed",
     "approved": "draft_approved",
+    "rejected": "draft_rejected",
 }
 
 
@@ -143,13 +149,18 @@ def validate_draft_payload(draft: dict[str, Any]) -> dict[str, Any]:
     see_also = [slugify(item) for item in _to_list(draft.get("see_also"))]
     tags = normalize_tags(_to_list(draft.get("tags")))
 
-    category_id = draft.get("category_id")
-    if category_id is not None:
-        category_id = str(category_id).strip() or None
+    category_id = str(draft.get("category_id", "")).strip()
+    if not category_id:
+        raise ValueError("category_id is required")
 
     contributor_id = _normalize_spaces(str(draft.get("contributor_id", "anonymous"))) or "anonymous"
+    contributor_metadata_raw = draft.get("contributor_metadata")
+    contributor_metadata = contributor_metadata_raw if isinstance(contributor_metadata_raw, dict) else {}
+    missing_search_event_id = draft.get("missing_search_event_id")
+    if missing_search_event_id is not None:
+        missing_search_event_id = int(missing_search_event_id)
 
-    status = str(draft.get("status", "draft")).strip().lower()
+    status = str(draft.get("status", "submitted")).strip().lower()
     if status not in DRAFT_STATUSES:
         raise ValueError(f"status must be one of: {', '.join(sorted(DRAFT_STATUSES))}")
 
@@ -167,6 +178,8 @@ def validate_draft_payload(draft: dict[str, Any]) -> dict[str, Any]:
         "status": status,
         "category_id": category_id,
         "contributor_id": contributor_id,
+        "contributor_metadata": contributor_metadata,
+        "missing_search_event_id": missing_search_event_id,
     }
 
 
@@ -317,8 +330,10 @@ def create_term_draft(payload: dict[str, Any]) -> dict[str, Any]:
                 source_reference,
                 status,
                 category_id,
-                contributor_id
-            ) VALUES (%s, %s, %s, %s, %s, %s::jsonb, %s::jsonb, %s, %s, %s, %s, %s, %s)
+                contributor_id,
+                contributor_metadata,
+                missing_search_event_id
+            ) VALUES (%s, %s, %s, %s, %s, %s::jsonb, %s::jsonb, %s, %s, %s, %s, %s, %s, %s::jsonb, %s)
             RETURNING *
             """,
             (
@@ -335,6 +350,8 @@ def create_term_draft(payload: dict[str, Any]) -> dict[str, Any]:
                 draft["status"],
                 draft["category_id"],
                 draft["contributor_id"],
+                json.dumps(draft["contributor_metadata"]),
+                draft["missing_search_event_id"],
             ),
         ).fetchone()
         _record_contribution_event(
@@ -367,6 +384,14 @@ def update_draft_status(draft_id: int, status: str) -> dict[str, Any] | None:
         if not current_draft:
             return None
 
+        previous_status = current_draft["status"]
+        if normalized_status == previous_status:
+            raise ValueError(f"draft is already '{normalized_status}'")
+
+        allowed_transitions = ALLOWED_STATUS_TRANSITIONS.get(previous_status, set())
+        if normalized_status not in allowed_transitions:
+            raise ValueError(f"transition '{previous_status}' -> '{normalized_status}' is not allowed")
+
         row = connection.execute(
             """
             UPDATE term_drafts
@@ -386,7 +411,7 @@ def update_draft_status(draft_id: int, status: str) -> dict[str, Any] | None:
                 draft_id=draft_id,
                 event_type=event_type,
                 metadata={
-                    "previousStatus": current_draft["status"],
+                    "previousStatus": previous_status,
                     "newStatus": normalized_status,
                 },
             )
@@ -406,6 +431,8 @@ def publish_term_draft(draft_id: int) -> dict[str, Any] | None:
             return None
 
         draft = validate_draft_payload(dict(draft_row))
+        if draft_row["status"] == "published":
+            raise ValueError("draft has already been published")
         if draft_row["status"] != "approved":
             raise ValueError("draft must have status 'approved' before publishing")
 
@@ -458,9 +485,10 @@ def publish_term_draft(draft_id: int) -> dict[str, Any] | None:
                 tags,
                 related_terms,
                 source,
+                source_draft_id,
                 created_at,
                 updated_at
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
             ON CONFLICT (slug)
             DO UPDATE SET
                 term = EXCLUDED.term,
@@ -474,6 +502,7 @@ def publish_term_draft(draft_id: int) -> dict[str, Any] | None:
                 tags = EXCLUDED.tags,
                 related_terms = EXCLUDED.related_terms,
                 source = EXCLUDED.source,
+                source_draft_id = EXCLUDED.source_draft_id,
                 updated_at = NOW()
             """,
             (
@@ -490,6 +519,7 @@ def publish_term_draft(draft_id: int) -> dict[str, Any] | None:
                 ",".join(draft["tags"]),
                 ",".join(related_term_ids),
                 source,
+                draft_id,
             ),
         )
 
@@ -509,11 +539,12 @@ def publish_term_draft(draft_id: int) -> dict[str, Any] | None:
             UPDATE term_drafts
             SET status = 'published',
                 category_id = %s,
+                published_term_id = %s,
                 updated_at = NOW()
             WHERE id = %s
             RETURNING *
             """,
-            (category_id, draft_id),
+            (category_id, term_id, draft_id),
         ).fetchone()
         _record_contribution_event(
             connection=connection,
@@ -613,7 +644,7 @@ def get_contributor_summary(contributor_id: str, *, recent_limit: int = 10) -> d
                 "metadata": row["metadata"],
                 "createdAt": row["created_at"],
             }
-            for row in recent_events_map_term_row
+            for row in recent_events
         ],
     }
 
@@ -748,6 +779,9 @@ def _map_draft_row(row: Any) -> dict[str, Any]:
         "status": row["status"],
         "categoryId": row["category_id"],
         "contributorId": row["contributor_id"],
+        "contributorMetadata": row["contributor_metadata"] or {},
+        "missingSearchEventId": row["missing_search_event_id"],
+        "publishedTermId": row["published_term_id"],
         "createdAt": row["created_at"],
         "updatedAt": row["updated_at"],
     }

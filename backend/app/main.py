@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from datetime import timedelta
 from typing import Any
 
@@ -52,6 +50,8 @@ class TermDraftRequest(BaseModel):
     status: str = "draft"
     categoryId: str | None = None
     contributorId: str = "anonymous"
+    contributorMetadata: dict[str, Any] = Field(default_factory=dict)
+    missingSearchEventId: int | None = None
 
 
 class DraftStatusRequest(BaseModel):
@@ -115,7 +115,10 @@ def get_term_search_results(q: str = Query(default="", min_length=0)) -> JSONRes
 
 
 @app.get("/api/v1/search/missing-queries")
-def get_missing_queries(days: int = Query(default=30, ge=1, le=365), limit: int = Query(default=20, ge=1, le=100)) -> JSONResponse:
+def get_missing_queries(
+    days: int = Query(default=30, ge=1, le=365),
+    limit: int = Query(default=20, ge=1, le=100),
+) -> JSONResponse:
     return _envelope_response(data=get_top_missing_queries(days=days, limit=limit))
 
 
@@ -135,6 +138,8 @@ def post_term_draft(request: TermDraftRequest) -> JSONResponse:
         "status": request.status,
         "category_id": request.categoryId,
         "contributor_id": request.contributorId,
+        "contributor_metadata": request.contributorMetadata,
+        "missing_search_event_id": request.missingSearchEventId,
     }
 
     try:
@@ -240,12 +245,20 @@ def post_ask_glossary(request: AskGlossaryRequest) -> JSONResponse:
 
 @app.post("/api/v1/ai/terms/{term_id}/scenario")
 def post_generate_scenario(term_id: str, request: GenerateArtifactRequest) -> JSONResponse:
-    return _generate_term_artifact(term_id=term_id, artifact_type="scenario", force_refresh=request.forceRefresh)
+    return _generate_term_artifact(
+        term_id=term_id,
+        artifact_type="scenario",
+        force_refresh=request.forceRefresh,
+    )
 
 
 @app.post("/api/v1/ai/terms/{term_id}/challenge")
 def post_generate_challenge(term_id: str, request: GenerateArtifactRequest) -> JSONResponse:
-    return _generate_term_artifact(term_id=term_id, artifact_type="challenge", force_refresh=request.forceRefresh)
+    return _generate_term_artifact(
+        term_id=term_id,
+        artifact_type="challenge",
+        force_refresh=request.forceRefresh,
+    )
 
 
 def _generate_term_artifact(term_id: str, artifact_type: str, force_refresh: bool) -> JSONResponse:
