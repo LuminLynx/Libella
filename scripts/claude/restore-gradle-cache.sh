@@ -49,6 +49,14 @@ log "extracting into $GRADLE_HOME ..."
 # Tarball is rooted at $GRADLE_HOME and is expected to contain
 # caches/modules-2 and caches/jars-9.
 if [[ "$CACHE_URL" == *.zst ]]; then
+  if ! command -v zstd >/dev/null 2>&1; then
+    log "zstd not installed; attempting apt-get install ..."
+    if command -v sudo >/dev/null 2>&1; then SUDO="sudo"; else SUDO=""; fi
+    $SUDO apt-get install -y zstd >/dev/null 2>&1 || {
+      log "could not install zstd; skipping restore." >&2
+      exit 0
+    }
+  fi
   tar --zstd -xf "$TMP" -C "$GRADLE_HOME"
 else
   tar -xf "$TMP" -C "$GRADLE_HOME"
