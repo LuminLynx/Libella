@@ -37,18 +37,19 @@ Full project context, MVP constraints, and product direction live in `AGENTS.md`
 ### 3.3 Android (Kotlin / Jetpack Compose / Gradle)
 Claude's execution environment **does have a working Gradle toolchain**, so Claude can:
 - read and edit Android sources, Gradle scripts, manifests, and resources
-- run `./gradlew <task>` via the project wrapper for static and compile-level feedback when network access permits
+- run `./gradlew <task>` via the project wrapper for static and compile-level feedback (dependency resolution, plugin/config inspection, `tasks`, `projects`, `dependencies`)
 
 Project Gradle facts Claude follows:
 - Project Gradle version (per `gradle/wrapper/gradle-wrapper.properties`): **8.7**
 - Android Gradle Plugin (per `app/build.gradle.kts`): **8.5.2**
 - Always use `./gradlew` (the wrapper) rather than any system-installed Gradle, so the project's pinned version is honored.
 
-Known network constraint:
-- Some sandboxed runs cannot reach `dl.google.com/dl/android/maven2`, which means the Android Gradle Plugin and other Google-hosted artifacts may fail to resolve. When that happens, full Android builds will not complete in Claude's environment.
-- In those cases, Claude falls back to static review and reasoning, and explicitly says so rather than claiming a green build.
+Network and toolchain in the cloud sandbox:
+- The Claude Code cloud sandbox proxy denies `dl.google.com` and `maven.google.com` (the Android Gradle Plugin's Maven hosts), so AGP cannot be resolved at session time.
+- This is mitigated by a SessionStart hook (`.claude/settings.json` → `scripts/claude/restore-gradle-cache.sh`) that restores a pre-baked Gradle dependency cache from a sandbox-reachable URL (`GRADLE_CACHE_URL`). The cache is captured offline by `scripts/claude/capture-gradle-cache.sh` and re-captured whenever AGP / Kotlin / Compose versions change.
+- The Android **SDK** is **not** installed in the cloud sandbox. Tasks that compile Kotlin/Java sources (`assembleDebug`, `lint`, unit tests, etc.) cannot run there. Static analysis, dependency resolution, and build-script inspection do work.
 
-Authoritative validation for Android still happens in **Android Studio** per `AGENTS.md` §5.1. Anything Claude runs locally is supplementary.
+Authoritative validation for Android still happens in **Android Studio** per `AGENTS.md` §5.1. Anything Claude runs in the cloud sandbox is supplementary.
 
 ### 3.4 Research and reasoning
 - Spawn parallel subagents for codebase exploration or implementation planning
