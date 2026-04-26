@@ -80,7 +80,6 @@ fun AppNav() {
         composable("ai_tools") { AiToolsScreen(onNavigate = { route -> navController.navigate(route) }) }
         composable("trend_watcher") { TrendWatcherScreen() }
         composable("ask_glossary") { ChatScreen(repository = glossaryRepository) }
-        composable("chat") { ChatScreen(repository = glossaryRepository) }
         composable("settings") { SettingsScreen() }
     }
 }
