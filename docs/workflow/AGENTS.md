@@ -84,13 +84,17 @@ Avoid:
 ### 4.2 Do not invent scope
 Agents must not add features outside approved scope.
 
-Examples of disallowed MVP additions unless explicitly requested:
+The following are approved and either implemented or explicitly planned — agents may work on them:
+- AI Learning Layer (Ask Glossary, AI Scenario, AI Challenge)
+- Term Draft contribution flow
+- Trend Watcher (AI Terms Trend of the week)
+
+The following are explicitly deferred — do not add unless approved:
 - authentication
 - bookmarks/favorites
-- AI chat
-- trend features
 - admin tooling
 - analytics systems
+- user accounts
 
 ### 4.3 Prefer clean architecture
 Agents should favor:
@@ -221,10 +225,13 @@ Do not steer the content back toward a FOSS-focused glossary unless explicitly r
 Do not add unless explicitly approved:
 - accounts
 - auth
-- chat
-- AI answer generation inside the app
 - admin dashboard
 - advanced sync features
+
+The following are approved post-core extensions (see §4.2):
+- AI answer generation / Ask Glossary (implemented)
+- Term Draft contribution flow (implemented)
+- Trend Watcher (planned)
 
 ---
 

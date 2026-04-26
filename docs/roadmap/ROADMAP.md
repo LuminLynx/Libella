@@ -76,16 +76,20 @@ These are the features that belong in the first usable version:
 7. Backend API
 8. Database-backed glossary content
 
-### 4.2 Post-MVP features
-These should remain postponed until the MVP is solid:
+### 4.2 Extension features (approved, post-core)
+These features are approved and either already implemented or planned. They extend the core glossary experience and should not be blocked once the MVP core is stable:
 
-1. AI tools inside the app
-2. Chat / Ask the Glossary
-3. Trend watcher features
-4. Favorites / bookmarks
-5. History / recently viewed
-6. User accounts
-7. Admin panel
+1. AI Learning Layer — Ask Glossary, AI Scenario, AI Challenge (implemented)
+2. Term Draft contribution flow — users can submit missing terms for review (implemented)
+3. Trend Watcher — AI Terms Trend of the week (placeholder in place, to be implemented)
+
+### 4.3 Explicitly deferred features
+These are not planned for the current development cycle and should not be added unless explicitly approved:
+
+1. Favorites / bookmarks
+2. History / recently viewed
+3. User accounts
+4. Admin panel
 
 ---
 

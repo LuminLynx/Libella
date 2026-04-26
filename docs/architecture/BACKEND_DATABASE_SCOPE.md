@@ -108,15 +108,17 @@ The backend should support these use cases in the MVP:
 5. Return terms filtered by search query
 
 ### 6.1 Out of scope for MVP
-The backend should **not** include these in MVP:
+The backend should **not** include these unless explicitly approved:
 - authentication
 - user profiles
 - bookmarks/favorites sync
-- chat
-- AI-generated answers inside the app
-- trend ingestion
 - admin dashboard
-- analytics platform features unless explicitly added later
+- analytics platform features
+
+The following are approved post-core extensions already implemented in the backend:
+- AI Learning Layer endpoints (`/api/v1/ai/*`) — Ask Glossary, Scenario, Challenge
+- Term Draft contribution pipeline (`/api/v1/term-drafts/*`, `/api/v1/contributors/*`)
+- Trend Watcher backend support — not yet implemented; to be added when the feature is built
 
 ---
 
