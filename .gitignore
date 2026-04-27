@@ -9,3 +9,4 @@ local.properties
 
 .venv/
 docs/test.kt
+gradle-cache-agp-8.5.2-v1.tar.zst
