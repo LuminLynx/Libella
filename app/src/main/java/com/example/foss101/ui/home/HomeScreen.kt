@@ -3,27 +3,78 @@ package com.example.foss101.ui.home
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import com.example.foss101.ui.components.PrimaryActionButton
+import com.example.foss101.ui.components.NavigationTile
 import com.example.foss101.ui.components.SectionHeader
 
-private val HomeRoutes = listOf(
-    "ai_tools" to "AI Learning Layer",
-    "ask_glossary" to "Ask Glossary",
-    "browse" to "Browse Terms",
-    "categories" to "Categories",
-    "search" to "Search",
-    "settings" to "Settings"
+private data class HomeDestination(
+    val route: String,
+    val title: String,
+    val description: String,
+    val icon: ImageVector
+)
+
+private val HomeDestinations = listOf(
+    HomeDestination(
+        route = "ai_tools",
+        title = "AI Learning Layer",
+        description = "Interactive scenarios and challenges",
+        icon = Icons.Filled.AutoAwesome
+    ),
+    HomeDestination(
+        route = "ask_glossary",
+        title = "Ask Glossary",
+        description = "Glossary-grounded AI answers",
+        icon = Icons.Filled.Chat
+    ),
+    HomeDestination(
+        route = "browse",
+        title = "Browse Terms",
+        description = "All glossary terms in one place",
+        icon = Icons.Filled.MenuBook
+    ),
+    HomeDestination(
+        route = "categories",
+        title = "Categories",
+        description = "Explore terms by topic",
+        icon = Icons.Filled.Category
+    ),
+    HomeDestination(
+        route = "search",
+        title = "Search",
+        description = "Find AI terms by keyword",
+        icon = Icons.Filled.Search
+    ),
+    HomeDestination(
+        route = "settings",
+        title = "Settings",
+        description = "App preferences and product info",
+        icon = Icons.Filled.Settings
+    )
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -31,11 +82,25 @@ private val HomeRoutes = listOf(
 fun HomeScreen(onNavigate: (String) -> Unit) {
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("AI-101") })
+            TopAppBar(
+                title = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Home,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Text("AI-101", style = MaterialTheme.typography.titleLarge)
+                    }
+                }
+            )
         }
     ) { innerPadding ->
         HomeScreenContent(
-            routes = HomeRoutes,
+            destinations = HomeDestinations,
             onNavigate = onNavigate,
             contentPadding = innerPadding
         )
@@ -44,7 +109,7 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
 
 @Composable
 private fun HomeScreenContent(
-    routes: List<Pair<String, String>>,
+    destinations: List<HomeDestination>,
     onNavigate: (String) -> Unit,
     contentPadding: PaddingValues
 ) {
@@ -52,24 +117,27 @@ private fun HomeScreenContent(
         modifier = Modifier
             .fillMaxSize()
             .padding(contentPadding)
-            .padding(horizontal = 20.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+            .padding(horizontal = 20.dp, vertical = 12.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Text(
             text = "Learn AI terms with glossary-backed AI tutoring, scenarios, and challenges.",
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
         SectionHeader(
             title = "Explore",
-            modifier = Modifier.padding(top = 8.dp)
+            modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
         )
 
-        routes.forEach { (route, label) ->
-            PrimaryActionButton(
-                text = label,
-                onClick = { onNavigate(route) },
+        destinations.forEach { destination ->
+            NavigationTile(
+                title = destination.title,
+                description = destination.description,
+                leadingIcon = destination.icon,
+                onClick = { onNavigate(destination.route) },
                 modifier = Modifier.fillMaxWidth()
             )
         }

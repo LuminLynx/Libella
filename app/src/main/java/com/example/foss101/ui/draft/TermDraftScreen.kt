@@ -4,15 +4,18 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -26,11 +29,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.foss101.data.repository.GlossaryRepository
 import com.example.foss101.ui.components.ErrorState
+import com.example.foss101.ui.components.PrimaryActionButton
 import com.example.foss101.ui.components.screenContentPadding
 import com.example.foss101.viewmodel.TermDraftViewModel
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Icon
+
+private val MultiLineFieldMinHeight = 96.dp
+private val MultiLineFieldMaxHeight = 140.dp
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TermDraftScreen(
@@ -63,7 +68,7 @@ fun TermDraftScreen(
             modifier = Modifier.screenContentPadding(padding),
             state = listState,
             contentPadding = PaddingValues(bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             item {
                 Text(
@@ -74,100 +79,67 @@ fun TermDraftScreen(
             }
 
             item {
-                OutlinedTextField(
+                FormField(
                     value = uiState.form.term,
                     onValueChange = viewModel::onTermChanged,
-                    label = { Text("Term name") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    isError = uiState.validationErrors.containsKey("term")
+                    label = "Term name",
+                    error = uiState.validationErrors["term"],
+                    singleLine = true
                 )
-                uiState.validationErrors["term"]?.let {
-                    Text(
-                        text = it,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
             }
 
             item {
-                OutlinedTextField(
+                FormField(
                     value = uiState.form.definition,
                     onValueChange = viewModel::onDefinitionChanged,
-                    label = { Text("Definition") },
-                    placeholder = { Text("Short, clear glossary definition") },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 3,
-                    isError = uiState.validationErrors.containsKey("definition")
+                    label = "Definition",
+                    placeholder = "Short, clear glossary definition",
+                    error = uiState.validationErrors["definition"],
+                    multiLine = true,
+                    capitalization = KeyboardCapitalization.Sentences
                 )
-                uiState.validationErrors["definition"]?.let {
-                    Text(
-                        text = it,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
             }
 
             item {
-                OutlinedTextField(
+                FormField(
                     value = uiState.form.explanation,
                     onValueChange = viewModel::onExplanationChanged,
-                    label = { Text("Explanation") },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 3,
-                    isError = uiState.validationErrors.containsKey("explanation"),
-                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                        capitalization = KeyboardCapitalization.Sentences
-                    )
+                    label = "Explanation",
+                    error = uiState.validationErrors["explanation"],
+                    multiLine = true,
+                    capitalization = KeyboardCapitalization.Sentences
                 )
-                uiState.validationErrors["explanation"]?.let {
-                    Text(
-                        text = it,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
             }
 
             item {
-                OutlinedTextField(
+                FormField(
                     value = uiState.form.categoryId,
                     onValueChange = viewModel::onCategoryChanged,
-                    label = { Text("Category") },
-                    placeholder = { Text("cat-llm-concepts") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    isError = uiState.validationErrors.containsKey("categoryId")
+                    label = "Category",
+                    placeholder = "cat-llm-concepts",
+                    error = uiState.validationErrors["categoryId"],
+                    singleLine = true
                 )
-                uiState.validationErrors["categoryId"]?.let {
-                    Text(
-                        text = it,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
             }
 
             item {
-                OutlinedTextField(
+                FormField(
                     value = uiState.form.humor,
                     onValueChange = viewModel::onHumorChanged,
-                    label = { Text("Humor (optional)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 2
+                    label = "Humor (optional)",
+                    multiLine = true,
+                    capitalization = KeyboardCapitalization.Sentences
                 )
             }
 
             item {
-                OutlinedTextField(
+                FormField(
                     value = uiState.form.tagsInput,
                     onValueChange = viewModel::onTagsInputChanged,
-                    label = { Text("Tags (optional)") },
-                    placeholder = { Text("llm, training, safety") },
-                    modifier = Modifier.fillMaxWidth(),
-                    supportingText = { Text("Separate tags with commas") }
+                    label = "Tags (optional)",
+                    placeholder = "llm, training, safety",
+                    helperText = "Separate tags with commas",
+                    singleLine = true
                 )
             }
 
@@ -181,24 +153,76 @@ fun TermDraftScreen(
             }
 
             item {
-                Button(
+                PrimaryActionButton(
+                    text = if (uiState.isSubmitting) "Submitting draft..." else "Submit Draft",
                     onClick = viewModel::submitDraft,
                     enabled = !uiState.isSubmitting,
                     modifier = Modifier.fillMaxWidth()
-                ) {
-                    if (uiState.isSubmitting) {
-                        CircularProgressIndicator(
-                            modifier = Modifier
-                                .size(18.dp)
-                                .padding(end = 10.dp),
-                            strokeWidth = 2.dp
-                        )
-                    }
-                    Text(if (uiState.isSubmitting) "Submitting draft..." else "Submit Draft")
+                )
+                if (uiState.isSubmitting) {
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .padding(top = 8.dp)
+                            .size(18.dp),
+                        strokeWidth = 2.dp
+                    )
                 }
             }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FormField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    error: String? = null,
+    placeholder: String? = null,
+    helperText: String? = null,
+    singleLine: Boolean = false,
+    multiLine: Boolean = false,
+    capitalization: KeyboardCapitalization = KeyboardCapitalization.None
+) {
+    val fieldModifier = if (multiLine) {
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = MultiLineFieldMinHeight, max = MultiLineFieldMaxHeight)
+    } else {
+        Modifier.fillMaxWidth()
+    }
+
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        placeholder = if (placeholder != null) {
+            { Text(placeholder) }
+        } else {
+            null
+        },
+        modifier = fieldModifier,
+        singleLine = singleLine,
+        isError = error != null,
+        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+            capitalization = capitalization
+        ),
+        supportingText = {
+            when {
+                error != null -> Text(
+                    text = error,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
+                helperText != null -> Text(
+                    text = helperText,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+    )
 }
 
 @Composable
@@ -209,7 +233,7 @@ private fun SuccessMessage(message: String) {
             containerColor = MaterialTheme.colorScheme.primaryContainer
         )
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodyMedium,
