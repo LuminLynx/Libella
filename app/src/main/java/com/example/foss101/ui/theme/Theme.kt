@@ -24,6 +24,7 @@ private val LightColors = lightColorScheme(
     onSurface = OnSurface,
     onSurfaceVariant = OnSurfaceVariant,
     outline = Outline,
+    outlineVariant = OutlineVariant,
     error = Error,
     onError = OnError
 )
@@ -46,6 +47,7 @@ private val DarkColors = darkColorScheme(
     onSurface = ColorDarkOnSurface,
     onSurfaceVariant = ColorDarkOnSurfaceVariant,
     outline = ColorDarkOutline,
+    outlineVariant = ColorDarkOutlineVariant,
     error = Error,
     onError = OnError
 )

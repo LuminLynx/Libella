@@ -6,24 +6,20 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.foss101.data.repository.GlossaryRepository
@@ -36,7 +32,9 @@ import com.example.foss101.ui.components.EmptyState
 import com.example.foss101.ui.components.ErrorState
 import com.example.foss101.ui.components.LoadingState
 import com.example.foss101.ui.components.PrimaryActionButton
+import com.example.foss101.ui.components.SecondaryActionButton
 import com.example.foss101.ui.components.SectionHeader
+import com.example.foss101.ui.components.TagChip
 import com.example.foss101.ui.components.screenContentPadding
 import com.example.foss101.viewmodel.ArtifactUiState
 import com.example.foss101.viewmodel.TermDetailsViewModel
@@ -140,7 +138,7 @@ private fun TermDetailsContent(
                 .fillMaxWidth()
                 .widthIn(max = TabletContentMaxWidth)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -149,12 +147,12 @@ private fun TermDetailsContent(
                 )
             ) {
                 Column(
-                    modifier = Modifier.padding(18.dp),
+                    modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Text(
                         text = "Definition",
-                        style = MaterialTheme.typography.titleSmall,
+                        style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
 
@@ -165,36 +163,11 @@ private fun TermDetailsContent(
                     )
 
                     FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        AssistChip(
-                            onClick = { },
-                            label = {
-                                Text(
-                                    text = "Category: ${displayCategoryName(term.categoryId)}",
-                                    maxLines = 1,
-                                    softWrap = false,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            },
-                            colors = AssistChipDefaults.assistChipColors(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                labelColor = MaterialTheme.colorScheme.onSecondaryContainer
-                            )
-                        )
-
-                        AssistChip(
-                            onClick = { },
-                            label = {
-                                Text(
-                                    text = "Controversy: ${displayControversyLevel(term.controversyLevel)}",
-                                    maxLines = 1,
-                                    softWrap = false,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                        )
+                        TagChip(label = displayCategoryName(term.categoryId))
+                        TagChip(label = "Controversy: ${displayControversyLevel(term.controversyLevel)}")
                     }
                 }
             }
@@ -214,55 +187,16 @@ private fun TermDetailsContent(
             }
 
             if (term.seeAlso.isNotEmpty()) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SectionHeader(title = "See Also")
-
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        term.seeAlso.forEach { related ->
-                            AssistChip(
-                                onClick = { },
-                                label = {
-                                    Text(
-                                        text = related,
-                                        maxLines = 2,
-                                        overflow = TextOverflow.Clip
-                                    )
-                                },
-                                modifier = Modifier.heightIn(min = 32.dp)
-                            )
-                        }
-                    }
-                }
+                ChipSection(title = "See Also", labels = term.seeAlso)
             }
 
             if (term.tags.isNotEmpty()) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SectionHeader(title = "Tags")
-
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        term.tags.forEach { tag ->
-                            AssistChip(
-                                onClick = { },
-                                label = {
-                                    Text(
-                                        text = tag,
-                                        maxLines = 2,
-                                        overflow = TextOverflow.Clip
-                                    )
-                                }
-                            )
-                        }
-                    }
-                }
+                ChipSection(title = "Tags", labels = term.tags)
             }
 
-            SecondaryLearningModulesSection(
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+            LearningModulesSection(
                 scenarioState = scenarioState,
                 challengeState = challengeState,
                 onGenerateScenario = onGenerateScenario,
@@ -274,8 +208,24 @@ private fun TermDetailsContent(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun SecondaryLearningModulesSection(
+private fun ChipSection(title: String, labels: List<String>) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SectionHeader(title = title)
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            labels.forEach { label ->
+                TagChip(label = label)
+            }
+        }
+    }
+}
+
+@Composable
+private fun LearningModulesSection(
     scenarioState: ArtifactUiState<LearningScenario>,
     challengeState: ArtifactUiState<LearningChallenge>,
     onGenerateScenario: () -> Unit,
@@ -283,32 +233,29 @@ private fun SecondaryLearningModulesSection(
     onGenerateChallenge: () -> Unit,
     onRefreshChallenge: () -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            Text(
-                text = "Optional AI Learning Modules",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(
+            text = "AI Learning Modules",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Text(
+            text = "Optional — generate a scenario or challenge grounded in this term.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
 
-            ScenarioSection(
-                state = scenarioState,
-                onGenerate = onGenerateScenario,
-                onRefresh = onRefreshScenario
-            )
+        ScenarioSection(
+            state = scenarioState,
+            onGenerate = onGenerateScenario,
+            onRefresh = onRefreshScenario
+        )
 
-            ChallengeSection(
-                state = challengeState,
-                onGenerate = onGenerateChallenge,
-                onRefresh = onRefreshChallenge
-            )
-        }
+        ChallengeSection(
+            state = challengeState,
+            onGenerate = onGenerateChallenge,
+            onRefresh = onRefreshChallenge
+        )
     }
 }
 
@@ -318,19 +265,21 @@ private fun ScenarioSection(
     onGenerate: () -> Unit,
     onRefresh: () -> Unit
 ) {
-    SectionHeader(title = "AI Learning Scenario")
-    when {
-        state.isLoading -> LoadingState(message = "Generating scenario...")
-        state.errorMessage != null -> ErrorState(message = state.errorMessage)
-        state.data == null -> EmptyState(message = "No scenario yet. Generate one to practice this term.")
-        else -> GeneratedScenarioCard(result = state.data, onRefresh = onRefresh)
-    }
-    if (state.data == null && !state.isLoading) {
-        PrimaryActionButton(
-            text = "Generate Scenario",
-            onClick = onGenerate,
-            modifier = Modifier.fillMaxWidth()
-        )
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SectionHeader(title = "Scenario")
+        when {
+            state.isLoading -> LoadingState(message = "Generating scenario...")
+            state.errorMessage != null -> ErrorState(message = state.errorMessage)
+            state.data == null -> EmptyState(message = "No scenario yet. Generate one to practice this term.")
+            else -> GeneratedScenarioCard(result = state.data, onRefresh = onRefresh)
+        }
+        if (state.data == null && !state.isLoading) {
+            PrimaryActionButton(
+                text = "Generate Scenario",
+                onClick = onGenerate,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
     }
 }
 
@@ -340,19 +289,21 @@ private fun ChallengeSection(
     onGenerate: () -> Unit,
     onRefresh: () -> Unit
 ) {
-    SectionHeader(title = "AI Learning Challenge")
-    when {
-        state.isLoading -> LoadingState(message = "Generating challenge...")
-        state.errorMessage != null -> ErrorState(message = state.errorMessage)
-        state.data == null -> EmptyState(message = "No challenge yet. Generate one to test your understanding.")
-        else -> GeneratedChallengeCard(result = state.data, onRefresh = onRefresh)
-    }
-    if (state.data == null && !state.isLoading) {
-        PrimaryActionButton(
-            text = "Generate Challenge",
-            onClick = onGenerate,
-            modifier = Modifier.fillMaxWidth()
-        )
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SectionHeader(title = "Challenge")
+        when {
+            state.isLoading -> LoadingState(message = "Generating challenge...")
+            state.errorMessage != null -> ErrorState(message = state.errorMessage)
+            state.data == null -> EmptyState(message = "No challenge yet. Generate one to test your understanding.")
+            else -> GeneratedChallengeCard(result = state.data, onRefresh = onRefresh)
+        }
+        if (state.data == null && !state.isLoading) {
+            PrimaryActionButton(
+                text = "Generate Challenge",
+                onClick = onGenerate,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
     }
 }
 
@@ -362,25 +313,33 @@ private fun GeneratedScenarioCard(
     onRefresh: () -> Unit
 ) {
     val artifact = result.artifact
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = artifact.title,
-                    style = MaterialTheme.typography.titleMedium
-                )
-            }
-            Text(text = "Difficulty: ${artifact.difficulty}")
-            Text(text = artifact.context)
-            Text(text = "Objective: ${artifact.objective}")
-            Text(text = "Tasks:\n- ${artifact.tasks.joinToString("\n- ")}")
-            Text(text = "Reflect:\n- ${artifact.reflectionQuestions.joinToString("\n- ")}")
-            Text(text = if (result.cached) "Loaded from cache" else "Freshly generated")
-            PrimaryActionButton(
-                text = "Regenerate Scenario",
+            Text(
+                text = artifact.title,
+                style = MaterialTheme.typography.titleMedium
+            )
+            MetadataLine(text = "Difficulty: ${artifact.difficulty}")
+            Text(text = artifact.context, style = MaterialTheme.typography.bodyMedium)
+            Text(text = "Objective: ${artifact.objective}", style = MaterialTheme.typography.bodyMedium)
+            Text(
+                text = "Tasks:\n- ${artifact.tasks.joinToString("\n- ")}",
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Text(
+                text = "Reflect:\n- ${artifact.reflectionQuestions.joinToString("\n- ")}",
+                style = MaterialTheme.typography.bodyMedium
+            )
+            MetadataLine(text = if (result.cached) "Loaded from cache" else "Freshly generated")
+            SecondaryActionButton(
+                text = "Regenerate",
                 onClick = onRefresh,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -394,27 +353,43 @@ private fun GeneratedChallengeCard(
     onRefresh: () -> Unit
 ) {
     val artifact = result.artifact
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
                 text = artifact.title,
                 style = MaterialTheme.typography.titleMedium
             )
-            Text(text = "Difficulty: ${artifact.difficulty}")
-            Text(text = artifact.prompt)
-            Text(text = "Success criteria:\n- ${artifact.successCriteria.joinToString("\n- ")}")
-            Text(text = "Hint: ${artifact.hint}")
-            Text(text = if (result.cached) "Loaded from cache" else "Freshly generated")
-            PrimaryActionButton(
-                text = "Regenerate Challenge",
+            MetadataLine(text = "Difficulty: ${artifact.difficulty}")
+            Text(text = artifact.prompt, style = MaterialTheme.typography.bodyMedium)
+            Text(
+                text = "Success criteria:\n- ${artifact.successCriteria.joinToString("\n- ")}",
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Text(text = "Hint: ${artifact.hint}", style = MaterialTheme.typography.bodyMedium)
+            MetadataLine(text = if (result.cached) "Loaded from cache" else "Freshly generated")
+            SecondaryActionButton(
+                text = "Regenerate",
                 onClick = onRefresh,
                 modifier = Modifier.fillMaxWidth()
             )
         }
     }
+}
+
+@Composable
+private fun MetadataLine(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
 }
 
 @Composable
@@ -426,7 +401,8 @@ private fun DetailSectionCard(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
-        )
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -436,7 +412,7 @@ private fun DetailSectionCard(
 
             Text(
                 text = content,
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
