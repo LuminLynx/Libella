@@ -6,31 +6,42 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.foss101.data.repository.AuthRepository
 import com.example.foss101.data.repository.GlossaryRepository
+import com.example.foss101.model.ArtifactKind
 import com.example.foss101.model.GeneratedArtifactResult
 import com.example.foss101.model.GlossaryTerm
 import com.example.foss101.model.LearningChallenge
+import com.example.foss101.model.LearningCompletion
+import com.example.foss101.model.LearningPreset
 import com.example.foss101.model.LearningScenario
 import com.example.foss101.ui.components.AppScreenScaffold
+import com.example.foss101.ui.components.CompletionSheet
 import com.example.foss101.ui.components.EmptyState
 import com.example.foss101.ui.components.ErrorState
 import com.example.foss101.ui.components.LoadingState
+import com.example.foss101.ui.components.PresetSelector
 import com.example.foss101.ui.components.PrimaryActionButton
 import com.example.foss101.ui.components.SecondaryActionButton
 import com.example.foss101.ui.components.SectionHeader
@@ -44,13 +55,24 @@ private val TabletContentMaxWidth = 960.dp
 @Composable
 fun TermDetailsScreen(
     termId: String? = null,
-    repository: GlossaryRepository
+    repository: GlossaryRepository,
+    authRepository: AuthRepository,
+    onNavigate: (String) -> Unit
 ) {
     val viewModel: TermDetailsViewModel = viewModel(
         key = termId,
-        factory = TermDetailsViewModel.factory(termId = termId, repository = repository)
+        factory = TermDetailsViewModel.factory(
+            termId = termId,
+            repository = repository,
+            authRepository = authRepository
+        )
     )
     val uiState = viewModel.uiState
+
+    LifecycleResumeEffect(Unit) {
+        viewModel.refreshAuthState()
+        onPauseOrDispose { }
+    }
 
     AppScreenScaffold(
         title = uiState.term?.term ?: "Loading...",
@@ -79,15 +101,40 @@ fun TermDetailsScreen(
                 TermDetailsContent(
                     contentPadding = contentPadding,
                     term = uiState.term,
+                    isSignedIn = uiState.isSignedIn,
+                    scenarioPreset = uiState.scenarioPreset,
+                    challengePreset = uiState.challengePreset,
                     scenarioState = uiState.scenarioState,
                     challengeState = uiState.challengeState,
+                    onSignInClick = { onNavigate("auth_login") },
+                    onScenarioPresetSelected = viewModel::setScenarioPreset,
+                    onChallengePresetSelected = viewModel::setChallengePreset,
                     onGenerateScenario = { viewModel.generateScenario() },
                     onRefreshScenario = { viewModel.generateScenario(forceRefresh = true) },
                     onGenerateChallenge = { viewModel.generateChallenge() },
-                    onRefreshChallenge = { viewModel.generateChallenge(forceRefresh = true) }
+                    onRefreshChallenge = { viewModel.generateChallenge(forceRefresh = true) },
+                    onMarkScenarioComplete = { viewModel.openCompletionSheet(ArtifactKind.Scenario) },
+                    onMarkChallengeComplete = { viewModel.openCompletionSheet(ArtifactKind.Challenge) }
                 )
             }
         }
+    }
+
+    val activeSheet = uiState.activeCompletionSheet
+    if (activeSheet != null) {
+        val artifactState = when (activeSheet) {
+            ArtifactKind.Scenario -> uiState.scenarioState
+            ArtifactKind.Challenge -> uiState.challengeState
+        }
+        CompletionSheet(
+            kind = activeSheet,
+            isSubmitting = artifactState.isSubmittingCompletion,
+            errorMessage = artifactState.completionErrorMessage,
+            onDismiss = viewModel::dismissCompletionSheet,
+            onSubmit = { confidence, notes ->
+                viewModel.submitCompletion(activeSheet, confidence, notes)
+            }
+        )
     }
 }
 
@@ -117,12 +164,20 @@ private fun CenteredDetailsContainer(
 private fun TermDetailsContent(
     contentPadding: PaddingValues,
     term: GlossaryTerm,
+    isSignedIn: Boolean,
+    scenarioPreset: LearningPreset,
+    challengePreset: LearningPreset,
     scenarioState: ArtifactUiState<LearningScenario>,
     challengeState: ArtifactUiState<LearningChallenge>,
+    onSignInClick: () -> Unit,
+    onScenarioPresetSelected: (LearningPreset) -> Unit,
+    onChallengePresetSelected: (LearningPreset) -> Unit,
     onGenerateScenario: () -> Unit,
     onRefreshScenario: () -> Unit,
     onGenerateChallenge: () -> Unit,
-    onRefreshChallenge: () -> Unit
+    onRefreshChallenge: () -> Unit,
+    onMarkScenarioComplete: () -> Unit,
+    onMarkChallengeComplete: () -> Unit
 ) {
     val explanation = term.explanation
     val humor = term.humor
@@ -197,12 +252,20 @@ private fun TermDetailsContent(
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
             LearningModulesSection(
+                isSignedIn = isSignedIn,
+                scenarioPreset = scenarioPreset,
+                challengePreset = challengePreset,
                 scenarioState = scenarioState,
                 challengeState = challengeState,
+                onSignInClick = onSignInClick,
+                onScenarioPresetSelected = onScenarioPresetSelected,
+                onChallengePresetSelected = onChallengePresetSelected,
                 onGenerateScenario = onGenerateScenario,
                 onRefreshScenario = onRefreshScenario,
                 onGenerateChallenge = onGenerateChallenge,
-                onRefreshChallenge = onRefreshChallenge
+                onRefreshChallenge = onRefreshChallenge,
+                onMarkScenarioComplete = onMarkScenarioComplete,
+                onMarkChallengeComplete = onMarkChallengeComplete
             )
         }
     }
@@ -226,12 +289,20 @@ private fun ChipSection(title: String, labels: List<String>) {
 
 @Composable
 private fun LearningModulesSection(
+    isSignedIn: Boolean,
+    scenarioPreset: LearningPreset,
+    challengePreset: LearningPreset,
     scenarioState: ArtifactUiState<LearningScenario>,
     challengeState: ArtifactUiState<LearningChallenge>,
+    onSignInClick: () -> Unit,
+    onScenarioPresetSelected: (LearningPreset) -> Unit,
+    onChallengePresetSelected: (LearningPreset) -> Unit,
     onGenerateScenario: () -> Unit,
     onRefreshScenario: () -> Unit,
     onGenerateChallenge: () -> Unit,
-    onRefreshChallenge: () -> Unit
+    onRefreshChallenge: () -> Unit,
+    onMarkScenarioComplete: () -> Unit,
+    onMarkChallengeComplete: () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
@@ -240,38 +311,94 @@ private fun LearningModulesSection(
             color = MaterialTheme.colorScheme.onSurface
         )
         Text(
-            text = "Optional — generate a scenario or challenge grounded in this term.",
+            text = "Pick a style, generate a scenario or challenge, then mark it complete to earn points.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
+        if (!isSignedIn) {
+            SignInGate(onSignInClick = onSignInClick)
+            return@Column
+        }
+
         ScenarioSection(
+            preset = scenarioPreset,
             state = scenarioState,
+            onPresetSelected = onScenarioPresetSelected,
             onGenerate = onGenerateScenario,
-            onRefresh = onRefreshScenario
+            onRefresh = onRefreshScenario,
+            onMarkComplete = onMarkScenarioComplete
         )
 
         ChallengeSection(
+            preset = challengePreset,
             state = challengeState,
+            onPresetSelected = onChallengePresetSelected,
             onGenerate = onGenerateChallenge,
-            onRefresh = onRefreshChallenge
+            onRefresh = onRefreshChallenge,
+            onMarkComplete = onMarkChallengeComplete
         )
     }
 }
 
 @Composable
+private fun SignInGate(onSignInClick: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(
+                text = "Sign in to generate scenarios and challenges",
+                style = MaterialTheme.typography.titleSmall
+            )
+            Text(
+                text = "Generated artifacts and the points you earn for completing them are tied to your account.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            PrimaryActionButton(
+                text = "Sign in",
+                onClick = onSignInClick,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
+}
+
+@Composable
 private fun ScenarioSection(
+    preset: LearningPreset,
     state: ArtifactUiState<LearningScenario>,
+    onPresetSelected: (LearningPreset) -> Unit,
     onGenerate: () -> Unit,
-    onRefresh: () -> Unit
+    onRefresh: () -> Unit,
+    onMarkComplete: () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionHeader(title = "Scenario")
+        if (state.data == null && !state.isLoading) {
+            PresetSelector(
+                selected = preset,
+                onSelect = onPresetSelected
+            )
+        }
         when {
             state.isLoading -> LoadingState(message = "Generating scenario...")
             state.errorMessage != null -> ErrorState(message = state.errorMessage)
-            state.data == null -> EmptyState(message = "No scenario yet. Generate one to practice this term.")
-            else -> GeneratedScenarioCard(result = state.data, onRefresh = onRefresh)
+            state.data == null -> EmptyState(message = "No scenario yet. Pick a style and generate one.")
+            else -> GeneratedScenarioCard(
+                result = state.data,
+                completion = state.completion,
+                pointsAwarded = state.pointsAwarded,
+                onRefresh = onRefresh,
+                onMarkComplete = onMarkComplete
+            )
         }
         if (state.data == null && !state.isLoading) {
             PrimaryActionButton(
@@ -285,17 +412,32 @@ private fun ScenarioSection(
 
 @Composable
 private fun ChallengeSection(
+    preset: LearningPreset,
     state: ArtifactUiState<LearningChallenge>,
+    onPresetSelected: (LearningPreset) -> Unit,
     onGenerate: () -> Unit,
-    onRefresh: () -> Unit
+    onRefresh: () -> Unit,
+    onMarkComplete: () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionHeader(title = "Challenge")
+        if (state.data == null && !state.isLoading) {
+            PresetSelector(
+                selected = preset,
+                onSelect = onPresetSelected
+            )
+        }
         when {
             state.isLoading -> LoadingState(message = "Generating challenge...")
             state.errorMessage != null -> ErrorState(message = state.errorMessage)
-            state.data == null -> EmptyState(message = "No challenge yet. Generate one to test your understanding.")
-            else -> GeneratedChallengeCard(result = state.data, onRefresh = onRefresh)
+            state.data == null -> EmptyState(message = "No challenge yet. Pick a style and generate one.")
+            else -> GeneratedChallengeCard(
+                result = state.data,
+                completion = state.completion,
+                pointsAwarded = state.pointsAwarded,
+                onRefresh = onRefresh,
+                onMarkComplete = onMarkComplete
+            )
         }
         if (state.data == null && !state.isLoading) {
             PrimaryActionButton(
@@ -310,7 +452,10 @@ private fun ChallengeSection(
 @Composable
 private fun GeneratedScenarioCard(
     result: GeneratedArtifactResult<LearningScenario>,
-    onRefresh: () -> Unit
+    completion: LearningCompletion?,
+    pointsAwarded: Int,
+    onRefresh: () -> Unit,
+    onMarkComplete: () -> Unit
 ) {
     val artifact = result.artifact
     Card(
@@ -338,10 +483,12 @@ private fun GeneratedScenarioCard(
                 style = MaterialTheme.typography.bodyMedium
             )
             MetadataLine(text = if (result.cached) "Loaded from cache" else "Freshly generated")
-            SecondaryActionButton(
-                text = "Regenerate",
-                onClick = onRefresh,
-                modifier = Modifier.fillMaxWidth()
+
+            CompletionFooter(
+                completion = completion,
+                pointsAwarded = pointsAwarded,
+                onMarkComplete = onMarkComplete,
+                onRefresh = onRefresh
             )
         }
     }
@@ -350,7 +497,10 @@ private fun GeneratedScenarioCard(
 @Composable
 private fun GeneratedChallengeCard(
     result: GeneratedArtifactResult<LearningChallenge>,
-    onRefresh: () -> Unit
+    completion: LearningCompletion?,
+    pointsAwarded: Int,
+    onRefresh: () -> Unit,
+    onMarkComplete: () -> Unit
 ) {
     val artifact = result.artifact
     Card(
@@ -374,12 +524,76 @@ private fun GeneratedChallengeCard(
             )
             Text(text = "Hint: ${artifact.hint}", style = MaterialTheme.typography.bodyMedium)
             MetadataLine(text = if (result.cached) "Loaded from cache" else "Freshly generated")
-            SecondaryActionButton(
-                text = "Regenerate",
-                onClick = onRefresh,
-                modifier = Modifier.fillMaxWidth()
+
+            CompletionFooter(
+                completion = completion,
+                pointsAwarded = pointsAwarded,
+                onMarkComplete = onMarkComplete,
+                onRefresh = onRefresh
             )
         }
+    }
+}
+
+@Composable
+private fun CompletionFooter(
+    completion: LearningCompletion?,
+    pointsAwarded: Int,
+    onMarkComplete: () -> Unit,
+    onRefresh: () -> Unit
+) {
+    if (completion != null) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.CheckCircle,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onTertiaryContainer
+                    )
+                    val pointsText = if (pointsAwarded > 0) " · +$pointsAwarded points" else ""
+                    Text(
+                        text = "Completed (${completion.confidence.label} confidence)$pointsText",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                    )
+                }
+                completion.reflectionNotes?.let { notes ->
+                    Text(
+                        text = "Reflection: $notes",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                    )
+                }
+            }
+        }
+        SecondaryActionButton(
+            text = "Regenerate",
+            onClick = onRefresh,
+            modifier = Modifier.fillMaxWidth()
+        )
+    } else {
+        PrimaryActionButton(
+            text = "Mark complete",
+            onClick = onMarkComplete,
+            modifier = Modifier.fillMaxWidth()
+        )
+        SecondaryActionButton(
+            text = "Regenerate",
+            onClick = onRefresh,
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }
 

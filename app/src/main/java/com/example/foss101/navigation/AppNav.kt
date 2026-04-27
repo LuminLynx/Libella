@@ -77,7 +77,9 @@ fun AppNav() {
             val termId = backStackEntry.arguments?.getString("termId")
             TermDetailsScreen(
                 termId = termId,
-                repository = glossaryRepository
+                repository = glossaryRepository,
+                authRepository = authRepository,
+                onNavigate = { route -> navController.navigate(route) }
             )
         }
         composable("ai_tools") { AiToolsScreen(onNavigate = { route -> navController.navigate(route) }) }
