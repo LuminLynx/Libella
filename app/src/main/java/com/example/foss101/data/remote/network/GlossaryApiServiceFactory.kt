@@ -18,13 +18,17 @@ import java.net.URL
 import java.net.URLEncoder
 
 object GlossaryApiServiceFactory {
-    fun create(config: ApiConfig): GlossaryApiService {
-        return HttpGlossaryApiService(config)
+    fun create(
+        config: ApiConfig,
+        tokenProvider: () -> String? = { null }
+    ): GlossaryApiService {
+        return HttpGlossaryApiService(config, tokenProvider)
     }
 }
 
 private class HttpGlossaryApiService(
-    private val config: ApiConfig
+    private val config: ApiConfig,
+    private val tokenProvider: () -> String?
 ) : GlossaryApiService {
 
     override suspend fun getTerms(): List<RemoteGlossaryTerm> = withContext(Dispatchers.IO) {
@@ -121,6 +125,9 @@ private class HttpGlossaryApiService(
             connectTimeout = config.connectTimeoutMillis.toInt()
             readTimeout = config.readTimeoutMillis.toInt()
             setRequestProperty("Accept", "application/json")
+            tokenProvider()?.takeIf { it.isNotBlank() }?.let { token ->
+                setRequestProperty("Authorization", "Bearer $token")
+            }
             if (payload != null) {
                 doOutput = true
                 setRequestProperty("Content-Type", "application/json")
