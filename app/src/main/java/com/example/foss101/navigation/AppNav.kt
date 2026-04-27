@@ -9,6 +9,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.foss101.data.repository.RepositoryProvider
 import com.example.foss101.ui.ai.AiToolsScreen
+import com.example.foss101.ui.auth.AuthScreen
 import com.example.foss101.ui.browse.BrowseTermsScreen
 import com.example.foss101.ui.categories.CategoriesScreen
 import com.example.foss101.ui.chat.ChatScreen
@@ -18,12 +19,14 @@ import com.example.foss101.ui.home.HomeScreen
 import com.example.foss101.ui.search.SearchScreen
 import com.example.foss101.ui.settings.SettingsScreen
 import com.example.foss101.ui.trendwatcher.TrendWatcherScreen
+import com.example.foss101.viewmodel.AuthMode
 import java.net.URLDecoder
 
 @Composable
 fun AppNav() {
     val navController = rememberNavController()
     val glossaryRepository = remember { RepositoryProvider.glossaryRepository }
+    val authRepository = remember { RepositoryProvider.authRepository }
 
     NavHost(navController = navController, startDestination = "home") {
         composable("home") {
@@ -80,6 +83,27 @@ fun AppNav() {
         composable("ai_tools") { AiToolsScreen(onNavigate = { route -> navController.navigate(route) }) }
         composable("trend_watcher") { TrendWatcherScreen() }
         composable("ask_glossary") { ChatScreen(repository = glossaryRepository) }
-        composable("settings") { SettingsScreen() }
+        composable("settings") {
+            SettingsScreen(
+                authRepository = authRepository,
+                onNavigate = { route -> navController.navigate(route) }
+            )
+        }
+        composable("auth_login") {
+            AuthScreen(
+                initialMode = AuthMode.Login,
+                authRepository = authRepository,
+                onBack = { navController.popBackStack() },
+                onAuthenticated = { navController.popBackStack() }
+            )
+        }
+        composable("auth_signup") {
+            AuthScreen(
+                initialMode = AuthMode.Signup,
+                authRepository = authRepository,
+                onBack = { navController.popBackStack() },
+                onAuthenticated = { navController.popBackStack() }
+            )
+        }
     }
 }

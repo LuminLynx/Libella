@@ -1,20 +1,34 @@
 from datetime import timedelta
 from typing import Any
 
-from fastapi import FastAPI, Query
+from fastapi import Depends, FastAPI, Query
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from .ai_service import AIServiceError, AIUnavailableError, ai_service, ai_service_metadata
+from .auth import (
+    AuthError,
+    create_access_token,
+    hash_password,
+    optional_user_id,
+    required_user_id,
+    validate_display_name,
+    validate_email,
+    validate_password,
+    verify_password,
+)
 from .migrations import run_migrations
 from .repository import (
     build_term_context,
     create_term_draft,
+    create_user,
     get_cached_generated_content,
     get_contributor_summary,
     get_term_by_id,
     get_top_missing_queries,
+    get_user_by_email,
+    get_user_by_id,
     list_categories,
     list_terms,
     list_terms_by_category,
@@ -56,6 +70,17 @@ class TermDraftRequest(BaseModel):
 
 class DraftStatusRequest(BaseModel):
     status: str
+
+
+class SignupRequest(BaseModel):
+    email: str
+    password: str
+    displayName: str
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
 
 
 def _envelope_response(*, data, error=None, status_code: int = 200) -> JSONResponse:
@@ -123,7 +148,11 @@ def get_missing_queries(
 
 
 @app.post("/api/v1/term-drafts")
-def post_term_draft(request: TermDraftRequest) -> JSONResponse:
+def post_term_draft(
+    request: TermDraftRequest,
+    current_user_id: str | None = Depends(optional_user_id),
+) -> JSONResponse:
+    contributor_id = current_user_id if current_user_id else request.contributorId
     payload = {
         "slug": request.slug,
         "term": request.term,
@@ -137,7 +166,7 @@ def post_term_draft(request: TermDraftRequest) -> JSONResponse:
         "source_reference": request.sourceReference,
         "status": request.status,
         "category_id": request.categoryId,
-        "contributor_id": request.contributorId,
+        "contributor_id": contributor_id,
         "contributor_metadata": request.contributorMetadata,
         "missing_search_event_id": request.missingSearchEventId,
     }
@@ -303,3 +332,76 @@ def _generate_term_artifact(term_id: str, artifact_type: str, force_refresh: boo
         model_name=metadata["model"],
     )
     return _envelope_response(data={"artifact": artifact, "cached": False})
+
+
+@app.post("/api/v1/auth/signup")
+def post_signup(request: SignupRequest) -> JSONResponse:
+    try:
+        email = validate_email(request.email)
+        password = validate_password(request.password)
+        display_name = validate_display_name(request.displayName)
+    except AuthError as error:
+        return _envelope_response(
+            status_code=error.status_code,
+            data=None,
+            error={"code": error.code, "message": str(error)},
+        )
+
+    if get_user_by_email(email) is not None:
+        return _envelope_response(
+            status_code=409,
+            data=None,
+            error={"code": "EMAIL_TAKEN", "message": "An account with this email already exists."},
+        )
+
+    user = create_user(
+        email=email,
+        password_hash=hash_password(password),
+        display_name=display_name,
+    )
+    token = create_access_token(user["id"])
+    return _envelope_response(
+        status_code=201,
+        data={"token": token, "user": user},
+    )
+
+
+@app.post("/api/v1/auth/login")
+def post_login(request: LoginRequest) -> JSONResponse:
+    try:
+        email = validate_email(request.email)
+    except AuthError as error:
+        return _envelope_response(
+            status_code=error.status_code,
+            data=None,
+            error={"code": error.code, "message": str(error)},
+        )
+
+    row = get_user_by_email(email)
+    if row is None or not verify_password(request.password, row["password_hash"]):
+        return _envelope_response(
+            status_code=401,
+            data=None,
+            error={"code": "INVALID_CREDENTIALS", "message": "Invalid email or password."},
+        )
+
+    user = {
+        "id": row["id"],
+        "email": row["email"],
+        "displayName": row["display_name"],
+        "createdAt": row["created_at"],
+    }
+    token = create_access_token(user["id"])
+    return _envelope_response(data={"token": token, "user": user})
+
+
+@app.get("/api/v1/auth/me")
+def get_me(current_user_id: str = Depends(required_user_id)) -> JSONResponse:
+    user = get_user_by_id(current_user_id)
+    if user is None:
+        return _envelope_response(
+            status_code=404,
+            data=None,
+            error={"code": "USER_NOT_FOUND", "message": "Authenticated user no longer exists."},
+        )
+    return _envelope_response(data=user)

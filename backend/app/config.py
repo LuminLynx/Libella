@@ -28,6 +28,10 @@ AI_PROVIDER_BASE_URL = os.getenv("AI_PROVIDER_BASE_URL", "https://api.openai.com
 AI_PROVIDER_API_KEY = os.getenv("AI_PROVIDER_API_KEY", "")
 AI_MODEL = os.getenv("AI_MODEL", "gpt-4.1-mini")
 
+JWT_SECRET = os.getenv("JWT_SECRET", "change-me-in-production")
+JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
+JWT_EXPIRATION_DAYS = int(os.getenv("JWT_EXPIRATION_DAYS", "30"))
+
 
 def masked_database_url() -> str:
     split = urlsplit(RESOLVED_DATABASE_URL)

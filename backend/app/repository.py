@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -833,3 +834,54 @@ def _record_contribution_event(
         """,
         (contributor_id, inserted_row["points_awarded"]),
     )
+
+
+# ----- Users / Auth -----
+
+
+def _user_id() -> str:
+    return f"u-{secrets.token_urlsafe(12)}"
+
+
+def _map_user_row(row: Any) -> dict[str, Any]:
+    return {
+        "id": row["id"],
+        "email": row["email"],
+        "displayName": row["display_name"],
+        "createdAt": row["created_at"],
+    }
+
+
+def create_user(*, email: str, password_hash: str, display_name: str) -> dict[str, Any]:
+    user_id = _user_id()
+    with get_connection() as connection:
+        row = connection.execute(
+            """
+            INSERT INTO users (id, email, password_hash, display_name)
+            VALUES (%s, %s, %s, %s)
+            RETURNING *
+            """,
+            (user_id, email, password_hash, display_name),
+        ).fetchone()
+        connection.commit()
+    return _map_user_row(row)
+
+
+def get_user_by_email(email: str) -> dict[str, Any] | None:
+    with get_connection() as connection:
+        row = connection.execute(
+            "SELECT * FROM users WHERE LOWER(email) = LOWER(%s)",
+            (email,),
+        ).fetchone()
+    return row if row is None else dict(row)
+
+
+def get_user_by_id(user_id: str) -> dict[str, Any] | None:
+    with get_connection() as connection:
+        row = connection.execute(
+            "SELECT * FROM users WHERE id = %s",
+            (user_id,),
+        ).fetchone()
+    if row is None:
+        return None
+    return _map_user_row(row)
