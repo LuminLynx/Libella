@@ -14,6 +14,76 @@ from .config import (
 )
 
 ArtifactType = Literal["scenario", "challenge"]
+PresetKey = Literal["quick_recap", "interview_prep", "hands_on_coding", "conceptual_deep_dive"]
+
+DEFAULT_PRESET: PresetKey = "quick_recap"
+
+# Each preset is a small bundle of generation hints injected into the prompt.
+# Keep these short and concrete — verbose presets dilute the model's focus.
+PRESETS: dict[str, dict[str, str]] = {
+    "quick_recap": {
+        "label": "Quick recap",
+        "difficulty": "beginner",
+        "tone": "friendly and concise",
+        "scenario_focus": (
+            "Build a simple, contextual scenario the learner can finish in about 5 minutes. "
+            "Use 2 to 3 short tasks. Keep the context to 2 sentences."
+        ),
+        "challenge_focus": (
+            "Make a short, low-pressure challenge that reinforces the core idea. "
+            "Use 2 to 3 success criteria. Provide a gentle, encouraging hint."
+        ),
+    },
+    "interview_prep": {
+        "label": "Interview prep",
+        "difficulty": "intermediate",
+        "tone": "probing, in the style of a senior interviewer talking to a junior candidate",
+        "scenario_focus": (
+            "Frame the scenario as an interview probe. Tasks should require the learner to explain "
+            "the concept, justify trade-offs, and connect it to a realistic engineering decision. "
+            "Reflection questions must dig into edge cases and failure modes."
+        ),
+        "challenge_focus": (
+            "Frame the prompt as an interview question. Success criteria should reward clear reasoning, "
+            "naming trade-offs, and articulating when NOT to use the concept. Hint should be a Socratic nudge, "
+            "not a giveaway."
+        ),
+    },
+    "hands_on_coding": {
+        "label": "Hands-on coding",
+        "difficulty": "intermediate",
+        "tone": "technical and example-driven",
+        "scenario_focus": (
+            "Tasks must include a small, runnable code snippet (Python preferred, pseudocode acceptable) "
+            "that the learner can paste into a notebook. Keep snippets under 15 lines. "
+            "Reflection should ask the learner to predict or modify the snippet's behavior."
+        ),
+        "challenge_focus": (
+            "The challenge should produce a concrete artifact: a function signature, a code completion, "
+            "or a small refactor. Success criteria must be objectively checkable. The hint may include "
+            "a starter line of code."
+        ),
+    },
+    "conceptual_deep_dive": {
+        "label": "Conceptual deep-dive",
+        "difficulty": "advanced",
+        "tone": "rigorous and reflective",
+        "scenario_focus": (
+            "Push the learner past surface understanding: ask why the concept exists, when it breaks, "
+            "and how it contrasts with related ideas. Reflection questions should require comparative analysis "
+            "with at least one related concept (use the term's seeAlso when available)."
+        ),
+        "challenge_focus": (
+            "Pose a question that cannot be answered by definition recall alone. Success criteria should "
+            "demand the learner argue a position, pick between alternatives, or identify when the concept "
+            "fails. The hint should point to a key tension, not a fact."
+        ),
+    },
+}
+
+
+def resolve_preset(key: str | None) -> dict[str, str]:
+    return PRESETS.get(key or DEFAULT_PRESET) or PRESETS[DEFAULT_PRESET]
 
 
 class AIServiceError(RuntimeError):
@@ -59,8 +129,14 @@ class AIService:
             feature_name="ask_glossary",
         )
 
-    def generate_artifact(self, term: dict[str, Any], artifact_type: ArtifactType) -> dict[str, Any]:
+    def generate_artifact(
+        self,
+        term: dict[str, Any],
+        artifact_type: ArtifactType,
+        preset: str | None = None,
+    ) -> dict[str, Any]:
         serialized_term = json.dumps(jsonable_encoder(term))
+        preset_bundle = resolve_preset(preset)
 
         if artifact_type == "scenario":
             schema = {
@@ -83,9 +159,13 @@ class AIService:
                 ],
                 "additionalProperties": False,
             }
+            focus = preset_bundle["scenario_focus"]
             user_prompt = (
-                "Create a hands-on learning scenario for this glossary term. "
-                "Term JSON: " + serialized_term
+                f"Create a hands-on learning scenario for this glossary term.\n"
+                f"Target difficulty: {preset_bundle['difficulty']}.\n"
+                f"Tone: {preset_bundle['tone']}.\n"
+                f"Focus instructions: {focus}\n"
+                f"Term JSON: {serialized_term}"
             )
         else:
             schema = {
@@ -100,15 +180,20 @@ class AIService:
                 "required": ["title", "difficulty", "prompt", "successCriteria", "hint"],
                 "additionalProperties": False,
             }
+            focus = preset_bundle["challenge_focus"]
             user_prompt = (
-                "Create a practical learner challenge for this glossary term. "
-                "Term JSON: " + serialized_term
+                f"Create a practical learner challenge for this glossary term.\n"
+                f"Target difficulty: {preset_bundle['difficulty']}.\n"
+                f"Tone: {preset_bundle['tone']}.\n"
+                f"Focus instructions: {focus}\n"
+                f"Term JSON: {serialized_term}"
             )
 
         return self._chat_json(
             system_prompt=(
                 "You create concise, high-quality learning content for AI-101 learners. "
-                "Use only term context and avoid fabricated claims."
+                "Use only the provided term context; do not invent facts. "
+                "Keep prose tight: no preamble, no meta-commentary, no apologies."
             ),
             user_prompt=user_prompt,
             response_schema=schema,

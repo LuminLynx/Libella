@@ -73,6 +73,8 @@ CONTRIBUTION_EVENT_POINTS = {
     "draft_approved": 15,
     "draft_rejected": 0,
     "draft_published": 25,
+    "scenario_completed": 10,
+    "challenge_completed": 15,
 }
 STATUS_TO_EVENT_TYPE = {
     "approved": "draft_approved",
@@ -795,7 +797,12 @@ def _record_contribution_event(
     draft_id: int | None,
     event_type: str,
     metadata: dict[str, Any] | None = None,
-) -> None:
+    learning_completion_id: int | None = None,
+) -> int:
+    """
+    Insert a contribution_event row and increment contributor_scores.
+    Returns the points awarded by THIS call (0 if the event was deduplicated).
+    """
     points = CONTRIBUTION_EVENT_POINTS.get(event_type)
     if points is None:
         raise ValueError(f"unsupported contribution event_type '{event_type}'")
@@ -807,8 +814,9 @@ def _record_contribution_event(
             draft_id,
             event_type,
             points_awarded,
-            metadata
-        ) VALUES (%s, %s, %s, %s, %s::jsonb)
+            metadata,
+            learning_completion_id
+        ) VALUES (%s, %s, %s, %s, %s::jsonb, %s)
         ON CONFLICT DO NOTHING
         RETURNING points_awarded
         """,
@@ -818,10 +826,11 @@ def _record_contribution_event(
             event_type,
             points,
             json.dumps(metadata or {}),
+            learning_completion_id,
         ),
     ).fetchone()
     if inserted_row is None:
-        return
+        return 0
 
     connection.execute(
         """
@@ -834,6 +843,7 @@ def _record_contribution_event(
         """,
         (contributor_id, inserted_row["points_awarded"]),
     )
+    return int(inserted_row["points_awarded"])
 
 
 # ----- Users / Auth -----
@@ -885,3 +895,93 @@ def get_user_by_id(user_id: str) -> dict[str, Any] | None:
     if row is None:
         return None
     return _map_user_row(row)
+
+
+# ----- Learning completions (scenario / challenge) -----
+
+VALID_ARTIFACT_TYPES = ("scenario", "challenge")
+VALID_CONFIDENCE = ("low", "medium", "high")
+ARTIFACT_TO_EVENT_TYPE = {
+    "scenario": "scenario_completed",
+    "challenge": "challenge_completed",
+}
+
+
+def _map_completion_row(row: Any) -> dict[str, Any]:
+    return {
+        "id": row["id"],
+        "userId": row["user_id"],
+        "termId": row["term_id"],
+        "artifactType": row["artifact_type"],
+        "confidence": row["confidence"],
+        "reflectionNotes": row["reflection_notes"],
+        "completedAt": row["completed_at"],
+    }
+
+
+def record_learning_completion(
+    *,
+    user_id: str,
+    term_id: str,
+    artifact_type: str,
+    confidence: str,
+    reflection_notes: str | None,
+) -> dict[str, Any]:
+    """
+    Record a scenario/challenge completion. Idempotent on (user_id, term_id, artifact_type):
+    a second call returns the existing row and awards no additional points.
+
+    Returns: {"completion": {...}, "pointsAwarded": int, "alreadyCompleted": bool}
+    """
+    if artifact_type not in VALID_ARTIFACT_TYPES:
+        raise ValueError(f"artifact_type must be one of {VALID_ARTIFACT_TYPES}")
+    if confidence not in VALID_CONFIDENCE:
+        raise ValueError(f"confidence must be one of {VALID_CONFIDENCE}")
+
+    cleaned_notes = (reflection_notes or "").strip() or None
+    event_type = ARTIFACT_TO_EVENT_TYPE[artifact_type]
+
+    with get_connection() as connection:
+        existing = connection.execute(
+            """
+            SELECT * FROM learning_completions
+            WHERE user_id = %s AND term_id = %s AND artifact_type = %s
+            """,
+            (user_id, term_id, artifact_type),
+        ).fetchone()
+
+        if existing is not None:
+            return {
+                "completion": _map_completion_row(existing),
+                "pointsAwarded": 0,
+                "alreadyCompleted": True,
+            }
+
+        row = connection.execute(
+            """
+            INSERT INTO learning_completions (
+                user_id, term_id, artifact_type, confidence, reflection_notes
+            ) VALUES (%s, %s, %s, %s, %s)
+            RETURNING *
+            """,
+            (user_id, term_id, artifact_type, confidence, cleaned_notes),
+        ).fetchone()
+
+        points = _record_contribution_event(
+            connection=connection,
+            contributor_id=user_id,
+            draft_id=None,
+            event_type=event_type,
+            metadata={
+                "termId": term_id,
+                "confidence": confidence,
+            },
+            learning_completion_id=row["id"],
+        )
+        connection.commit()
+
+    return {
+        "completion": _map_completion_row(row),
+        "pointsAwarded": points,
+        "alreadyCompleted": False,
+    }

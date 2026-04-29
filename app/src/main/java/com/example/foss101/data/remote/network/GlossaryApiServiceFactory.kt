@@ -6,6 +6,8 @@ import com.example.foss101.data.remote.model.RemoteCategory
 import com.example.foss101.data.remote.model.RemoteGeneratedArtifactResult
 import com.example.foss101.data.remote.model.RemoteGlossaryTerm
 import com.example.foss101.data.remote.model.RemoteLearningChallenge
+import com.example.foss101.data.remote.model.RemoteLearningCompletion
+import com.example.foss101.data.remote.model.RemoteLearningCompletionResult
 import com.example.foss101.data.remote.model.RemoteLearningScenario
 import com.example.foss101.data.remote.model.RemoteTermDraftSubmission
 import com.example.foss101.data.remote.model.RemoteTermDraftSubmissionResult
@@ -73,26 +75,47 @@ private class HttpGlossaryApiService(
 
     override suspend fun generateScenario(
         termId: String,
-        forceRefresh: Boolean
+        forceRefresh: Boolean,
+        preset: String?
     ): RemoteGeneratedArtifactResult<RemoteLearningScenario> = withContext(Dispatchers.IO) {
         val encodedId = URLEncoder.encode(termId, Charsets.UTF_8.name())
-        val response = post(
-            path = "api/v1/ai/terms/$encodedId/scenario",
-            payload = JSONObject().put("forceRefresh", forceRefresh)
-        )
+        val payload = JSONObject().put("forceRefresh", forceRefresh)
+        if (!preset.isNullOrBlank()) {
+            payload.put("preset", preset)
+        }
+        val response = post(path = "api/v1/ai/terms/$encodedId/scenario", payload = payload)
         parseGeneratedScenario(response)
     }
 
     override suspend fun generateChallenge(
         termId: String,
-        forceRefresh: Boolean
+        forceRefresh: Boolean,
+        preset: String?
     ): RemoteGeneratedArtifactResult<RemoteLearningChallenge> = withContext(Dispatchers.IO) {
         val encodedId = URLEncoder.encode(termId, Charsets.UTF_8.name())
-        val response = post(
-            path = "api/v1/ai/terms/$encodedId/challenge",
-            payload = JSONObject().put("forceRefresh", forceRefresh)
-        )
+        val payload = JSONObject().put("forceRefresh", forceRefresh)
+        if (!preset.isNullOrBlank()) {
+            payload.put("preset", preset)
+        }
+        val response = post(path = "api/v1/ai/terms/$encodedId/challenge", payload = payload)
         parseGeneratedChallenge(response)
+    }
+
+    override suspend fun submitLearningCompletion(
+        termId: String,
+        artifactType: String,
+        confidence: String,
+        reflectionNotes: String?
+    ): RemoteLearningCompletionResult = withContext(Dispatchers.IO) {
+        val payload = JSONObject()
+            .put("termId", termId)
+            .put("artifactType", artifactType)
+            .put("confidence", confidence)
+        if (!reflectionNotes.isNullOrBlank()) {
+            payload.put("reflectionNotes", reflectionNotes)
+        }
+        val response = post(path = "api/v1/learning-completions", payload = payload)
+        parseLearningCompletion(response)
     }
 
     override suspend fun submitTermDraft(
@@ -252,6 +275,26 @@ private class HttpGlossaryApiService(
                 hint = artifact.optString("hint")
             ),
             cached = data.optBoolean("cached", false)
+        )
+    }
+
+    private fun parseLearningCompletion(envelope: JSONObject): RemoteLearningCompletionResult {
+        val data = envelope.optJSONObject("data")
+            ?: throw GlossaryApiException(message = "Completion response was empty.")
+        val completionObj = data.optJSONObject("completion")
+            ?: throw GlossaryApiException(message = "Completion response missing completion object.")
+        return RemoteLearningCompletionResult(
+            completion = RemoteLearningCompletion(
+                id = completionObj.optLong("id"),
+                userId = completionObj.optString("userId"),
+                termId = completionObj.optString("termId"),
+                artifactType = completionObj.optString("artifactType"),
+                confidence = completionObj.optString("confidence"),
+                reflectionNotes = completionObj.optString("reflectionNotes").takeIf { it.isNotBlank() },
+                completedAt = completionObj.optString("completedAt")
+            ),
+            pointsAwarded = data.optInt("pointsAwarded", 0),
+            alreadyCompleted = data.optBoolean("alreadyCompleted", false)
         )
     }
 

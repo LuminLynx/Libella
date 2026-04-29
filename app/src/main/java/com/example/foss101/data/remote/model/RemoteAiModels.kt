@@ -1,8 +1,12 @@
 package com.example.foss101.data.remote.model
 
+import com.example.foss101.model.ArtifactKind
 import com.example.foss101.model.AskGlossaryResponse
+import com.example.foss101.model.CompletionConfidence
 import com.example.foss101.model.GeneratedArtifactResult
 import com.example.foss101.model.LearningChallenge
+import com.example.foss101.model.LearningCompletion
+import com.example.foss101.model.LearningCompletionResult
 import com.example.foss101.model.LearningScenario
 
 data class RemoteAskGlossaryResponse(
@@ -62,3 +66,35 @@ fun <T, R> RemoteGeneratedArtifactResult<T>.toDomain(mapper: (T) -> R): Generate
         cached = cached
     )
 }
+
+data class RemoteLearningCompletion(
+    val id: Long,
+    val userId: String,
+    val termId: String,
+    val artifactType: String,
+    val confidence: String,
+    val reflectionNotes: String?,
+    val completedAt: String
+)
+
+data class RemoteLearningCompletionResult(
+    val completion: RemoteLearningCompletion,
+    val pointsAwarded: Int,
+    val alreadyCompleted: Boolean
+)
+
+fun RemoteLearningCompletion.toDomain(): LearningCompletion = LearningCompletion(
+    id = id,
+    userId = userId,
+    termId = termId,
+    artifactType = if (artifactType == "challenge") ArtifactKind.Challenge else ArtifactKind.Scenario,
+    confidence = CompletionConfidence.fromKey(confidence),
+    reflectionNotes = reflectionNotes?.takeIf { it.isNotBlank() },
+    completedAt = completedAt
+)
+
+fun RemoteLearningCompletionResult.toDomain(): LearningCompletionResult = LearningCompletionResult(
+    completion = completion.toDomain(),
+    pointsAwarded = pointsAwarded,
+    alreadyCompleted = alreadyCompleted
+)

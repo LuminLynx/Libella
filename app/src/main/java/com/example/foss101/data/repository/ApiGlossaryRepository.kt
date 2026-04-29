@@ -4,11 +4,15 @@ import com.example.foss101.data.remote.api.GlossaryApiService
 import com.example.foss101.data.remote.model.toDomain
 import com.example.foss101.data.remote.model.toRemote
 import com.example.foss101.data.remote.network.GlossaryApiException
+import com.example.foss101.model.ArtifactKind
 import com.example.foss101.model.AskGlossaryResponse
 import com.example.foss101.model.Category
+import com.example.foss101.model.CompletionConfidence
 import com.example.foss101.model.GeneratedArtifactResult
 import com.example.foss101.model.GlossaryTerm
 import com.example.foss101.model.LearningChallenge
+import com.example.foss101.model.LearningCompletionResult
+import com.example.foss101.model.LearningPreset
 import com.example.foss101.model.LearningScenario
 import com.example.foss101.model.TermDraftSubmission
 import com.example.foss101.model.TermDraftSubmissionResult
@@ -51,21 +55,43 @@ class ApiGlossaryRepository(
 
     override suspend fun generateScenario(
         termId: String,
-        forceRefresh: Boolean
+        forceRefresh: Boolean,
+        preset: LearningPreset?
     ): GeneratedArtifactResult<LearningScenario> {
-        return glossaryApiService.generateScenario(termId = termId, forceRefresh = forceRefresh)
-            .toDomain { it.toDomain() }
+        return glossaryApiService.generateScenario(
+            termId = termId,
+            forceRefresh = forceRefresh,
+            preset = preset?.key
+        ).toDomain { it.toDomain() }
     }
 
     override suspend fun generateChallenge(
         termId: String,
-        forceRefresh: Boolean
+        forceRefresh: Boolean,
+        preset: LearningPreset?
     ): GeneratedArtifactResult<LearningChallenge> {
-        return glossaryApiService.generateChallenge(termId = termId, forceRefresh = forceRefresh)
-            .toDomain { it.toDomain() }
+        return glossaryApiService.generateChallenge(
+            termId = termId,
+            forceRefresh = forceRefresh,
+            preset = preset?.key
+        ).toDomain { it.toDomain() }
     }
 
     override suspend fun submitTermDraft(draft: TermDraftSubmission): TermDraftSubmissionResult {
         return glossaryApiService.submitTermDraft(draft.toRemote()).toDomain()
+    }
+
+    override suspend fun submitLearningCompletion(
+        termId: String,
+        artifactType: ArtifactKind,
+        confidence: CompletionConfidence,
+        reflectionNotes: String?
+    ): LearningCompletionResult {
+        return glossaryApiService.submitLearningCompletion(
+            termId = termId,
+            artifactType = artifactType.key,
+            confidence = confidence.key,
+            reflectionNotes = reflectionNotes
+        ).toDomain()
     }
 }

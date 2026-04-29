@@ -364,7 +364,8 @@ class MockGlossaryRepository : GlossaryRepository {
 
     override suspend fun generateScenario(
         termId: String,
-        forceRefresh: Boolean
+        forceRefresh: Boolean,
+        preset: com.example.foss101.model.LearningPreset?
     ): GeneratedArtifactResult<LearningScenario> {
         val term = getTermById(termId) ?: error("Missing term")
         return GeneratedArtifactResult(
@@ -385,7 +386,8 @@ class MockGlossaryRepository : GlossaryRepository {
 
     override suspend fun generateChallenge(
         termId: String,
-        forceRefresh: Boolean
+        forceRefresh: Boolean,
+        preset: com.example.foss101.model.LearningPreset?
     ): GeneratedArtifactResult<LearningChallenge> {
         val term = getTermById(termId) ?: error("Missing term")
         return GeneratedArtifactResult(
@@ -408,6 +410,27 @@ class MockGlossaryRepository : GlossaryRepository {
         return TermDraftSubmissionResult(
             id = "mock-draft-${System.currentTimeMillis()}",
             status = "draft"
+        )
+    }
+
+    override suspend fun submitLearningCompletion(
+        termId: String,
+        artifactType: com.example.foss101.model.ArtifactKind,
+        confidence: com.example.foss101.model.CompletionConfidence,
+        reflectionNotes: String?
+    ): com.example.foss101.model.LearningCompletionResult {
+        return com.example.foss101.model.LearningCompletionResult(
+            completion = com.example.foss101.model.LearningCompletion(
+                id = System.currentTimeMillis(),
+                userId = "mock-user",
+                termId = termId,
+                artifactType = artifactType,
+                confidence = confidence,
+                reflectionNotes = reflectionNotes,
+                completedAt = "2024-01-01T00:00:00Z"
+            ),
+            pointsAwarded = if (artifactType == com.example.foss101.model.ArtifactKind.Challenge) 15 else 10,
+            alreadyCompleted = false
         )
     }
 }

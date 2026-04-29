@@ -33,6 +33,7 @@ from .repository import (
     list_terms,
     list_terms_by_category,
     publish_term_draft,
+    record_learning_completion,
     search_terms,
     update_draft_status,
     upsert_generated_content,
@@ -48,6 +49,14 @@ class AskGlossaryRequest(BaseModel):
 
 class GenerateArtifactRequest(BaseModel):
     forceRefresh: bool = False
+    preset: str | None = None
+
+
+class LearningCompletionRequest(BaseModel):
+    termId: str = Field(min_length=1)
+    artifactType: str
+    confidence: str
+    reflectionNotes: str | None = None
 
 
 class TermDraftRequest(BaseModel):
@@ -273,24 +282,39 @@ def post_ask_glossary(request: AskGlossaryRequest) -> JSONResponse:
 
 
 @app.post("/api/v1/ai/terms/{term_id}/scenario")
-def post_generate_scenario(term_id: str, request: GenerateArtifactRequest) -> JSONResponse:
+def post_generate_scenario(
+    term_id: str,
+    request: GenerateArtifactRequest,
+    current_user_id: str = Depends(required_user_id),
+) -> JSONResponse:
     return _generate_term_artifact(
         term_id=term_id,
         artifact_type="scenario",
         force_refresh=request.forceRefresh,
+        preset=request.preset,
     )
 
 
 @app.post("/api/v1/ai/terms/{term_id}/challenge")
-def post_generate_challenge(term_id: str, request: GenerateArtifactRequest) -> JSONResponse:
+def post_generate_challenge(
+    term_id: str,
+    request: GenerateArtifactRequest,
+    current_user_id: str = Depends(required_user_id),
+) -> JSONResponse:
     return _generate_term_artifact(
         term_id=term_id,
         artifact_type="challenge",
         force_refresh=request.forceRefresh,
+        preset=request.preset,
     )
 
 
-def _generate_term_artifact(term_id: str, artifact_type: str, force_refresh: bool) -> JSONResponse:
+def _generate_term_artifact(
+    term_id: str,
+    artifact_type: str,
+    force_refresh: bool,
+    preset: str | None = None,
+) -> JSONResponse:
     term = get_term_by_id(term_id)
     if term is None:
         return _envelope_response(
@@ -299,7 +323,11 @@ def _generate_term_artifact(term_id: str, artifact_type: str, force_refresh: boo
             error={"code": "TERM_NOT_FOUND", "message": "Term context was not found."},
         )
 
-    if not force_refresh:
+    # Cache only when no preset is specified — different presets produce different artifacts,
+    # and the cache schema does not include the preset key.
+    use_cache = not force_refresh and preset is None
+
+    if use_cache:
         cached = get_cached_generated_content(
             term_id=term_id,
             content_type=artifact_type,
@@ -309,7 +337,11 @@ def _generate_term_artifact(term_id: str, artifact_type: str, force_refresh: boo
             return _envelope_response(data={"artifact": cached, "cached": True})
 
     try:
-        artifact = ai_service.generate_artifact(term=term, artifact_type=artifact_type)  # type: ignore[arg-type]
+        artifact = ai_service.generate_artifact(
+            term=term,
+            artifact_type=artifact_type,  # type: ignore[arg-type]
+            preset=preset,
+        )
     except AIUnavailableError as error:
         return _envelope_response(
             status_code=503,
@@ -323,14 +355,15 @@ def _generate_term_artifact(term_id: str, artifact_type: str, force_refresh: boo
             error={"code": error.code, "message": str(error)},
         )
 
-    metadata = ai_service_metadata()
-    upsert_generated_content(
-        term_id=term_id,
-        content_type=artifact_type,
-        content_json=artifact,
-        provider=metadata["provider"] or "unknown",
-        model_name=metadata["model"],
-    )
+    if use_cache:
+        metadata = ai_service_metadata()
+        upsert_generated_content(
+            term_id=term_id,
+            content_type=artifact_type,
+            content_json=artifact,
+            provider=metadata["provider"] or "unknown",
+            model_name=metadata["model"],
+        )
     return _envelope_response(data={"artifact": artifact, "cached": False})
 
 
@@ -405,3 +438,34 @@ def get_me(current_user_id: str = Depends(required_user_id)) -> JSONResponse:
             error={"code": "USER_NOT_FOUND", "message": "Authenticated user no longer exists."},
         )
     return _envelope_response(data=user)
+
+
+@app.post("/api/v1/learning-completions")
+def post_learning_completion(
+    request: LearningCompletionRequest,
+    current_user_id: str = Depends(required_user_id),
+) -> JSONResponse:
+    if get_term_by_id(request.termId) is None:
+        return _envelope_response(
+            status_code=404,
+            data=None,
+            error={"code": "TERM_NOT_FOUND", "message": f"No term found for id '{request.termId}'."},
+        )
+
+    try:
+        result = record_learning_completion(
+            user_id=current_user_id,
+            term_id=request.termId,
+            artifact_type=request.artifactType,
+            confidence=request.confidence,
+            reflection_notes=request.reflectionNotes,
+        )
+    except ValueError as error:
+        return _envelope_response(
+            status_code=400,
+            data=None,
+            error={"code": "INVALID_COMPLETION", "message": str(error)},
+        )
+
+    status_code = 200 if result["alreadyCompleted"] else 201
+    return _envelope_response(status_code=status_code, data=result)
