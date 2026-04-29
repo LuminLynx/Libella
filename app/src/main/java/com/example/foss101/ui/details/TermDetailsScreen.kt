@@ -1,5 +1,7 @@
 package com.example.foss101.ui.details
 
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,7 +18,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
@@ -27,10 +31,13 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
@@ -54,6 +61,10 @@ import com.example.foss101.ui.components.SecondaryActionButton
 import com.example.foss101.ui.components.SectionHeader
 import com.example.foss101.ui.components.TagChip
 import com.example.foss101.ui.components.screenContentPadding
+import com.example.foss101.ui.theme.OnSuccessContainerDark
+import com.example.foss101.ui.theme.OnSuccessContainerLight
+import com.example.foss101.ui.theme.SuccessContainerDark
+import com.example.foss101.ui.theme.SuccessContainerLight
 import com.example.foss101.viewmodel.ArtifactUiState
 import com.example.foss101.viewmodel.ChallengeEditState
 import com.example.foss101.viewmodel.ChallengePhase
@@ -786,10 +797,14 @@ private fun CompletedFooter(
     pointsAwarded: Int
 ) {
     val displayedPoints = if (pointsAwarded > 0) pointsAwarded else completion.earnedPoints
+    val isDark = isSystemInDarkTheme()
+    val containerColor = if (isDark) SuccessContainerDark else SuccessContainerLight
+    val onContainerColor = if (isDark) OnSuccessContainerDark else OnSuccessContainerLight
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+            containerColor = containerColor
         )
     ) {
         Column(
@@ -803,13 +818,12 @@ private fun CompletedFooter(
                 Icon(
                     imageVector = Icons.Filled.CheckCircle,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onTertiaryContainer
+                    tint = onContainerColor
                 )
-                val pointsText = if (displayedPoints > 0) " · +$displayedPoints points" else ""
                 Text(
-                    text = "Completed (${completion.confidence.label} confidence)$pointsText",
+                    text = "Completed (${completion.confidence.label} confidence) · +$displayedPoints points",
                     style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                    color = onContainerColor
                 )
             }
         }
@@ -832,9 +846,8 @@ private fun EditableTaskRow(
             modifier = Modifier.fillMaxWidth()
         ) {
             Checkbox(checked = checked, onCheckedChange = onToggle)
-            Text(
+            TaskBody(
                 text = text,
-                style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier
                     .padding(top = 12.dp)
                     .fillMaxWidth()
@@ -866,17 +879,16 @@ private fun ReadOnlyTaskRow(
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Icon(
-                imageVector = Icons.Filled.CheckCircle,
-                contentDescription = null,
+                imageVector = if (checked) Icons.Filled.CheckCircle else Icons.Filled.RadioButtonUnchecked,
+                contentDescription = if (checked) "Done" else "Not done",
                 tint = if (checked) {
                     MaterialTheme.colorScheme.primary
                 } else {
                     MaterialTheme.colorScheme.outlineVariant
                 }
             )
-            Text(
+            TaskBody(
                 text = text,
-                style = MaterialTheme.typography.bodyMedium,
                 color = if (checked) {
                     MaterialTheme.colorScheme.onSurface
                 } else {
@@ -940,12 +952,12 @@ private fun ReadOnlyCriterionRow(
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Icon(
-                imageVector = Icons.Filled.CheckCircle,
-                contentDescription = null,
+                imageVector = if (met) Icons.Filled.CheckCircle else Icons.Filled.Cancel,
+                contentDescription = if (met) "Met" else "Not met",
                 tint = if (met) {
                     MaterialTheme.colorScheme.primary
                 } else {
-                    MaterialTheme.colorScheme.outlineVariant
+                    MaterialTheme.colorScheme.error
                 }
             )
             Text(text = text, style = MaterialTheme.typography.bodyMedium)
@@ -987,6 +999,51 @@ private fun ConfidenceSelector(
             }
         }
     }
+}
+
+/**
+ * Renders a task line. If the task content looks like a code block (multi-line or starts
+ * with a recognisable code keyword) we switch to a monospace font and a subtle
+ * surfaceVariant background so the snippet stays readable. Plain prose tasks render
+ * unchanged.
+ */
+@Composable
+private fun TaskBody(
+    text: String,
+    modifier: Modifier = Modifier,
+    color: Color = MaterialTheme.colorScheme.onSurface
+) {
+    if (looksLikeCode(text)) {
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            shape = RoundedCornerShape(8.dp),
+            modifier = modifier
+        ) {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
+                color = color,
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
+            )
+        }
+    } else {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = color,
+            modifier = modifier
+        )
+    }
+}
+
+private fun looksLikeCode(text: String): Boolean {
+    if ('\n' in text) return true
+    val trimmed = text.trimStart()
+    val codePrefixes = listOf(
+        "import ", "from ", "def ", "class ", ">>> ", "$ ", "# ",
+        "for ", "while ", "if __name__", "return "
+    )
+    return codePrefixes.any { trimmed.startsWith(it) }
 }
 
 @Composable
