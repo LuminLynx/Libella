@@ -290,7 +290,11 @@ private class HttpGlossaryApiService(
                 termId = completionObj.optString("termId"),
                 artifactType = completionObj.optString("artifactType"),
                 confidence = completionObj.optString("confidence"),
-                reflectionNotes = completionObj.optString("reflectionNotes").takeIf { it.isNotBlank() },
+                reflectionNotes = if (completionObj.isNull("reflectionNotes")) {
+                    null
+                } else {
+                    completionObj.optString("reflectionNotes").takeIf { it.isNotBlank() }
+                },
                 completedAt = completionObj.optString("completedAt")
             ),
             pointsAwarded = data.optInt("pointsAwarded", 0),
