@@ -35,3 +35,10 @@ val ColorDarkOnSurface = Color(0xFFE2E8F6)
 val ColorDarkOnSurfaceVariant = Color(0xFFC1C8DB)
 val ColorDarkOutline = Color(0xFF8A92A8)
 val ColorDarkOutlineVariant = Color(0xFF3A4256)
+
+// Custom semantic accent for "successful completion" — Material3 has no built-in success role.
+// Tuned for legibility in both light and dark mode.
+val SuccessContainerLight = Color(0xFFD1F1D8)
+val OnSuccessContainerLight = Color(0xFF0F3D1A)
+val SuccessContainerDark = Color(0xFF1F4F2C)
+val OnSuccessContainerDark = Color(0xFFC8EFD1)
