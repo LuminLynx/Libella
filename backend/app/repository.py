@@ -798,14 +798,23 @@ def _record_contribution_event(
     event_type: str,
     metadata: dict[str, Any] | None = None,
     learning_completion_id: int | None = None,
+    points_override: int | None = None,
 ) -> int:
     """
     Insert a contribution_event row and increment contributor_scores.
     Returns the points awarded by THIS call (0 if the event was deduplicated).
+
+    When points_override is provided, that value is used instead of the
+    table-driven default for the event type. Used for variable-score events
+    like scenario/challenge completions where the score depends on user input.
     """
-    points = CONTRIBUTION_EVENT_POINTS.get(event_type)
-    if points is None:
-        raise ValueError(f"unsupported contribution event_type '{event_type}'")
+    if points_override is not None:
+        points = max(0, int(points_override))
+    else:
+        default_points = CONTRIBUTION_EVENT_POINTS.get(event_type)
+        if default_points is None:
+            raise ValueError(f"unsupported contribution event_type '{event_type}'")
+        points = default_points
 
     inserted_row = connection.execute(
         """
@@ -906,6 +915,10 @@ ARTIFACT_TO_EVENT_TYPE = {
     "challenge": "challenge_completed",
 }
 
+SCENARIO_BASE_POINTS = 5
+SCENARIO_MAX_POINTS = 10
+CHALLENGE_MAX_POINTS = 15
+
 
 def _map_completion_row(row: Any) -> dict[str, Any]:
     return {
@@ -915,8 +928,69 @@ def _map_completion_row(row: Any) -> dict[str, Any]:
         "artifactType": row["artifact_type"],
         "confidence": row["confidence"],
         "reflectionNotes": row["reflection_notes"],
+        "taskStates": row["task_states"] if "task_states" in row.keys() else None,
+        "challengeResponse": row["challenge_response"] if "challenge_response" in row.keys() else None,
+        "criteriaGrades": row["criteria_grades"] if "criteria_grades" in row.keys() else None,
+        "earnedPoints": row["earned_points"] if "earned_points" in row.keys() else 0,
         "completedAt": row["completed_at"],
     }
+
+
+def _normalize_task_states(raw: Any) -> list[dict[str, Any]]:
+    if not isinstance(raw, list):
+        raise ValueError("taskStates must be a list")
+    cleaned: list[dict[str, Any]] = []
+    seen_indices: set[int] = set()
+    for item in raw:
+        if not isinstance(item, dict):
+            raise ValueError("each task state must be an object")
+        try:
+            index = int(item["index"])
+        except (KeyError, TypeError, ValueError) as error:
+            raise ValueError("each task state requires an integer index") from error
+        if index in seen_indices:
+            raise ValueError(f"duplicate task index {index}")
+        seen_indices.add(index)
+        checked = bool(item.get("checked", False))
+        note_raw = item.get("note")
+        note = (str(note_raw).strip() or None) if note_raw is not None else None
+        cleaned.append({"index": index, "checked": checked, "note": note})
+    return cleaned
+
+
+def _normalize_criteria_grades(raw: Any) -> list[dict[str, Any]]:
+    if not isinstance(raw, list):
+        raise ValueError("criteriaGrades must be a list")
+    cleaned: list[dict[str, Any]] = []
+    seen_indices: set[int] = set()
+    for item in raw:
+        if not isinstance(item, dict):
+            raise ValueError("each criterion grade must be an object")
+        try:
+            index = int(item["index"])
+        except (KeyError, TypeError, ValueError) as error:
+            raise ValueError("each criterion grade requires an integer index") from error
+        if index in seen_indices:
+            raise ValueError(f"duplicate criterion index {index}")
+        seen_indices.add(index)
+        met = bool(item.get("met", False))
+        note_raw = item.get("note")
+        note = (str(note_raw).strip() or None) if note_raw is not None else None
+        cleaned.append({"index": index, "met": met, "note": note})
+    return cleaned
+
+
+def compute_scenario_points(task_states: list[dict[str, Any]]) -> int:
+    checked_count = sum(1 for state in task_states if state.get("checked"))
+    return min(SCENARIO_MAX_POINTS, SCENARIO_BASE_POINTS + checked_count)
+
+
+def compute_challenge_points(criteria_grades: list[dict[str, Any]]) -> int:
+    if not criteria_grades:
+        return 0
+    met_count = sum(1 for grade in criteria_grades if grade.get("met"))
+    raw = met_count / len(criteria_grades) * CHALLENGE_MAX_POINTS
+    return int(round(raw))
 
 
 def record_learning_completion(
@@ -926,10 +1000,17 @@ def record_learning_completion(
     artifact_type: str,
     confidence: str,
     reflection_notes: str | None,
+    task_states: list[dict[str, Any]] | None = None,
+    challenge_response: str | None = None,
+    criteria_grades: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """
     Record a scenario/challenge completion. Idempotent on (user_id, term_id, artifact_type):
     a second call returns the existing row and awards no additional points.
+
+    Server computes earned_points from the engagement signals:
+      - scenario: 5 base + 1 per checked task, capped at 10
+      - challenge: round(criteria_met / total_criteria * 15)
 
     Returns: {"completion": {...}, "pointsAwarded": int, "alreadyCompleted": bool}
     """
@@ -940,6 +1021,30 @@ def record_learning_completion(
 
     cleaned_notes = (reflection_notes or "").strip() or None
     event_type = ARTIFACT_TO_EVENT_TYPE[artifact_type]
+
+    if artifact_type == "scenario":
+        if task_states is None:
+            raise ValueError("scenario completions require taskStates")
+        normalized_tasks = _normalize_task_states(task_states)
+        if not any(t["checked"] for t in normalized_tasks):
+            raise ValueError("scenario completions require at least one checked task")
+        earned_points = compute_scenario_points(normalized_tasks)
+        normalized_criteria: list[dict[str, Any]] | None = None
+        cleaned_response: str | None = None
+    else:  # challenge
+        cleaned_response = (challenge_response or "").strip()
+        if not cleaned_response:
+            raise ValueError("challenge completions require a non-empty challengeResponse")
+        if criteria_grades is None:
+            raise ValueError("challenge completions require criteriaGrades")
+        normalized_criteria = _normalize_criteria_grades(criteria_grades)
+        if not normalized_criteria:
+            raise ValueError("challenge completions require at least one criterion grade")
+        earned_points = compute_challenge_points(normalized_criteria)
+        normalized_tasks = None
+
+    task_states_json = json.dumps(normalized_tasks) if normalized_tasks is not None else None
+    criteria_grades_json = json.dumps(normalized_criteria) if normalized_criteria is not None else None
 
     with get_connection() as connection:
         existing = connection.execute(
@@ -960,11 +1065,15 @@ def record_learning_completion(
         row = connection.execute(
             """
             INSERT INTO learning_completions (
-                user_id, term_id, artifact_type, confidence, reflection_notes
-            ) VALUES (%s, %s, %s, %s, %s)
+                user_id, term_id, artifact_type, confidence, reflection_notes,
+                task_states, challenge_response, criteria_grades, earned_points
+            ) VALUES (%s, %s, %s, %s, %s, %s::jsonb, %s, %s::jsonb, %s)
             RETURNING *
             """,
-            (user_id, term_id, artifact_type, confidence, cleaned_notes),
+            (
+                user_id, term_id, artifact_type, confidence, cleaned_notes,
+                task_states_json, cleaned_response, criteria_grades_json, earned_points,
+            ),
         ).fetchone()
 
         points = _record_contribution_event(
@@ -975,8 +1084,10 @@ def record_learning_completion(
             metadata={
                 "termId": term_id,
                 "confidence": confidence,
+                "earnedPoints": earned_points,
             },
             learning_completion_id=row["id"],
+            points_override=earned_points,
         )
         connection.commit()
 

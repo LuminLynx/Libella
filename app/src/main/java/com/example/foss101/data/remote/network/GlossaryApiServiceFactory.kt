@@ -3,12 +3,14 @@ package com.example.foss101.data.remote.network
 import com.example.foss101.data.remote.api.GlossaryApiService
 import com.example.foss101.data.remote.model.RemoteAskGlossaryResponse
 import com.example.foss101.data.remote.model.RemoteCategory
+import com.example.foss101.data.remote.model.RemoteCriterionGrade
 import com.example.foss101.data.remote.model.RemoteGeneratedArtifactResult
 import com.example.foss101.data.remote.model.RemoteGlossaryTerm
 import com.example.foss101.data.remote.model.RemoteLearningChallenge
 import com.example.foss101.data.remote.model.RemoteLearningCompletion
 import com.example.foss101.data.remote.model.RemoteLearningCompletionResult
 import com.example.foss101.data.remote.model.RemoteLearningScenario
+import com.example.foss101.data.remote.model.RemoteTaskState
 import com.example.foss101.data.remote.model.RemoteTermDraftSubmission
 import com.example.foss101.data.remote.model.RemoteTermDraftSubmissionResult
 import kotlinx.coroutines.Dispatchers
@@ -105,7 +107,10 @@ private class HttpGlossaryApiService(
         termId: String,
         artifactType: String,
         confidence: String,
-        reflectionNotes: String?
+        reflectionNotes: String?,
+        taskStates: List<com.example.foss101.model.TaskState>?,
+        challengeResponse: String?,
+        criteriaGrades: List<com.example.foss101.model.CriterionGrade>?
     ): RemoteLearningCompletionResult = withContext(Dispatchers.IO) {
         val payload = JSONObject()
             .put("termId", termId)
@@ -113,6 +118,31 @@ private class HttpGlossaryApiService(
             .put("confidence", confidence)
         if (!reflectionNotes.isNullOrBlank()) {
             payload.put("reflectionNotes", reflectionNotes)
+        }
+        if (taskStates != null) {
+            val arr = JSONArray()
+            taskStates.forEach { state ->
+                val obj = JSONObject()
+                    .put("index", state.index)
+                    .put("checked", state.checked)
+                if (!state.note.isNullOrBlank()) obj.put("note", state.note)
+                arr.put(obj)
+            }
+            payload.put("taskStates", arr)
+        }
+        if (!challengeResponse.isNullOrBlank()) {
+            payload.put("challengeResponse", challengeResponse)
+        }
+        if (criteriaGrades != null) {
+            val arr = JSONArray()
+            criteriaGrades.forEach { grade ->
+                val obj = JSONObject()
+                    .put("index", grade.index)
+                    .put("met", grade.met)
+                if (!grade.note.isNullOrBlank()) obj.put("note", grade.note)
+                arr.put(obj)
+            }
+            payload.put("criteriaGrades", arr)
         }
         val response = post(path = "api/v1/learning-completions", payload = payload)
         parseLearningCompletion(response)
@@ -290,16 +320,55 @@ private class HttpGlossaryApiService(
                 termId = completionObj.optString("termId"),
                 artifactType = completionObj.optString("artifactType"),
                 confidence = completionObj.optString("confidence"),
-                reflectionNotes = if (completionObj.isNull("reflectionNotes")) {
-                    null
-                } else {
-                    completionObj.optString("reflectionNotes").takeIf { it.isNotBlank() }
-                },
+                reflectionNotes = readOptionalString(completionObj, "reflectionNotes"),
+                taskStates = readTaskStates(completionObj),
+                challengeResponse = readOptionalString(completionObj, "challengeResponse"),
+                criteriaGrades = readCriteriaGrades(completionObj),
+                earnedPoints = completionObj.optInt("earnedPoints", 0),
                 completedAt = completionObj.optString("completedAt")
             ),
             pointsAwarded = data.optInt("pointsAwarded", 0),
             alreadyCompleted = data.optBoolean("alreadyCompleted", false)
         )
+    }
+
+    private fun readOptionalString(obj: JSONObject, key: String): String? {
+        if (obj.isNull(key)) return null
+        return obj.optString(key).takeIf { it.isNotBlank() }
+    }
+
+    private fun readTaskStates(obj: JSONObject): List<RemoteTaskState>? {
+        if (obj.isNull("taskStates")) return null
+        val arr = obj.optJSONArray("taskStates") ?: return null
+        return buildList {
+            for (i in 0 until arr.length()) {
+                val item = arr.optJSONObject(i) ?: continue
+                add(
+                    RemoteTaskState(
+                        index = item.optInt("index", i),
+                        checked = item.optBoolean("checked", false),
+                        note = readOptionalString(item, "note")
+                    )
+                )
+            }
+        }
+    }
+
+    private fun readCriteriaGrades(obj: JSONObject): List<RemoteCriterionGrade>? {
+        if (obj.isNull("criteriaGrades")) return null
+        val arr = obj.optJSONArray("criteriaGrades") ?: return null
+        return buildList {
+            for (i in 0 until arr.length()) {
+                val item = arr.optJSONObject(i) ?: continue
+                add(
+                    RemoteCriterionGrade(
+                        index = item.optInt("index", i),
+                        met = item.optBoolean("met", false),
+                        note = readOptionalString(item, "note")
+                    )
+                )
+            }
+        }
     }
 
     private fun parseTermDraftSubmission(envelope: JSONObject): RemoteTermDraftSubmissionResult {

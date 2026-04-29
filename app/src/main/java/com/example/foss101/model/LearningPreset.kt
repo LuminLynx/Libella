@@ -51,6 +51,18 @@ enum class ArtifactKind(val key: String) {
     Challenge("challenge")
 }
 
+data class TaskState(
+    val index: Int,
+    val checked: Boolean,
+    val note: String? = null
+)
+
+data class CriterionGrade(
+    val index: Int,
+    val met: Boolean,
+    val note: String? = null
+)
+
 data class LearningCompletion(
     val id: Long,
     val userId: String,
@@ -58,6 +70,10 @@ data class LearningCompletion(
     val artifactType: ArtifactKind,
     val confidence: CompletionConfidence,
     val reflectionNotes: String?,
+    val taskStates: List<TaskState>?,
+    val challengeResponse: String?,
+    val criteriaGrades: List<CriterionGrade>?,
+    val earnedPoints: Int,
     val completedAt: String
 )
 

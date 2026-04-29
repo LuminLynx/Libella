@@ -3,11 +3,13 @@ package com.example.foss101.data.remote.model
 import com.example.foss101.model.ArtifactKind
 import com.example.foss101.model.AskGlossaryResponse
 import com.example.foss101.model.CompletionConfidence
+import com.example.foss101.model.CriterionGrade
 import com.example.foss101.model.GeneratedArtifactResult
 import com.example.foss101.model.LearningChallenge
 import com.example.foss101.model.LearningCompletion
 import com.example.foss101.model.LearningCompletionResult
 import com.example.foss101.model.LearningScenario
+import com.example.foss101.model.TaskState
 
 data class RemoteAskGlossaryResponse(
     val answer: String,
@@ -67,6 +69,18 @@ fun <T, R> RemoteGeneratedArtifactResult<T>.toDomain(mapper: (T) -> R): Generate
     )
 }
 
+data class RemoteTaskState(
+    val index: Int,
+    val checked: Boolean,
+    val note: String?
+)
+
+data class RemoteCriterionGrade(
+    val index: Int,
+    val met: Boolean,
+    val note: String?
+)
+
 data class RemoteLearningCompletion(
     val id: Long,
     val userId: String,
@@ -74,6 +88,10 @@ data class RemoteLearningCompletion(
     val artifactType: String,
     val confidence: String,
     val reflectionNotes: String?,
+    val taskStates: List<RemoteTaskState>?,
+    val challengeResponse: String?,
+    val criteriaGrades: List<RemoteCriterionGrade>?,
+    val earnedPoints: Int,
     val completedAt: String
 )
 
@@ -83,6 +101,18 @@ data class RemoteLearningCompletionResult(
     val alreadyCompleted: Boolean
 )
 
+fun RemoteTaskState.toDomain(): TaskState = TaskState(
+    index = index,
+    checked = checked,
+    note = note?.takeIf { it.isNotBlank() }
+)
+
+fun RemoteCriterionGrade.toDomain(): CriterionGrade = CriterionGrade(
+    index = index,
+    met = met,
+    note = note?.takeIf { it.isNotBlank() }
+)
+
 fun RemoteLearningCompletion.toDomain(): LearningCompletion = LearningCompletion(
     id = id,
     userId = userId,
@@ -90,6 +120,10 @@ fun RemoteLearningCompletion.toDomain(): LearningCompletion = LearningCompletion
     artifactType = if (artifactType == "challenge") ArtifactKind.Challenge else ArtifactKind.Scenario,
     confidence = CompletionConfidence.fromKey(confidence),
     reflectionNotes = reflectionNotes?.takeIf { it.isNotBlank() },
+    taskStates = taskStates?.map { it.toDomain() },
+    challengeResponse = challengeResponse?.takeIf { it.isNotBlank() },
+    criteriaGrades = criteriaGrades?.map { it.toDomain() },
+    earnedPoints = earnedPoints,
     completedAt = completedAt
 )
 
