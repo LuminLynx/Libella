@@ -8,12 +8,14 @@ import com.example.foss101.model.ArtifactKind
 import com.example.foss101.model.AskGlossaryResponse
 import com.example.foss101.model.Category
 import com.example.foss101.model.CompletionConfidence
+import com.example.foss101.model.CriterionGrade
 import com.example.foss101.model.GeneratedArtifactResult
 import com.example.foss101.model.GlossaryTerm
 import com.example.foss101.model.LearningChallenge
 import com.example.foss101.model.LearningCompletionResult
 import com.example.foss101.model.LearningPreset
 import com.example.foss101.model.LearningScenario
+import com.example.foss101.model.TaskState
 import com.example.foss101.model.TermDraftSubmission
 import com.example.foss101.model.TermDraftSubmissionResult
 
@@ -85,13 +87,19 @@ class ApiGlossaryRepository(
         termId: String,
         artifactType: ArtifactKind,
         confidence: CompletionConfidence,
-        reflectionNotes: String?
+        reflectionNotes: String?,
+        taskStates: List<TaskState>?,
+        challengeResponse: String?,
+        criteriaGrades: List<CriterionGrade>?
     ): LearningCompletionResult {
         return glossaryApiService.submitLearningCompletion(
             termId = termId,
             artifactType = artifactType.key,
             confidence = confidence.key,
-            reflectionNotes = reflectionNotes
+            reflectionNotes = reflectionNotes,
+            taskStates = taskStates,
+            challengeResponse = challengeResponse,
+            criteriaGrades = criteriaGrades
         ).toDomain()
     }
 }

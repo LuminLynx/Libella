@@ -32,6 +32,9 @@ interface GlossaryApiService {
         termId: String,
         artifactType: String,
         confidence: String,
-        reflectionNotes: String?
+        reflectionNotes: String?,
+        taskStates: List<com.example.foss101.model.TaskState>?,
+        challengeResponse: String?,
+        criteriaGrades: List<com.example.foss101.model.CriterionGrade>?
     ): RemoteLearningCompletionResult
 }

@@ -52,11 +52,26 @@ class GenerateArtifactRequest(BaseModel):
     preset: str | None = None
 
 
+class TaskStatePayload(BaseModel):
+    index: int
+    checked: bool = False
+    note: str | None = None
+
+
+class CriterionGradePayload(BaseModel):
+    index: int
+    met: bool = False
+    note: str | None = None
+
+
 class LearningCompletionRequest(BaseModel):
     termId: str = Field(min_length=1)
     artifactType: str
     confidence: str
     reflectionNotes: str | None = None
+    taskStates: list[TaskStatePayload] | None = None
+    challengeResponse: str | None = None
+    criteriaGrades: list[CriterionGradePayload] | None = None
 
 
 class TermDraftRequest(BaseModel):
@@ -452,6 +467,15 @@ def post_learning_completion(
             error={"code": "TERM_NOT_FOUND", "message": f"No term found for id '{request.termId}'."},
         )
 
+    task_states_payload = (
+        [item.model_dump() for item in request.taskStates] if request.taskStates is not None else None
+    )
+    criteria_grades_payload = (
+        [item.model_dump() for item in request.criteriaGrades]
+        if request.criteriaGrades is not None
+        else None
+    )
+
     try:
         result = record_learning_completion(
             user_id=current_user_id,
@@ -459,6 +483,9 @@ def post_learning_completion(
             artifact_type=request.artifactType,
             confidence=request.confidence,
             reflection_notes=request.reflectionNotes,
+            task_states=task_states_payload,
+            challenge_response=request.challengeResponse,
+            criteria_grades=criteria_grades_payload,
         )
     except ValueError as error:
         return _envelope_response(

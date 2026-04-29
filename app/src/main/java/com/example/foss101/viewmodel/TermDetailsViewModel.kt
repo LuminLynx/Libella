@@ -10,13 +10,45 @@ import com.example.foss101.data.repository.AuthRepository
 import com.example.foss101.data.repository.GlossaryRepository
 import com.example.foss101.model.ArtifactKind
 import com.example.foss101.model.CompletionConfidence
+import com.example.foss101.model.CriterionGrade
 import com.example.foss101.model.GeneratedArtifactResult
 import com.example.foss101.model.GlossaryTerm
 import com.example.foss101.model.LearningChallenge
 import com.example.foss101.model.LearningCompletion
 import com.example.foss101.model.LearningPreset
 import com.example.foss101.model.LearningScenario
+import com.example.foss101.model.TaskState
 import kotlinx.coroutines.launch
+
+/**
+ * Per-task editing state during the scenario completion workflow.
+ */
+data class ScenarioEditState(
+    val taskChecked: Map<Int, Boolean> = emptyMap(),
+    val taskNotes: Map<Int, String> = emptyMap(),
+    val reflection: String = "",
+    val confidence: CompletionConfidence = CompletionConfidence.Medium
+) {
+    fun checkedCount(): Int = taskChecked.count { it.value }
+    fun isSubmittable(): Boolean = checkedCount() > 0
+}
+
+enum class ChallengePhase { Writing, Grading }
+
+/**
+ * Per-criterion editing state during the challenge completion workflow.
+ */
+data class ChallengeEditState(
+    val response: String = "",
+    val phase: ChallengePhase = ChallengePhase.Writing,
+    val criterionMet: Map<Int, Boolean> = emptyMap(),
+    val criterionNotes: Map<Int, String> = emptyMap(),
+    val confidence: CompletionConfidence = CompletionConfidence.Medium
+) {
+    fun isResponseReady(): Boolean = response.trim().isNotEmpty()
+    fun isSubmittable(totalCriteria: Int): Boolean =
+        phase == ChallengePhase.Grading && totalCriteria > 0
+}
 
 data class ArtifactUiState<T>(
     val isLoading: Boolean = false,
@@ -37,7 +69,8 @@ data class TermDetailsUiState(
     val challengePreset: LearningPreset = LearningPreset.Default,
     val scenarioState: ArtifactUiState<LearningScenario> = ArtifactUiState(),
     val challengeState: ArtifactUiState<LearningChallenge> = ArtifactUiState(),
-    val activeCompletionSheet: ArtifactKind? = null
+    val scenarioEdit: ScenarioEditState = ScenarioEditState(),
+    val challengeEdit: ChallengeEditState = ChallengeEditState()
 )
 
 class TermDetailsViewModel(
@@ -108,7 +141,8 @@ class TermDetailsViewModel(
                 completion = null,
                 pointsAwarded = 0,
                 completionErrorMessage = null
-            )
+            ),
+            scenarioEdit = ScenarioEditState()
         )
 
         viewModelScope.launch {
@@ -145,7 +179,8 @@ class TermDetailsViewModel(
                 completion = null,
                 pointsAwarded = 0,
                 completionErrorMessage = null
-            )
+            ),
+            challengeEdit = ChallengeEditState()
         )
 
         viewModelScope.launch {
@@ -168,83 +203,186 @@ class TermDetailsViewModel(
         }
     }
 
-    fun openCompletionSheet(kind: ArtifactKind) {
-        uiState = uiState.copy(activeCompletionSheet = kind)
+    // ----- Scenario edit handlers -----
+
+    fun toggleScenarioTask(index: Int, checked: Boolean) {
+        val current = uiState.scenarioEdit
+        uiState = uiState.copy(
+            scenarioEdit = current.copy(
+                taskChecked = current.taskChecked + (index to checked)
+            )
+        )
     }
 
-    fun dismissCompletionSheet() {
-        uiState = uiState.copy(activeCompletionSheet = null)
+    fun setScenarioTaskNote(index: Int, note: String) {
+        val current = uiState.scenarioEdit
+        uiState = uiState.copy(
+            scenarioEdit = current.copy(
+                taskNotes = current.taskNotes + (index to note)
+            )
+        )
     }
 
-    fun submitCompletion(
-        kind: ArtifactKind,
-        confidence: CompletionConfidence,
-        reflectionNotes: String?
-    ) {
+    fun setScenarioReflection(text: String) {
+        uiState = uiState.copy(
+            scenarioEdit = uiState.scenarioEdit.copy(reflection = text)
+        )
+    }
+
+    fun setScenarioConfidence(confidence: CompletionConfidence) {
+        uiState = uiState.copy(
+            scenarioEdit = uiState.scenarioEdit.copy(confidence = confidence)
+        )
+    }
+
+    fun submitScenarioCompletion() {
         val resolvedTermId = termId ?: return
+        val scenario = uiState.scenarioState.data?.artifact ?: return
+        val edit = uiState.scenarioEdit
+        if (!edit.isSubmittable()) return
 
-        when (kind) {
-            ArtifactKind.Scenario -> {
-                uiState = uiState.copy(
-                    scenarioState = uiState.scenarioState.copy(
-                        isSubmittingCompletion = true,
-                        completionErrorMessage = null
-                    )
-                )
-            }
-            ArtifactKind.Challenge -> {
-                uiState = uiState.copy(
-                    challengeState = uiState.challengeState.copy(
-                        isSubmittingCompletion = true,
-                        completionErrorMessage = null
-                    )
-                )
-            }
+        val taskStates = scenario.tasks.indices.map { index ->
+            TaskState(
+                index = index,
+                checked = edit.taskChecked[index] == true,
+                note = edit.taskNotes[index]?.trim()?.ifBlank { null }
+            )
         }
+        val reflection = edit.reflection.trim().ifBlank { null }
+        val confidence = edit.confidence
+
+        uiState = uiState.copy(
+            scenarioState = uiState.scenarioState.copy(
+                isSubmittingCompletion = true,
+                completionErrorMessage = null
+            )
+        )
 
         viewModelScope.launch {
             try {
                 val result = repository.submitLearningCompletion(
                     termId = resolvedTermId,
-                    artifactType = kind,
+                    artifactType = ArtifactKind.Scenario,
                     confidence = confidence,
-                    reflectionNotes = reflectionNotes
+                    reflectionNotes = reflection,
+                    taskStates = taskStates,
+                    challengeResponse = null,
+                    criteriaGrades = null
                 )
-                uiState = when (kind) {
-                    ArtifactKind.Scenario -> uiState.copy(
-                        activeCompletionSheet = null,
-                        scenarioState = uiState.scenarioState.copy(
-                            isSubmittingCompletion = false,
-                            completion = result.completion,
-                            pointsAwarded = result.pointsAwarded,
-                            completionErrorMessage = null
-                        )
+                uiState = uiState.copy(
+                    scenarioState = uiState.scenarioState.copy(
+                        isSubmittingCompletion = false,
+                        completion = result.completion,
+                        pointsAwarded = result.pointsAwarded,
+                        completionErrorMessage = null
                     )
-                    ArtifactKind.Challenge -> uiState.copy(
-                        activeCompletionSheet = null,
-                        challengeState = uiState.challengeState.copy(
-                            isSubmittingCompletion = false,
-                            completion = result.completion,
-                            pointsAwarded = result.pointsAwarded,
-                            completionErrorMessage = null
-                        )
-                    )
-                }
+                )
             } catch (_: Exception) {
-                uiState = when (kind) {
-                    ArtifactKind.Scenario -> uiState.copy(
-                        scenarioState = uiState.scenarioState.copy(
-                            isSubmittingCompletion = false,
-                            completionErrorMessage = "Could not submit completion. Try again."
-                        )
+                uiState = uiState.copy(
+                    scenarioState = uiState.scenarioState.copy(
+                        isSubmittingCompletion = false,
+                        completionErrorMessage = "Could not submit completion. Try again."
                     )
-                    ArtifactKind.Challenge -> uiState.copy(
-                        challengeState = uiState.challengeState.copy(
-                            isSubmittingCompletion = false,
-                            completionErrorMessage = "Could not submit completion. Try again."
-                        )
+                )
+            }
+        }
+    }
+
+    // ----- Challenge edit handlers -----
+
+    fun setChallengeResponse(text: String) {
+        uiState = uiState.copy(
+            challengeEdit = uiState.challengeEdit.copy(response = text)
+        )
+    }
+
+    fun continueToChallengeGrading() {
+        val current = uiState.challengeEdit
+        if (!current.isResponseReady()) return
+        uiState = uiState.copy(
+            challengeEdit = current.copy(phase = ChallengePhase.Grading)
+        )
+    }
+
+    fun returnToChallengeWriting() {
+        uiState = uiState.copy(
+            challengeEdit = uiState.challengeEdit.copy(phase = ChallengePhase.Writing)
+        )
+    }
+
+    fun toggleCriterionMet(index: Int, met: Boolean) {
+        val current = uiState.challengeEdit
+        uiState = uiState.copy(
+            challengeEdit = current.copy(
+                criterionMet = current.criterionMet + (index to met)
+            )
+        )
+    }
+
+    fun setCriterionNote(index: Int, note: String) {
+        val current = uiState.challengeEdit
+        uiState = uiState.copy(
+            challengeEdit = current.copy(
+                criterionNotes = current.criterionNotes + (index to note)
+            )
+        )
+    }
+
+    fun setChallengeConfidence(confidence: CompletionConfidence) {
+        uiState = uiState.copy(
+            challengeEdit = uiState.challengeEdit.copy(confidence = confidence)
+        )
+    }
+
+    fun submitChallengeCompletion() {
+        val resolvedTermId = termId ?: return
+        val challenge = uiState.challengeState.data?.artifact ?: return
+        val edit = uiState.challengeEdit
+        if (!edit.isSubmittable(challenge.successCriteria.size)) return
+
+        val criteriaGrades = challenge.successCriteria.indices.map { index ->
+            CriterionGrade(
+                index = index,
+                met = edit.criterionMet[index] == true,
+                note = edit.criterionNotes[index]?.trim()?.ifBlank { null }
+            )
+        }
+        val response = edit.response.trim()
+        val confidence = edit.confidence
+
+        uiState = uiState.copy(
+            challengeState = uiState.challengeState.copy(
+                isSubmittingCompletion = true,
+                completionErrorMessage = null
+            )
+        )
+
+        viewModelScope.launch {
+            try {
+                val result = repository.submitLearningCompletion(
+                    termId = resolvedTermId,
+                    artifactType = ArtifactKind.Challenge,
+                    confidence = confidence,
+                    reflectionNotes = null,
+                    taskStates = null,
+                    challengeResponse = response,
+                    criteriaGrades = criteriaGrades
+                )
+                uiState = uiState.copy(
+                    challengeState = uiState.challengeState.copy(
+                        isSubmittingCompletion = false,
+                        completion = result.completion,
+                        pointsAwarded = result.pointsAwarded,
+                        completionErrorMessage = null
                     )
-                }
+                )
+            } catch (_: Exception) {
+                uiState = uiState.copy(
+                    challengeState = uiState.challengeState.copy(
+                        isSubmittingCompletion = false,
+                        completionErrorMessage = "Could not submit completion. Try again."
+                    )
+                )
             }
         }
     }

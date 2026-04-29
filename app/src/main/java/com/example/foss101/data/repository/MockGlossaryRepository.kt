@@ -417,8 +417,20 @@ class MockGlossaryRepository : GlossaryRepository {
         termId: String,
         artifactType: com.example.foss101.model.ArtifactKind,
         confidence: com.example.foss101.model.CompletionConfidence,
-        reflectionNotes: String?
+        reflectionNotes: String?,
+        taskStates: List<com.example.foss101.model.TaskState>?,
+        challengeResponse: String?,
+        criteriaGrades: List<com.example.foss101.model.CriterionGrade>?
     ): com.example.foss101.model.LearningCompletionResult {
+        val earned = when (artifactType) {
+            com.example.foss101.model.ArtifactKind.Scenario ->
+                minOf(10, 5 + (taskStates?.count { it.checked } ?: 0))
+            com.example.foss101.model.ArtifactKind.Challenge -> {
+                val grades = criteriaGrades.orEmpty()
+                if (grades.isEmpty()) 0
+                else (grades.count { it.met }.toDouble() / grades.size * 15).toInt()
+            }
+        }
         return com.example.foss101.model.LearningCompletionResult(
             completion = com.example.foss101.model.LearningCompletion(
                 id = System.currentTimeMillis(),
@@ -427,9 +439,13 @@ class MockGlossaryRepository : GlossaryRepository {
                 artifactType = artifactType,
                 confidence = confidence,
                 reflectionNotes = reflectionNotes,
+                taskStates = taskStates,
+                challengeResponse = challengeResponse,
+                criteriaGrades = criteriaGrades,
+                earnedPoints = earned,
                 completedAt = "2024-01-01T00:00:00Z"
             ),
-            pointsAwarded = if (artifactType == com.example.foss101.model.ArtifactKind.Challenge) 15 else 10,
+            pointsAwarded = earned,
             alreadyCompleted = false
         )
     }
