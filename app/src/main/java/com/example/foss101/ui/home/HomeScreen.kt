@@ -155,5 +155,13 @@ private fun HomeScreenContent(
             onClick = { onNavigate("preview_tokenization") },
             modifier = Modifier.fillMaxWidth()
         )
+
+        NavigationTile(
+            title = "Tokenization · bite feed",
+            description = "Bundle 0 v3 — TikTok-shaped vertical swipe of 6 interactions",
+            leadingIcon = Icons.Filled.Science,
+            onClick = { onNavigate("preview_tokenization_bite") },
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }
