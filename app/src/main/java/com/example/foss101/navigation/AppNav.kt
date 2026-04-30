@@ -17,6 +17,8 @@ import com.example.foss101.ui.details.TermDetailsScreen
 import com.example.foss101.ui.draft.TermDraftScreen
 import com.example.foss101.ui.home.HomeScreen
 import com.example.foss101.ui.preview.TokenizationProofScreen
+import com.example.foss101.ui.preview.bite.BiteFeedScreen
+import com.example.foss101.ui.preview.bite.tokenizationBites
 import com.example.foss101.ui.search.SearchScreen
 import com.example.foss101.ui.settings.SettingsScreen
 import com.example.foss101.ui.trendwatcher.TrendWatcherScreen
@@ -110,6 +112,12 @@ fun AppNav() {
         }
         composable("preview_tokenization") {
             TokenizationProofScreen(onBack = { navController.popBackStack() })
+        }
+        composable("preview_tokenization_bite") {
+            BiteFeedScreen(
+                bites = tokenizationBites(),
+                onClose = { navController.popBackStack() }
+            )
         }
     }
 }
