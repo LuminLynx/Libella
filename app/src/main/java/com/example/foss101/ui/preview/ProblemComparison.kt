@@ -13,9 +13,9 @@ import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -54,7 +54,7 @@ fun ProblemComparison() {
             )
         }
 
-        PrimaryTabRow(selectedTabIndex = selected) {
+        TabRow(selectedTabIndex = selected) {
             tabs.forEachIndexed { index, label ->
                 Tab(
                     selected = selected == index,
