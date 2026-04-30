@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -141,5 +142,18 @@ private fun HomeScreenContent(
                 modifier = Modifier.fillMaxWidth()
             )
         }
+
+        SectionHeader(
+            title = "Concept previews",
+            modifier = Modifier.padding(top = 12.dp, bottom = 2.dp)
+        )
+
+        NavigationTile(
+            title = "Tokenization",
+            description = "Bundle 0 proof — rich learning page + try-it widget",
+            leadingIcon = Icons.Filled.Science,
+            onClick = { onNavigate("preview_tokenization") },
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }

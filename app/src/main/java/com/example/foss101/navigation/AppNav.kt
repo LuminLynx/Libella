@@ -16,6 +16,7 @@ import com.example.foss101.ui.chat.ChatScreen
 import com.example.foss101.ui.details.TermDetailsScreen
 import com.example.foss101.ui.draft.TermDraftScreen
 import com.example.foss101.ui.home.HomeScreen
+import com.example.foss101.ui.preview.TokenizationProofScreen
 import com.example.foss101.ui.search.SearchScreen
 import com.example.foss101.ui.settings.SettingsScreen
 import com.example.foss101.ui.trendwatcher.TrendWatcherScreen
@@ -106,6 +107,9 @@ fun AppNav() {
                 onBack = { navController.popBackStack() },
                 onAuthenticated = { navController.popBackStack() }
             )
+        }
+        composable("preview_tokenization") {
+            TokenizationProofScreen(onBack = { navController.popBackStack() })
         }
     }
 }
