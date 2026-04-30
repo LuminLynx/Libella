@@ -27,19 +27,20 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 
 /**
- * Bundle 0 proof screen: a hand-authored, rich learning page for "Tokenization".
+ * Bundle 0 v2 — interactive Tokenization proof.
  *
- * No data model, no AI generation, no migration. Pure static UI proof of what a
- * canonical term page should *feel* like when populated by the future content
- * pipeline (curated sources + grounded generation).
+ * Every section (except the brief TL;DR and the Sources list) is a stand-alone
+ * interactive widget. The text scaffolding around each widget is deliberately
+ * minimal — the goal is for the user to learn by doing, not by reading.
  *
- * Section structure mirrors the schema we will adopt in Bundle A:
- *  - TL;DR
- *  - Why this matters
- *  - How it works
- *  - Concrete example  (with embedded interactive widget)
- *  - Pitfalls
- *  - Sources
+ * Section order:
+ *   1. TL;DR (single sentence)
+ *   2. The problem (3-tab Characters / Words / Tokens comparison)
+ *   3. How BPE works (stepper through a tiny corpus)
+ *   4. Try it (tokenizer playground with language presets)
+ *   5. Pitfall: compound-word fragmentation (live)
+ *   6. Pitfall: emoji cost (live)
+ *   7. Sources (tappable cards)
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -77,10 +78,26 @@ fun TokenizationProofScreen(onBack: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             TldrCard()
-            SectionCard(title = "Why this matters", body = WHY_BODY)
-            SectionCard(title = "How it works", body = HOW_BODY)
-            ExampleCard()
-            PitfallsCard()
+            InteractionCard(
+                title = "The problem",
+                subtitle = "Tap each tab to see what breaks."
+            ) { ProblemComparison() }
+            InteractionCard(
+                title = "How BPE builds a vocabulary",
+                subtitle = "Step through a tiny corpus and watch tokens merge."
+            ) { BpeWalkthrough() }
+            InteractionCard(
+                title = "Try it",
+                subtitle = "Type or pick a preset; tokens update live."
+            ) { TokenizerPlayground() }
+            InteractionCard(
+                title = "Pitfall · compound words split unexpectedly",
+                subtitle = null
+            ) { JavaScriptSplitDemo() }
+            InteractionCard(
+                title = "Pitfall · emojis are expensive",
+                subtitle = null
+            ) { EmojiCostDemo() }
             SourcesCard()
             ProofFooter()
         }
@@ -97,7 +114,7 @@ private fun TldrCard() {
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Text(
                 text = "TL;DR",
@@ -105,10 +122,7 @@ private fun TldrCard() {
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
             Text(
-                text = "Tokenization converts raw text into a sequence of discrete units (tokens) " +
-                    "that a language model actually operates on. Modern LLMs use subword " +
-                    "tokenization — like Byte-Pair Encoding (BPE) or SentencePiece — which " +
-                    "balances vocabulary size against sequence length.",
+                text = "Tokenization turns text into the discrete pieces a language model actually operates on.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
@@ -117,23 +131,11 @@ private fun TldrCard() {
 }
 
 @Composable
-private fun SectionCard(title: String, body: String) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(text = title, style = MaterialTheme.typography.titleMedium)
-            Text(text = body, style = MaterialTheme.typography.bodyMedium)
-        }
-    }
-}
-
-@Composable
-private fun ExampleCard() {
+private fun InteractionCard(
+    title: String,
+    subtitle: String?,
+    content: @Composable () -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -142,66 +144,16 @@ private fun ExampleCard() {
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Text(text = "Concrete example", style = MaterialTheme.typography.titleMedium)
-            Text(
-                text = "Type any sentence below to see how it breaks into tokens. " +
-                    "Each chip is one token; the small number under it is its (synthetic) id.",
-                style = MaterialTheme.typography.bodyMedium
-            )
-            TokenizationWidget()
+            Text(text = title, style = MaterialTheme.typography.titleMedium)
+            if (subtitle != null) {
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            content()
         }
-    }
-}
-
-@Composable
-private fun PitfallsCard() {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = "Pitfalls / when this fails",
-                style = MaterialTheme.typography.titleMedium
-            )
-            Pitfall(
-                title = "Token boundaries shape outputs.",
-                body = "A model rarely sees \"JavaScript\" as a single token; it sees \"Java\" + " +
-                    "\"Script\". This can subtly leak associations and biases learned from each piece."
-            )
-            Pitfall(
-                title = "Counting tokens ≠ counting words.",
-                body = "A 100-word English sentence is typically 130–200 tokens. Non-English " +
-                    "languages and code can be 2–3× more, because the tokenizer's vocabulary " +
-                    "was learned mostly on English."
-            )
-            Pitfall(
-                title = "Special characters and emojis are expensive.",
-                body = "A single emoji often takes 3–4 tokens. A long unicode-heavy string " +
-                    "can blow up token counts dramatically."
-            )
-            Pitfall(
-                title = "Different models, different tokenizers.",
-                body = "GPT-4's tokenizer is not LLaMA's, which is not Claude's. The same " +
-                    "prompt has different costs and different boundary behaviour across models."
-            )
-        }
-    }
-}
-
-@Composable
-private fun Pitfall(title: String, body: String) {
-    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text(text = "• $title", style = MaterialTheme.typography.bodyMedium)
-        Text(
-            text = body,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 12.dp)
-        )
     }
 }
 
@@ -218,44 +170,39 @@ private fun SourcesCard() {
         ) {
             Text(text = "Sources", style = MaterialTheme.typography.titleMedium)
             Text(
-                text = "This page synthesises material from the following sources. Future " +
-                    "auto-generated pages will cite them inline per section.",
+                text = "Each section in a future curated page will cite the specific source it draws from.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             SourceRow(
-                label = "Wikipedia — Lexical analysis",
-                url = "https://en.wikipedia.org/wiki/Lexical_analysis",
                 kind = "Wikipedia",
-                onOpen = { uriHandler.openUri(it) }
-            )
+                label = "Lexical analysis — the broader concept of breaking text into tokens",
+                url = "https://en.wikipedia.org/wiki/Lexical_analysis"
+            ) { uriHandler.openUri(it) }
             SourceRow(
-                label = "Sennrich, Haddow & Birch (2016) — Neural Machine Translation of Rare Words with Subword Units",
-                url = "https://arxiv.org/abs/1508.07909",
                 kind = "arXiv · BPE paper",
-                onOpen = { uriHandler.openUri(it) }
-            )
+                label = "Sennrich, Haddow & Birch (2016) — Neural Machine Translation of Rare Words with Subword Units",
+                url = "https://arxiv.org/abs/1508.07909"
+            ) { uriHandler.openUri(it) }
             SourceRow(
-                label = "Karpathy — Let's build the GPT Tokenizer",
-                url = "https://www.youtube.com/watch?v=zduSFxRajkE",
                 kind = "Video",
-                onOpen = { uriHandler.openUri(it) }
-            )
+                label = "Karpathy — Let's build the GPT Tokenizer",
+                url = "https://www.youtube.com/watch?v=zduSFxRajkE"
+            ) { uriHandler.openUri(it) }
             SourceRow(
-                label = "Hugging Face — Tokenizers chapter",
-                url = "https://huggingface.co/learn/nlp-course/chapter6/1",
                 kind = "Course",
-                onOpen = { uriHandler.openUri(it) }
-            )
+                label = "Hugging Face — Tokenizers chapter",
+                url = "https://huggingface.co/learn/nlp-course/chapter6/1"
+            ) { uriHandler.openUri(it) }
         }
     }
 }
 
 @Composable
 private fun SourceRow(
+    kind: String,
     label: String,
     url: String,
-    kind: String,
     onOpen: (String) -> Unit
 ) {
     Card(
@@ -294,30 +241,9 @@ private fun SourceRow(
 @Composable
 private fun ProofFooter() {
     Text(
-        text = "Bundle 0 proof — static, hand-authored, no data model. " +
-            "If this depth feels right, Bundle A introduces the schema that lets every term page look like this.",
+        text = "Bundle 0 v2 — every section is an interaction. If this shape feels right, " +
+            "Bundle A introduces a schema where every section is a typed widget kind + payload.",
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant
     )
 }
-
-private const val WHY_BODY =
-    "Models can't process raw characters or whole words efficiently. Character-level input " +
-    "produces sequences too long to be practical; word-level input can't handle words that " +
-    "weren't seen in training. Tokenization is the bridge: it determines vocabulary size, " +
-    "sequence length, multilingual coverage, and even what the model can emit. A bad " +
-    "tokenizer caps what the model can do — no architecture or training data can fully " +
-    "compensate for it."
-
-private const val HOW_BODY =
-    "1. The tokenizer learns a vocabulary of subword pieces from a training corpus, " +
-    "typically via Byte-Pair Encoding (BPE) — repeatedly merging the most frequent " +
-    "adjacent symbol pairs.\n\n" +
-    "2. At inference time, input text is scanned left-to-right and split into the longest " +
-    "matching pieces from that vocabulary. Common words become a single token; rare words " +
-    "split into multiple subword pieces; truly unseen characters fall through to a " +
-    "byte-level fallback.\n\n" +
-    "3. Each piece maps to a fixed integer id.\n\n" +
-    "4. The model operates on the integer sequence — embeddings → transformer layers → " +
-    "output logits. The output is also a sequence of token ids that get converted back " +
-    "into text by the same vocabulary."
