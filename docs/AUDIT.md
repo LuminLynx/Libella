@@ -1,8 +1,16 @@
 # Phase 0 — Cleanup Audit
 
-**Status:** Draft for founder sign-off (recorded 2026-05-04).
+**Status:** Draft for founder sign-off — revision pass applied 2026-05-04.
 **Anchored to:** [`STRATEGY.md`](./STRATEGY.md) and [`EXECUTION.md`](./EXECUTION.md).
-**Branch:** `claude/cleanup-audit-YUHEh`.
+**Branch:** `claude/audit-revision-I7CvQ` (this revision).
+**Revision summary:** Original draft on `claude/cleanup-audit-YUHEh`. This pass
+addresses review push-backs without re-litigating locked strategy: explicit
+data-preservation policy in §2.6, clarified Phase 0 vs Phase 2 provider-switch
+scope in §5 #6, MCQ-as-Return-step option surfaced in §1.8 + §5 #7, fresh
+Phase 1 mocks justified for §1.11, consistent archive-or-delete policy across
+§3 + §5 #4, new sub-sections for AndroidManifest (§1.13), Resources expanded
+(§1.14), CI/CD pipelines absent (§1.15), and forward-looking Phase 1 test
+scaffolding (§7).
 
 This audit walks the FOSS-101 repo and classifies every meaningful module/file
 against the locked Libella strategy as one of:
@@ -105,7 +113,7 @@ Tokenization. Bundle 0 has reusable raw material for the bite…").
 | `ui/preview/TokenizationProofScreen.kt` | RESHAPE | The static stacked-page rendering of the tokenization unit. Becomes the *depth-on-tap* mode of the Tokenization flagship unit (F2). Drop the standalone `preview_tokenization` route once it lives inside the unit reader. |
 | `ui/preview/bite/BiteFeedScreen.kt` | RESHAPE | Vertical pager bite-feed shell. Useful as the *bite* mode of F2 (Loop step 2). Generalize from "Tokenization bites" to "any unit's bites". |
 | `ui/preview/bite/TokenizationBites.kt` | RESHAPE | Concrete bite list for Tokenization. Becomes the seed payload for the Tokenization flagship unit when authoring re-expresses it in the markdown 9-slot anatomy. Eventually this hardcoded list is replaced by data loaded from the authored unit. |
-| `ui/preview/bite/McqCheckpoint.kt` | RESHAPE → DELETE-leaning | Multiple-choice checkpoint widget. Strategy says: *"Multiple-choice and self-grade are explicitly rejected"* for the Decide step. **The MCQ checkpoint cannot survive as Loop step 3.** It may have a sliver of life as an *in-bite comprehension nudge* preceding the decision prompt, but if it muddies the wedge, delete. Recommend DELETE unless founder explicitly wants it kept as supplementary. |
+| `ui/preview/bite/McqCheckpoint.kt` | RESHAPE → DELETE-leaning | Multiple-choice checkpoint widget. Strategy says: *"Multiple-choice and self-grade are explicitly rejected"* for the Decide step. **The MCQ checkpoint cannot survive as Loop step 3.** Two possible survival paths to consider before deleting: (i) an *in-bite comprehension nudge* preceding the decision prompt, or (ii) the **Return step (Loop step 6, spaced review)** where the question is retention rather than first-encounter learning — strategy's explicit rejection of MCQ is scoped to *Decide*, and MCQ is more defensible for retention checks. Both are founder calls (see §5 #1 and §5 #7). The Return-step path is the new option surfaced in this revision; the bite-nudge path was the original recommendation. Recommend DELETE only after the founder closes both options; otherwise hold pending decision. |
 | `ui/preview/SimpleTokenizer.kt` | KEEP | Pure tokenizer logic backing the playground demo; reusable verbatim by the Tokenization unit. |
 | `ui/preview/TokenizerPlayground.kt` | RESHAPE | Interactive widget; survives as one of the S2 flagship-only interactive widgets inside the Tokenization unit. |
 | `ui/preview/BpeWalkthrough.kt` | RESHAPE | Same as above — flagship-only interactive widget. |
@@ -140,7 +148,7 @@ Tokenization. Bundle 0 has reusable raw material for the bite…").
 | `data/repository/RepositoryProvider.kt` | KEEP | Provider object, simple lazy DI; survives. |
 | `data/repository/GlossaryRepository.kt` (interface) | RESHAPE → replace | Currently a fat catch-all (terms, categories, search, askGlossary, generateScenario, generateChallenge, submitTermDraft, submitLearningCompletion). Strategy splits this cleanly into: `PathRepository`, `UnitRepository`, `DecisionRepository` (submit answer → grade), `CompletionRepository`, `ReviewScheduleRepository`. Plus a small `GlossaryRepository` retained for S1. Don't extend; replace. |
 | `data/repository/ApiGlossaryRepository.kt` | RESHAPE → replace | Same — implementation against deleted endpoints. |
-| `data/repository/MockGlossaryRepository.kt` | DELETE | Currently unused (`repositoryMode = API`). If a mock is needed during Phase 1 reshape, write a new path-shaped one rather than reanimating this. |
+| `data/repository/MockGlossaryRepository.kt` | DELETE — **fresh mocks in Phase 1** | Currently unused (`repositoryMode = API`). The instinct to keep it as a template is reasonable but doesn't pay off: Phase 1 splits the fat `GlossaryRepository` into 4–5 small path-centric repositories (`PathRepository`, `UnitRepository`, `DecisionRepository`, `CompletionRepository`, `ReviewScheduleRepository`), and the existing mock implements *the deleted shape* on every method. Renaming and gutting it to fit a single new interface saves nothing over writing a 30-line in-memory mock per new repo from scratch — and the seed data inside (categories, terms) is not the right test fixture for a path-centric world either. **Phase 1 will author fresh mocks per new repository interface; the cost is acceptable and the result is cleaner.** This delete is contingent on Phase 1 actually authoring those mocks (called out in §7 below). |
 | `data/remote/api/GlossaryApiService.kt` | RESHAPE → replace | Interface mirrors the deleted endpoints. New shape will have `getPath`, `getUnit`, `submitDecisionAnswer`, `streamGradeResult`, etc. |
 | `data/remote/network/ApiConfig.kt` `GlossaryApiServiceFactory.kt` | RESHAPE | HTTP plumbing (URL, JSON, auth header). The plumbing is fine; the surface it exposes changes. |
 | `data/remote/model/RemoteGlossaryTerm.kt` | RESHAPE | DTOs need to follow the new path-centric server shape. |
@@ -158,11 +166,44 @@ Tokenization. Bundle 0 has reusable raw material for the bite…").
 | `viewmodel/BrowseTermsViewModel.kt` `CategoriesViewModel.kt` `SearchViewModel.kt` | RESHAPE | Survive only if their screens survive (S1 side-door). Likely all collapse into one small viewmodel for the side-door in Phase 3. |
 | `viewmodel/AuthViewModel.kt` | KEEP | F7. |
 
-### 1.13 Resources
+### 1.13 AndroidManifest — **KEEP**
 
-| File | Verdict |
-|---|---|
-| `res/values/strings.xml` | KEEP — sweep for old-soul strings during reshape. |
+| File | Verdict | Notes |
+|---|---|---|
+| `app/src/main/AndroidManifest.xml` | KEEP | Inspected. Declares `INTERNET` permission, an `application` block with theme/label, and exactly one `activity` (`.MainActivity`) with the `MAIN` / `LAUNCHER` intent filter. **Nothing in the manifest references the deleted screens** — the cut UIs (`AiToolsScreen`, `ChatScreen`, `TrendWatcherScreen`, `TermDraftScreen`) are Compose composables routed through `navigation/AppNav.kt`, not Android `Activity` declarations, so the manifest is unaffected by their removal. No intent filters, no exported components, no permissions tied to deleted features. No edits required during Phase 0. (If any future feature requires storage access, push notifications, or share intents, add at that time.) |
+
+### 1.14 Resources — **KEEP-light, with a Phase 1 watch-item**
+
+| File | Verdict | Notes |
+|---|---|---|
+| `res/values/strings.xml` | KEEP | Today contains exactly one entry: `<string name="app_name">FOSS 101</string>`. **All user-facing copy is currently hardcoded inline in Compose composables** (e.g. `Text("AI Learning Layer")` inside `HomeScreen.kt`, scenario/challenge UX strings inside `TermDetailsScreen.kt`, term-draft form labels inside `TermDraftScreen.kt`, contribution scoring strings inside the contribution-flow viewmodels). Because those composables themselves are DELETE / RESHAPE per §1.3 / §1.6 / §1.7 / §1.4, the strings vanish with them. No surgical sweep of `strings.xml` needed *now*. |
+| **Watch-item for Phase 1** | — | When Phase 1 begins extracting hardcoded copy into `strings.xml` (a likely a11y / future-i18n step alongside the path-centric reshape), the categories that must **not** carry over from the old surfaces are: (a) AI Tools menu items (*"AI Learning Layer"*, *"Ask Glossary"*, *"Trend Watcher"*); (b) scenario / challenge UX copy (preset-picker labels, scenario card titles, challenge prompts); (c) term-draft form labels (*"Submit term"*, contributor-confirmation strings); (d) contribution scoring strings (*"You earned N points"*, contributor-summary copy). These are surfaces of cut features; their copy does not get a second life in v1. |
+| **Localization** | — | No `res/values-*/` directories exist (no localized resource sets). No translations to retire, no localization implications from the cut. If localization is ever added, it begins fresh against the path-centric vocabulary, not the old soul's. |
+| `app_name` itself | KEEP, **rename watch-item for Phase 4** | `app_name = "FOSS 101"` will need to flip to `"Libella"` (or whatever the trademark check clears under `STRATEGY.md` § Naming) at the Phase 4 launch-readiness gate. Not a Phase 0 concern. |
+
+### 1.15 CI / CD pipelines — **ABSENT (state explicitly)**
+
+Walked the repo for `.github/workflows/`, `.gitlab-ci.yml`, `.circleci/`,
+`Jenkinsfile`, `azure-pipelines.yml`, and any `*.yml` / `*.yaml` at the root.
+**None present.** There are no CI workflows to triage against the cut list.
+
+Implications:
+
+- No automated test runner today means `tests/test_presets.py` and
+  `tests/test_scoring.py` (DELETE per §2.8) are not currently being
+  exercised in CI; their deletion silently removes nothing scheduled.
+- No build pipeline today means there is no Android build job that will fail
+  the moment the deleted Compose screens stop resolving — local `gradlew`
+  and developer attention are the only signal.
+- The `scripts/claude/capture-gradle-cache.sh` / `restore-gradle-cache.sh`
+  pair under §3 is *cache plumbing for Claude web sessions*, not CI per se.
+
+This is a gap, not a verdict. **Phase 1 should add CI** — at minimum: a
+GitHub Actions workflow that runs `pytest backend/tests/`, runs the
+schema-linter on authored unit markdown (per `EXECUTION.md` Phase 1 work),
+and runs `gradle assembleDebug` on the Android module. The grader regression
+runner (`EXECUTION.md` Phase 2) will live in CI by Phase 2. Tracked further
+in §7.
 
 ---
 
@@ -238,6 +279,27 @@ encode features that are explicitly cut. Strategy here:
   term_search_events, ai_generated_content) get retired by future migrations
   (drop or rename), not by editing the migrations that created them.
 
+**Data preservation before drops — founder call required.** The retire-by-drop
+approach above destroys whatever rows currently live in `term_drafts`,
+`contribution_events`, `contributor_scores`, `ai_generated_content`, and
+`term_search_events`. Two acceptable paths; founder must pick one before any
+drop migration lands:
+
+- **(a) No preservation needed.** Confirm in writing that the deployed Railway
+  DB contains only synthetic / development data — i.e. no real contributor
+  records, no real search telemetry worth retaining for analysis. If true, drop
+  freely. *Working assumption: this is the case, since the contribution flow
+  was never publicly launched. Founder confirmation required.*
+- **(b) Snapshot, then drop.** Before the retirement migration ships, export
+  each retiring table to a SQL dump committed under `db/archive/` (e.g.
+  `db/archive/2026-05_term_drafts.sql`). Dump format: `pg_dump
+  --data-only --table=<name>`. Future analysis can re-load from the dump if
+  needed, and the drop is reversible in the historical sense. Adds ~30 minutes
+  of work to the retirement migration; no recurring cost.
+
+Either way, this is a founder call (#8 in §5), not an audit-level decision.
+The audit assumes (a) until told otherwise.
+
 | Migration | Subject | Verdict |
 |---|---|---|
 | `001_initial_schema.sql` | terms, categories | KEEP, demote (S1 backing data) |
@@ -304,8 +366,8 @@ forward step each time):
 | `docs/roadmap/ROADMAP.md` | RESHAPE → archive (single canonical archived copy of the old roadmap) | Same body as root ROADMAP.md, no top-of-file supersession note. Pick one location, mark archived, drop the other. |
 | `docs/architecture/BACKEND_DATABASE_SCOPE.md` | DELETE | Begins with "No user accounts. No chat / AI tools. Online-first. Content managed manually." Most decisions are obsolete or contradicted by the new strategy (we *do* have user accounts; we *do* have an LLM grader). The misalignment is worse than no doc at all. |
 | `docs/test.kt` | DELETE | 1-line file, ignored by `.gitignore`. Not needed. |
-| `docs/workflow/AGENTS.md` `CLAUDE_CAPABILITIES.md` `CODEX_EXECUTION_ROADMAP.md` `CODEX_HOME_THEME_ALIGNMENT_BUNDLE.md` `GEMINI_AGENT_ROADMAP.md` `TASKS.md` | RESHAPE → archive | Old workflow docs anchored to the old soul. Not load-bearing under the new strategy but document past intent. Recommend moving to `docs/workflow/_archive/` rather than deleting outright; pruning can come at Phase 3 when nothing references them. |
-| `docs/workflow/prompts/*` (25 prompt bundles named e.g. `AI_LEARNING_LAYER.md`, `TERM_DRAFT_*`, `CATEGORIES_SEARCH_MVP_BUNDLE.md`, etc.) | DELETE | Each prompt bundle drove a feature that is now cut (term drafts, contribution pipeline, AI Learning Layer with style picker, category/search MVP as front door). Keeping them around invites confused future agents to re-execute against a dead spec. **Strong recommend: delete the directory** rather than archive. If history-preservation matters, git already preserves them. |
+| `docs/workflow/AGENTS.md` `CLAUDE_CAPABILITIES.md` `CODEX_EXECUTION_ROADMAP.md` `CODEX_HOME_THEME_ALIGNMENT_BUNDLE.md` `GEMINI_AGENT_ROADMAP.md` `TASKS.md` | DELETE | Old workflow docs anchored to the old soul. Each one was a guide for executing against features that are now cut (term-draft contribution pipelines, AI Learning Layer style picker, ask-glossary as a primary surface). Under P5 (quality ceiling, not content scale), keeping confusing dead docs around is a tax that compounds — every future agent has to figure out which doc is current and risks executing against a dead spec. **Recommended: delete.** Git preserves the history if anyone ever needs to reread them. *If founder prefers archival, the consistent fallback is to archive these alongside `prompts/` under `docs/workflow/_archive/` — see §5 #4.* |
+| `docs/workflow/prompts/*` (25 prompt bundles named e.g. `AI_LEARNING_LAYER.md`, `TERM_DRAFT_*`, `CATEGORIES_SEARCH_MVP_BUNDLE.md`, etc.) | DELETE | Each prompt bundle drove a feature that is now cut (term drafts, contribution pipeline, AI Learning Layer with style picker, category/search MVP as front door). Same P5 logic as the workflow docs above: dead specs invite re-execution against a dead world. **Recommended: delete.** Git preserves them. *Same fallback if founder prefers archival — both directories archived together under `_archive/`, never one and not the other (§5 #4).* |
 
 ---
 
@@ -319,7 +381,8 @@ forward step each time):
   `viewmodel/TermDetailsViewModel.kt`,
   `ui/components/PresetSelector.kt`, `model/TermDraft.kt`,
   `model/AiLearningModels.kt`, `model/LearningPreset.kt` (replace with
-  new path-centric models), `data/repository/MockGlossaryRepository.kt`,
+  new path-centric models), `data/repository/MockGlossaryRepository.kt`
+  (Phase 1 authors fresh mocks per new interface — see §1.11 + §7),
   `data/remote/model/RemoteAiModels.kt`,
   `data/remote/model/RemoteTermDraft.kt`. Recommend delete:
   `ui/preview/bite/McqCheckpoint.kt` (founder call).
@@ -328,7 +391,9 @@ forward step each time):
   `scripts/audit_term_schema.py`. Endpoints in `main.py` for term-drafts,
   contributors, ask-glossary, scenario, challenge.
 - Repo: `docs/test.kt`, `docs/architecture/BACKEND_DATABASE_SCOPE.md`,
-  `docs/workflow/prompts/*` (the whole `prompts/` directory).
+  `docs/workflow/*.md` (the workflow docs) **and**
+  `docs/workflow/prompts/*` (the prompt bundles) — applied as a single
+  consistent policy per §5 #4 (delete both, or archive both; never split).
 
 ### Reshape
 
@@ -346,8 +411,10 @@ forward step each time):
   `db/seed.sql` (demote to S1 seed material), `scripts/seed_db.py`,
   `scripts/verify_postgres_api.py`. Migrations 003, 005, 006, 007, 008, 010,
   011, 012 retired by *new* forward migrations, not by editing.
-- Repo: `ROADMAP.md` (root) → fold into single archived copy.
-  `docs/workflow/*.md` → move to `docs/workflow/_archive/`.
+- Repo: `ROADMAP.md` (root) → fold into single archived copy under
+  `docs/roadmap/`. (The workflow docs and prompt bundles are now in the
+  Delete bucket above per §5 #4 — only the archival fallback would move
+  them to `docs/workflow/_archive/`.)
 
 ### Keep
 
@@ -379,9 +446,14 @@ the wrong call wastes work later:
    Confirms dead-code on two screens.
 3. **`term_search_events`** (missing-query telemetry). Useful diagnostic; not
    load-bearing. Keep cheap, or drop entirely?
-4. **Workflow archive vs. delete**. `docs/workflow/*.md` and `prompts/*`. My
-   recommendation: archive `workflow/*.md` under `_archive/`, delete
-   `prompts/` outright. Confirm.
+4. **Workflow archive vs. delete**. `docs/workflow/*.md` and
+   `docs/workflow/prompts/*`. The "git preserves history" rationale applies
+   equally to both, so the audit must pick *one* policy and apply it
+   consistently. **Recommendation: delete both**, citing P5 — keeping
+   confusing dead docs is a tax on every future agent that opens the repo
+   and tries to figure out which spec is current. If founder prefers
+   archival, archive *both* under `docs/workflow/_archive/` (not just one).
+   What is not on the table: deleting one and archiving the other.
 5. **Migration retirement strategy**. Confirm we will retire dead tables via
    *new* forward migrations (drop / rename) rather than editing the
    already-applied historical ones. (This is standard Postgres practice; just
@@ -390,7 +462,34 @@ the wrong call wastes work later:
    currently point at OpenAI. The strategy locks Anthropic Claude Sonnet 4.6
    "pending final confirmation". Should the env defaults flip in Phase 0
    (cheap) or wait for Phase 2 (`#2` resolves there per `EXECUTION.md`)?
-   Recommend: flip in Phase 0 — costs nothing, removes confusion.
+   Recommend: flip in Phase 0 — costs nothing, removes confusion. **This is
+   a configuration-only change, not a Phase 2 pre-emption.** The Phase 0 flip
+   updates `app/config.py` defaults and `requirements.txt` so the codebase
+   stops carrying a contradiction with `STRATEGY.md` Q3. The provider
+   *final-lock* per `EXECUTION.md` Phase 2 still happens after the grader is
+   integrated and run against the regression set — that is the empirical step
+   that confirms the choice. Phase 0's flip is paperwork; Phase 2's lock is
+   evidence. No one should read this Phase 0 change as locking the provider.
+7. **MCQ as Return-step (spaced review), not Decide-step.** Strategy
+   *explicitly* rejects MCQ for Decide (Loop step 3) — that decision is
+   locked. Strategy is *silent* on the format of Return (Loop step 6).
+   Return is checking *retention* of an already-encountered concept, not
+   first-encounter learning, and MCQ is much more defensible there: cheap to
+   render, no LLM cost, fast feedback, well-suited to "do you still know
+   this?" rather than "can you reason about trade-offs?". Question for the
+   founder: *Could `McqCheckpoint.kt` survive as the Return-step format
+   (perhaps alongside or as an alternative to re-running the bite)?* If yes,
+   §1.8's verdict on `McqCheckpoint.kt` becomes RESHAPE (move to Return);
+   if no, it stays DELETE. The audit does not pre-empt this — surfacing the
+   option only.
+8. **Data preservation before retirement migrations.** See §2.6. Either
+   confirm in writing that the deployed Railway DB carries only synthetic /
+   development data in the retiring tables (`term_drafts`,
+   `contribution_events`, `contributor_scores`, `ai_generated_content`,
+   `term_search_events`) — in which case drop without snapshot — or specify
+   the snapshot procedure (`pg_dump --data-only --table=…` committed under
+   `db/archive/`) before the drop migration lands. The audit assumes
+   synthetic-only until told otherwise.
 
 ---
 
@@ -404,3 +503,114 @@ the wrong call wastes work later:
   only translates it into file-level verdicts. If a verdict here looks
   strategically wrong, the path is to surface a strategy revision, not to
   edit the verdict in isolation.
+
+---
+
+## 7. Phase 1 test scaffolding that this audit anticipates
+
+This section is forward-looking, not Phase 0 work. It captures the test
+scaffolding Phase 1 should ship alongside the path-centric reshape, so the
+foundation phase doesn't end with reshaped code and no safety net under it.
+None of the items below need to land before founder sign-off on the cut
+list, but they should be planned for so Phase 1 isn't surprised by them
+mid-flight.
+
+### Repository contract tests
+
+Phase 1 splits the fat `GlossaryRepository` into path-centric repositories
+(§1.11). Each new repository interface needs a small contract test that runs
+against both an in-memory mock and the real API-backed implementation:
+
+- `PathRepository` — getPath, list-paths-for-user, "next unit on path".
+- `UnitRepository` — getUnit (full 9-slot payload), list-units-on-path,
+  prereq resolution.
+- `DecisionRepository` — submitAnswer, observe streamed grade, fetch
+  per-criterion confidence and flagged state.
+- `CompletionRepository` — record completion, list completions, idempotency
+  on re-submit.
+- `ReviewScheduleRepository` — list-due-today, advance-on-correct,
+  reschedule-on-incorrect (interactions with whichever spaced-review
+  algorithm is selected in Phase 3, but the contract is testable now).
+
+Each contract test enforces the same behavior against both implementations
+(mock + real) so the mocks authored fresh in Phase 1 (per §1.11) stay
+faithful to the real API surface as it evolves. *This is the test work that
+makes the §1.11 "fresh mocks per new repo interface" verdict cheap.*
+
+### Schema linter tests for unit markdown
+
+`EXECUTION.md` Phase 1 calls for a schema linter that checks every authored
+unit has all 9 anatomy slots (title, definition, trade-off framing, bite,
+depth, calibration tags, sources, decision prompt + rubric, prereqs) and
+that calibration tags / sources / rubrics are well-formed. The linter
+itself needs tests:
+
+- **Positive fixtures** — at least one valid stub unit that lints clean.
+- **Negative fixtures** — one fixture per failure mode: missing slot,
+  malformed calibration tag tier, source without URL or date, rubric with
+  no criteria, prereq pointing at a non-existent unit. Each should fail the
+  linter with a specific, named error.
+- **CI integration** — the linter runs on every commit that touches
+  `content/units/` (or wherever the markdown lives). A unit that stops
+  linting must fail CI.
+
+### Migration tests for the new path tables
+
+Phase 1 introduces the new tables listed in §2.7 (`paths`, `units`,
+`unit_sources`, `calibration_tags`, `decision_prompts`, `rubrics`,
+`rubric_criteria`, `completions`, `grades`, `review_schedule`,
+`regression_pairs`). Migration tests should verify:
+
+- **Forward migration** runs idempotently against an empty DB and against a
+  DB at the previous schema version.
+- **Constraints** — the FK / NOT NULL / CHECK constraints match the audit
+  shape (e.g. `calibration_tags.tier` only accepts
+  `'settled' | 'contested' | 'unsettled'`).
+- **Rollback semantics** — for each retirement migration that drops a table
+  retired per §2.6, the test confirms the drop is irreversible *unless* the
+  pg_dump archive (founder call #8) has been written. This is more of a CI
+  guard than a unit test: the retirement migration should refuse to run if
+  the archive path is empty and option (a) of §2.6 hasn't been confirmed.
+- **Data preservation path** (only if §5 #8 lands as option b) — a test that
+  loads the archived dump back into a clean DB and verifies row counts and
+  representative columns survive the round trip.
+
+### Grader regression runner self-test
+
+`EXECUTION.md` Phase 2 introduces the regression runner (≥20 ground-truth
+pairs per flagship unit, run against the grader, agreement rate reported).
+The runner *itself* is non-trivial code and warrants its own self-test in
+Phase 1, before Unit 1 authoring stresses it:
+
+- A **synthetic regression pair fixture** — a tiny rubric, two known
+  answers (one passing, one failing), expected per-criterion grades.
+- A **mock grader** that returns predetermined grades. The runner test
+  verifies the agreement-rate calculation, the drift-flagging logic, and
+  the "flagged" pathway (T2-B *Flagged-or-graded*) are correct **before**
+  real LLM calls go through it.
+- A **CI smoke** that runs the self-test on every commit; this protects the
+  runner from silent regressions during Phase 2 authoring.
+
+Building this in Phase 1 (against a mock grader) means Phase 2 starts with
+a working scoreboard rather than building one mid-evaluation.
+
+### CI bootstrap
+
+§1.15 noted that no CI exists today. Phase 1 should bring up the minimum
+viable pipeline that makes the above tests load-bearing:
+
+- `pytest backend/tests/` (auth tests inherit; new contract tests, schema
+  linter tests, migration tests, regression-runner self-test added).
+- `gradle assembleDebug` on the Android module, plus whatever JUnit /
+  instrumented-test scope Phase 1 introduces against the new repository
+  interfaces.
+- A `lint-units` job that runs the schema linter on authored unit markdown.
+
+### Scope discipline
+
+This section is forward-looking. It is **not** a Phase 0 deliverable, and
+nothing here changes any verdict in §1–§3. Its purpose is to make sure
+Phase 1 inherits a complete picture of the test scaffolding the audit
+*assumes will exist* when it called certain deletes "cheap" (e.g.
+MockGlossaryRepository in §1.11) and certain reshapes "safe" (e.g. the
+repository split in §1.11 and the new endpoints in §2.4).
