@@ -1,3 +1,7 @@
+> **Status note (2026-05-04):** This document was written for the earlier *glossary-soul* framing of the project. The canonical product strategy is now in [`docs/STRATEGY.md`](./docs/STRATEGY.md), with execution sequencing in [`docs/EXECUTION.md`](./docs/EXECUTION.md). Phases 1–4 below are largely obsolete under the new strategy; later phases are partly reusable but should be re-pointed against `STRATEGY.md` during the Phase 0 cleanup audit. Kept here for historical reference.
+
+---
+
 # FOSS-101 Project Roadmap
 
 ## 1. Project Overview
