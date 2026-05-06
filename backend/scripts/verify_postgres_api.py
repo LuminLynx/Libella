@@ -46,28 +46,6 @@ def reset_verifier_contribution_data() -> None:
     with get_connection() as connection:
         connection.execute(
             """
-            DELETE FROM contribution_events
-            WHERE contributor_id = ANY(%s)
-            """,
-            (list(VERIFIER_CONTRIBUTORS),),
-        )
-        connection.execute(
-            """
-            DELETE FROM contributor_scores
-            WHERE contributor_id = ANY(%s)
-            """,
-            (list(VERIFIER_CONTRIBUTORS),),
-        )
-        connection.execute(
-            """
-            DELETE FROM term_drafts
-            WHERE contributor_id = ANY(%s)
-               OR slug = ANY(%s)
-            """,
-            (list(VERIFIER_CONTRIBUTORS), list(VERIFIER_TERM_SLUGS)),
-        )
-        connection.execute(
-            """
             DELETE FROM terms
             WHERE source = 'manual:verification'
                OR slug = ANY(%s)
