@@ -10,13 +10,12 @@ import com.example.foss101.ui.preview.TokenizerPlayground
 /**
  * The Tokenization bite feed.
  *
- * Six bites in order:
+ * Five bites in order:
  *  1. The problem (3-tab compare)
  *  2. How BPE merges (stepper)
  *  3. Try it (playground)
  *  4. Pitfall: compound words (live demo)
  *  5. Pitfall: emoji cost (live demo)
- *  6. Quick check (3 MCQs)
  *
  * Each bite reuses an existing widget verbatim — the bite-feed shell is just
  * a different consumption shape over the same content units. That's exactly
@@ -53,12 +52,6 @@ fun tokenizationBites(): List<Bite> = listOf(
         title = "Emojis are surprisingly expensive",
         hook = "Same sentence, with and without emoji. Check the multiplier.",
         content = { EmojiCostDemo() }
-    ),
-    Bite(
-        kicker = "Check",
-        title = "Three quick questions",
-        hook = "Lock in your understanding before the next concept.",
-        content = { McqCheckpoint(tokenizationMcqs()) }
     )
 )
 
@@ -67,42 +60,3 @@ private fun keepAvailable() {
     // Touchpoint to keep IDE imports happy if a bite ever drops a widget reference.
     // Compose-no-op.
 }
-
-private fun tokenizationMcqs(): List<Mcq> = listOf(
-    Mcq(
-        question = "Why don't modern LLMs tokenize at the character level?",
-        options = listOf(
-            "Characters can't represent every language.",
-            "Sequences would be far too long, making each step too expensive.",
-            "Models can't learn from individual characters.",
-            "Character vocabularies are too large to store."
-        ),
-        correctIndex = 1,
-        explanation = "Character-level inputs make every short message hundreds of steps long. " +
-            "Subword tokenization keeps sequences short while still handling unseen words."
-    ),
-    Mcq(
-        question = "What is BPE doing during training?",
-        options = listOf(
-            "Counting which words appear most often.",
-            "Encrypting text so the model can't memorise it.",
-            "Repeatedly merging the most frequent adjacent pair into a single token.",
-            "Translating text into a numeric format."
-        ),
-        correctIndex = 2,
-        explanation = "Byte-Pair Encoding starts with characters and grows the vocabulary by " +
-            "merging the pair that occurs most often. Common subwords end up as single tokens."
-    ),
-    Mcq(
-        question = "Why does a sentence with emojis cost more tokens?",
-        options = listOf(
-            "Emojis are stored as images.",
-            "The tokenizer's vocabulary was learned mostly on plain text, so emojis fall back to multiple unicode pieces.",
-            "Emojis are private characters that bypass the tokenizer.",
-            "Models charge extra for non-text inputs."
-        ),
-        correctIndex = 1,
-        explanation = "Emojis aren't in the trained vocabulary as single tokens, so the tokenizer " +
-            "splits them into 2–4 byte-level pieces each. Long emoji-heavy text costs noticeably more."
-    )
-)

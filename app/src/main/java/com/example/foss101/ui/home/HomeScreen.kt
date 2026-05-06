@@ -10,12 +10,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Category
-import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MenuBook
-import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -40,18 +37,6 @@ private data class HomeDestination(
 )
 
 private val HomeDestinations = listOf(
-    HomeDestination(
-        route = "ai_tools",
-        title = "AI Learning Layer",
-        description = "Interactive scenarios and challenges",
-        icon = Icons.Filled.AutoAwesome
-    ),
-    HomeDestination(
-        route = "ask_glossary",
-        title = "Ask Glossary",
-        description = "Glossary-grounded AI answers",
-        icon = Icons.Filled.Chat
-    ),
     HomeDestination(
         route = "browse",
         title = "Browse Terms",
@@ -122,12 +107,6 @@ private fun HomeScreenContent(
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Text(
-            text = "Learn AI terms with glossary-backed AI tutoring, scenarios, and challenges.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
         SectionHeader(
             title = "Explore",
             modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
@@ -142,26 +121,5 @@ private fun HomeScreenContent(
                 modifier = Modifier.fillMaxWidth()
             )
         }
-
-        SectionHeader(
-            title = "Concept previews",
-            modifier = Modifier.padding(top = 12.dp, bottom = 2.dp)
-        )
-
-        NavigationTile(
-            title = "Tokenization",
-            description = "Bundle 0 proof — rich learning page + try-it widget",
-            leadingIcon = Icons.Filled.Science,
-            onClick = { onNavigate("preview_tokenization") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        NavigationTile(
-            title = "Tokenization · bite feed",
-            description = "Bundle 0 v3 — TikTok-shaped vertical swipe of 6 interactions",
-            leadingIcon = Icons.Filled.Science,
-            onClick = { onNavigate("preview_tokenization_bite") },
-            modifier = Modifier.fillMaxWidth()
-        )
     }
 }
