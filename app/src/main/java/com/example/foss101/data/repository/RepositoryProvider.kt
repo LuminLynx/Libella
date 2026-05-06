@@ -9,13 +9,6 @@ import com.example.foss101.data.remote.network.GlossaryApiServiceFactory
 
 object RepositoryProvider {
 
-    private enum class RepositoryMode {
-        MOCK,
-        API
-    }
-
-    private val repositoryMode = RepositoryMode.API
-
     private var tokenStorage: TokenStorage? = null
 
     fun init(context: Context) {
@@ -34,19 +27,14 @@ object RepositoryProvider {
     }
 
     val glossaryRepository: GlossaryRepository by lazy {
-        when (repositoryMode) {
-            RepositoryMode.MOCK -> MockGlossaryRepository()
-            RepositoryMode.API -> {
-                val config = ApiConfig.fromBuildConfig()
-                val storage = requireTokenStorage()
-                ApiGlossaryRepository(
-                    glossaryApiService = GlossaryApiServiceFactory.create(
-                        config = config,
-                        tokenProvider = { storage.getToken() }
-                    )
-                )
-            }
-        }
+        val config = ApiConfig.fromBuildConfig()
+        val storage = requireTokenStorage()
+        ApiGlossaryRepository(
+            glossaryApiService = GlossaryApiServiceFactory.create(
+                config = config,
+                tokenProvider = { storage.getToken() }
+            )
+        )
     }
 
     private fun requireTokenStorage(): TokenStorage {
