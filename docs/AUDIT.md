@@ -1,16 +1,22 @@
 # Phase 0 — Cleanup Audit
 
-**Status:** Draft for founder sign-off — revision pass applied 2026-05-04.
+**Status:** **Founder-signed 2026-05-04.** All 8 open calls in §5 resolved; Phase 0 decision gate met. Phase 1 may begin.
 **Anchored to:** [`STRATEGY.md`](./STRATEGY.md) and [`EXECUTION.md`](./EXECUTION.md).
-**Branch:** `claude/audit-revision-I7CvQ` (this revision).
-**Revision summary:** Original draft on `claude/cleanup-audit-YUHEh`. This pass
-addresses review push-backs without re-litigating locked strategy: explicit
+**Branch:** `claude/phase-0-signoff-S1gnd` (this sign-off pass) — supersedes `claude/audit-revision-I7CvQ` (revision pass) which superseded `claude/cleanup-audit-YUHEh` (original).
+**Revision summary:** Original draft on `claude/cleanup-audit-YUHEh`. The first revision pass
+addressed review push-backs without re-litigating locked strategy: explicit
 data-preservation policy in §2.6, clarified Phase 0 vs Phase 2 provider-switch
 scope in §5 #6, MCQ-as-Return-step option surfaced in §1.8 + §5 #7, fresh
 Phase 1 mocks justified for §1.11, consistent archive-or-delete policy across
 §3 + §5 #4, new sub-sections for AndroidManifest (§1.13), Resources expanded
 (§1.14), CI/CD pipelines absent (§1.15), and forward-looking Phase 1 test
 scaffolding (§7).
+**Sign-off summary (2026-05-04):** All 8 §5 founder calls resolved. Notable
+verdict updates flowing from sign-off: §1.8 `McqCheckpoint.kt` becomes a
+clean DELETE (collapses §5 #1 + §5 #7); §3 + §4 workflow docs and prompt
+bundles confirmed DELETE-both (no archival fallback); retirement migrations
+proceed without `pg_dump` archive (§5 #8 option (a) confirmed). All other
+sign-offs match the audit's own recommendations.
 
 This audit walks the FOSS-101 repo and classifies every meaningful module/file
 against the locked Libella strategy as one of:
@@ -113,7 +119,7 @@ Tokenization. Bundle 0 has reusable raw material for the bite…").
 | `ui/preview/TokenizationProofScreen.kt` | RESHAPE | The static stacked-page rendering of the tokenization unit. Becomes the *depth-on-tap* mode of the Tokenization flagship unit (F2). Drop the standalone `preview_tokenization` route once it lives inside the unit reader. |
 | `ui/preview/bite/BiteFeedScreen.kt` | RESHAPE | Vertical pager bite-feed shell. Useful as the *bite* mode of F2 (Loop step 2). Generalize from "Tokenization bites" to "any unit's bites". |
 | `ui/preview/bite/TokenizationBites.kt` | RESHAPE | Concrete bite list for Tokenization. Becomes the seed payload for the Tokenization flagship unit when authoring re-expresses it in the markdown 9-slot anatomy. Eventually this hardcoded list is replaced by data loaded from the authored unit. |
-| `ui/preview/bite/McqCheckpoint.kt` | RESHAPE → DELETE-leaning | Multiple-choice checkpoint widget. Strategy says: *"Multiple-choice and self-grade are explicitly rejected"* for the Decide step. **The MCQ checkpoint cannot survive as Loop step 3.** Two possible survival paths to consider before deleting: (i) an *in-bite comprehension nudge* preceding the decision prompt, or (ii) the **Return step (Loop step 6, spaced review)** where the question is retention rather than first-encounter learning — strategy's explicit rejection of MCQ is scoped to *Decide*, and MCQ is more defensible for retention checks. Both are founder calls (see §5 #1 and §5 #7). The Return-step path is the new option surfaced in this revision; the bite-nudge path was the original recommendation. Recommend DELETE only after the founder closes both options; otherwise hold pending decision. |
+| `ui/preview/bite/McqCheckpoint.kt` | DELETE | Multiple-choice checkpoint widget. Strategy explicitly rejects MCQ for the Decide step (Loop step 3). Both survival paths considered (in-bite comprehension nudge §5 #1, Return-step retention check §5 #7) closed as DELETE on 2026-05-04: the bite-nudge path is unneeded clutter; the Return-step format decision belongs to Phase 3 when F5 is actually built, and rebuilding a small widget then is cheaper than maintaining a dormant one until then. See §5 #1 + §5 #7 for provenance. |
 | `ui/preview/SimpleTokenizer.kt` | KEEP | Pure tokenizer logic backing the playground demo; reusable verbatim by the Tokenization unit. |
 | `ui/preview/TokenizerPlayground.kt` | RESHAPE | Interactive widget; survives as one of the S2 flagship-only interactive widgets inside the Tokenization unit. |
 | `ui/preview/BpeWalkthrough.kt` | RESHAPE | Same as above — flagship-only interactive widget. |
@@ -366,8 +372,8 @@ forward step each time):
 | `docs/roadmap/ROADMAP.md` | RESHAPE → archive (single canonical archived copy of the old roadmap) | Same body as root ROADMAP.md, no top-of-file supersession note. Pick one location, mark archived, drop the other. |
 | `docs/architecture/BACKEND_DATABASE_SCOPE.md` | DELETE | Begins with "No user accounts. No chat / AI tools. Online-first. Content managed manually." Most decisions are obsolete or contradicted by the new strategy (we *do* have user accounts; we *do* have an LLM grader). The misalignment is worse than no doc at all. |
 | `docs/test.kt` | DELETE | 1-line file, ignored by `.gitignore`. Not needed. |
-| `docs/workflow/AGENTS.md` `CLAUDE_CAPABILITIES.md` `CODEX_EXECUTION_ROADMAP.md` `CODEX_HOME_THEME_ALIGNMENT_BUNDLE.md` `GEMINI_AGENT_ROADMAP.md` `TASKS.md` | DELETE | Old workflow docs anchored to the old soul. Each one was a guide for executing against features that are now cut (term-draft contribution pipelines, AI Learning Layer style picker, ask-glossary as a primary surface). Under P5 (quality ceiling, not content scale), keeping confusing dead docs around is a tax that compounds — every future agent has to figure out which doc is current and risks executing against a dead spec. **Recommended: delete.** Git preserves the history if anyone ever needs to reread them. *If founder prefers archival, the consistent fallback is to archive these alongside `prompts/` under `docs/workflow/_archive/` — see §5 #4.* |
-| `docs/workflow/prompts/*` (25 prompt bundles named e.g. `AI_LEARNING_LAYER.md`, `TERM_DRAFT_*`, `CATEGORIES_SEARCH_MVP_BUNDLE.md`, etc.) | DELETE | Each prompt bundle drove a feature that is now cut (term drafts, contribution pipeline, AI Learning Layer with style picker, category/search MVP as front door). Same P5 logic as the workflow docs above: dead specs invite re-execution against a dead world. **Recommended: delete.** Git preserves them. *Same fallback if founder prefers archival — both directories archived together under `_archive/`, never one and not the other (§5 #4).* |
+| `docs/workflow/AGENTS.md` `CLAUDE_CAPABILITIES.md` `CODEX_EXECUTION_ROADMAP.md` `CODEX_HOME_THEME_ALIGNMENT_BUNDLE.md` `GEMINI_AGENT_ROADMAP.md` `TASKS.md` | DELETE | Old workflow docs anchored to the old soul. Each one was a guide for executing against features that are now cut (term-draft contribution pipelines, AI Learning Layer style picker, ask-glossary as a primary surface). Under P5 (quality ceiling, not content scale), keeping confusing dead docs around is a tax that compounds — every future agent has to figure out which doc is current and risks executing against a dead spec. Confirmed DELETE per §5 #4 (resolved 2026-05-04). Git preserves the history if anyone ever needs to reread them. |
+| `docs/workflow/prompts/*` (25 prompt bundles named e.g. `AI_LEARNING_LAYER.md`, `TERM_DRAFT_*`, `CATEGORIES_SEARCH_MVP_BUNDLE.md`, etc.) | DELETE | Each prompt bundle drove a feature that is now cut (term drafts, contribution pipeline, AI Learning Layer with style picker, category/search MVP as front door). Same P5 logic as the workflow docs above: dead specs invite re-execution against a dead world. Confirmed DELETE per §5 #4 (resolved 2026-05-04). Git preserves them. |
 
 ---
 
@@ -384,16 +390,16 @@ forward step each time):
   new path-centric models), `data/repository/MockGlossaryRepository.kt`
   (Phase 1 authors fresh mocks per new interface — see §1.11 + §7),
   `data/remote/model/RemoteAiModels.kt`,
-  `data/remote/model/RemoteTermDraft.kt`. Recommend delete:
-  `ui/preview/bite/McqCheckpoint.kt` (founder call).
+  `data/remote/model/RemoteTermDraft.kt`,
+  `ui/preview/bite/McqCheckpoint.kt` (confirmed DELETE per §5 #1 + §5 #7).
 - Backend: `app/ai_service.py` (rewrite from scratch — preserve filename if
   desired, replace contents); `tests/test_presets.py`, `tests/test_scoring.py`,
   `scripts/audit_term_schema.py`. Endpoints in `main.py` for term-drafts,
   contributors, ask-glossary, scenario, challenge.
 - Repo: `docs/test.kt`, `docs/architecture/BACKEND_DATABASE_SCOPE.md`,
   `docs/workflow/*.md` (the workflow docs) **and**
-  `docs/workflow/prompts/*` (the prompt bundles) — applied as a single
-  consistent policy per §5 #4 (delete both, or archive both; never split).
+  `docs/workflow/prompts/*` (the prompt bundles) — confirmed DELETE-both
+  per §5 #4 (resolved 2026-05-04). No archival fallback.
 
 ### Reshape
 
@@ -440,12 +446,28 @@ the wrong call wastes work later:
 1. **MCQ checkpoint** (`ui/preview/bite/McqCheckpoint.kt`). Strategy rejects
    MCQ as the *Decide* step. Does the MCQ survive as a *pre-Decide
    comprehension nudge* inside a bite, or does it go entirely? Recommend: go.
+   **Resolved 2026-05-04: DELETE.** A small UI affordance can be added later
+   if a real need emerges; leaving the widget pending creates Phase 1 clutter.
+   Collapsed with §5 #7 below — see §1.8 for the consolidated verdict.
 2. **Glossary side-door scope** (S1). Three current screens (Browse,
    Categories, Search) all become side-door candidates. Recommend collapsing
    to one — a single in-unit "browse glossary" entry — rather than three.
    Confirms dead-code on two screens.
+   **Resolved 2026-05-04: COLLAPSE to one.** Single combined "browse glossary"
+   entry, accessible from inside a unit. The three current screens
+   (`BrowseTermsScreen`, `CategoriesScreen`, `SearchScreen`) and their three
+   ViewModels collapse into one screen + one ViewModel in Phase 1. P5
+   (quality ceiling, not scale) drives this. §1.5 and §1.12 verdicts now
+   resolve as: one screen + one ViewModel survive (RESHAPE), the other two
+   pairs are confirmed DELETE in Phase 1.
 3. **`term_search_events`** (missing-query telemetry). Useful diagnostic; not
    load-bearing. Keep cheap, or drop entirely?
+   **Resolved 2026-05-04: DROP entirely.** With search-as-front-door deleted
+   (§1.5) and the side-door collapsed to one (#2 above), the missing-query
+   telemetry has no consumer — the contribution flow that originally consumed
+   it is itself deleted. Migration `005_search_logging_and_term_drafts.sql`'s
+   search-event portion retires alongside its term_drafts portion. The
+   `GET /api/v1/search/missing-queries` endpoint (§2.4) is a confirmed DELETE.
 4. **Workflow archive vs. delete**. `docs/workflow/*.md` and
    `docs/workflow/prompts/*`. The "git preserves history" rationale applies
    equally to both, so the audit must pick *one* policy and apply it
@@ -454,10 +476,15 @@ the wrong call wastes work later:
    and tries to figure out which spec is current. If founder prefers
    archival, archive *both* under `docs/workflow/_archive/` (not just one).
    What is not on the table: deleting one and archiving the other.
+   **Resolved 2026-05-04: DELETE BOTH.** `docs/workflow/*.md` and
+   `docs/workflow/prompts/*` both deleted outright in Phase 1. No archival
+   fallback. Git preserves history if anyone needs to reread them.
 5. **Migration retirement strategy**. Confirm we will retire dead tables via
    *new* forward migrations (drop / rename) rather than editing the
    already-applied historical ones. (This is standard Postgres practice; just
    want it on the record.)
+   **Resolved 2026-05-04: CONFIRMED.** Retire dead tables via new forward
+   migrations only; never edit applied historical migrations.
 6. **Provider switch ordering**. The `AI_PROVIDER`/`AI_MODEL` env defaults
    currently point at OpenAI. The strategy locks Anthropic Claude Sonnet 4.6
    "pending final confirmation". Should the env defaults flip in Phase 0
@@ -470,6 +497,10 @@ the wrong call wastes work later:
    integrated and run against the regression set — that is the empirical step
    that confirms the choice. Phase 0's flip is paperwork; Phase 2's lock is
    evidence. No one should read this Phase 0 change as locking the provider.
+   **Resolved 2026-05-04: FLIP in Phase 0.** `AI_PROVIDER` and `AI_MODEL`
+   env defaults flip from OpenAI / `gpt-4.1-mini` to Anthropic /
+   `claude-sonnet-4-6` as a configuration-only change. Phase 2 still does the
+   empirical provider lock against the regression set per `EXECUTION.md`.
 7. **MCQ as Return-step (spaced review), not Decide-step.** Strategy
    *explicitly* rejects MCQ for Decide (Loop step 3) — that decision is
    locked. Strategy is *silent* on the format of Return (Loop step 6).
@@ -482,6 +513,13 @@ the wrong call wastes work later:
    §1.8's verdict on `McqCheckpoint.kt` becomes RESHAPE (move to Return);
    if no, it stays DELETE. The audit does not pre-empt this — surfacing the
    option only.
+   **Resolved 2026-05-04: DEFER format decision to Phase 3; DELETE
+   `McqCheckpoint.kt` now.** The Return-step format choice (Loop step 6)
+   belongs in Phase 3 when F5 is actually built. Keeping the widget orphaned
+   for months is brittle; if MCQ-as-Return turns out right in Phase 3,
+   rebuilding a small widget then is cheaper than maintaining a dormant one.
+   This collapses §5 #1 and §5 #7 into a single delete; §1.8 verdict
+   accordingly becomes a clean DELETE.
 8. **Data preservation before retirement migrations.** See §2.6. Either
    confirm in writing that the deployed Railway DB carries only synthetic /
    development data in the retiring tables (`term_drafts`,
@@ -490,19 +528,40 @@ the wrong call wastes work later:
    the snapshot procedure (`pg_dump --data-only --table=…` committed under
    `db/archive/`) before the drop migration lands. The audit assumes
    synthetic-only until told otherwise.
+   **Resolved 2026-05-04: OPTION (a) — synthetic-only, drop without
+   snapshot.** Founder confirms the deployed Railway DB contains only
+   synthetic / development data in the retiring tables (`term_drafts`,
+   `contribution_events`, `contributor_scores`, `ai_generated_content`,
+   `term_search_events`). No `pg_dump` archive is required. Drop migrations
+   may proceed in Phase 1 without preservation steps.
+
+---
+
+### Decision gate met (2026-05-04)
+
+With all 8 founder calls above resolved, the Phase 0 decision gate per
+`EXECUTION.md` ("Founder explicit sign-off on the cut list before any
+deletion") is now met. **Phase 1 may begin.** Phase 1 owns the actual
+deletions, the path-centric data-model reshape, the F1 / F2 / F7 spine,
+and the authoring-pipeline scaffolding (schema linter + markdown
+templates), per `EXECUTION.md` Phase 1 work cluster.
 
 ---
 
 ## 6. What this audit explicitly does *not* do
 
-- **No file deletions.** This is the cut list, not the cut. Per
-  `EXECUTION.md` Phase 0 decision gate, deletion waits on founder sign-off.
+- **No file deletions.** This is the cut list, not the cut. The actual
+  deletions are **Phase 1 execution work**, not gated on further founder
+  sign-off (which has now landed — see the decision gate note at the end
+  of §5). Phase 1 picks up the cut list as authoritative.
 - **No new code.** The new path-centric models, migrations, endpoints, and
   reshape implementations are Phase 1 work.
 - **No re-litigation of locked decisions.** Strategy is locked; this audit
   only translates it into file-level verdicts. If a verdict here looks
   strategically wrong, the path is to surface a strategy revision, not to
-  edit the verdict in isolation.
+  edit the verdict in isolation. The 8 §5 calls have been resolved by the
+  founder; resolutions are recorded for provenance and not re-openable
+  without a strategy revision.
 
 ---
 
@@ -567,13 +626,12 @@ Phase 1 introduces the new tables listed in §2.7 (`paths`, `units`,
   shape (e.g. `calibration_tags.tier` only accepts
   `'settled' | 'contested' | 'unsettled'`).
 - **Rollback semantics** — for each retirement migration that drops a table
-  retired per §2.6, the test confirms the drop is irreversible *unless* the
-  pg_dump archive (founder call #8) has been written. This is more of a CI
-  guard than a unit test: the retirement migration should refuse to run if
-  the archive path is empty and option (a) of §2.6 hasn't been confirmed.
-- **Data preservation path** (only if §5 #8 lands as option b) — a test that
-  loads the archived dump back into a clean DB and verifies row counts and
-  representative columns survive the round trip.
+  retired per §2.6, document in the migration that the drop is irreversible.
+  *Resolved 2026-05-04 via §5 #8 option (a):* no `pg_dump` archive guard is
+  required; the previously-considered CI guard ("refuse to run if archive
+  path empty") is unnecessary now that synthetic-only data is confirmed.
+- ~~**Data preservation path**~~ — *Not applicable.* §5 #8 resolved as
+  option (a); no archived dump exists to round-trip-test.
 
 ### Grader regression runner self-test
 
