@@ -1,5 +1,6 @@
 package com.example.foss101.ui.settings
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,6 +11,7 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.BrightnessMedium
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonOutline
 import androidx.compose.material3.Card
@@ -67,6 +69,16 @@ fun SettingsScreen(
                         authRepository.logout()
                         currentUser = null
                     }
+                )
+            }
+
+            SectionHeader(title = "Library")
+            SettingsCard {
+                SettingsRow(
+                    icon = Icons.Filled.MenuBook,
+                    title = "Glossary",
+                    description = "Browse the terms reference library",
+                    onClick = { onNavigate("glossary") }
                 )
             }
 
@@ -174,12 +186,15 @@ private fun SettingsCard(content: @Composable () -> Unit) {
 private fun SettingsRow(
     icon: ImageVector,
     title: String,
-    description: String
+    description: String,
+    onClick: (() -> Unit)? = null
 ) {
+    val rowModifier = Modifier
+        .fillMaxWidth()
+        .let { if (onClick != null) it.clickable(onClick = onClick) else it }
+        .padding(horizontal = 14.dp, vertical = 12.dp)
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 14.dp, vertical = 12.dp),
+        modifier = rowModifier,
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp)
     ) {

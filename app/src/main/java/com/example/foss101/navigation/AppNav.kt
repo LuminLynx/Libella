@@ -2,17 +2,20 @@ package com.example.foss101.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.foss101.data.repository.RepositoryProvider
 import com.example.foss101.ui.auth.AuthScreen
-import com.example.foss101.ui.home.HomeScreen
 import com.example.foss101.ui.library.GlossaryLibraryScreen
+import com.example.foss101.ui.path.PathHomeScreen
 import com.example.foss101.ui.preview.TokenizationProofScreen
 import com.example.foss101.ui.preview.bite.BiteFeedScreen
 import com.example.foss101.ui.preview.bite.tokenizationBites
 import com.example.foss101.ui.settings.SettingsScreen
+import com.example.foss101.ui.unit.UnitReaderScreen
 import com.example.foss101.viewmodel.AuthMode
 
 @Composable
@@ -20,10 +23,29 @@ fun AppNav() {
     val navController = rememberNavController()
     val glossaryRepository = remember { RepositoryProvider.glossaryRepository }
     val authRepository = remember { RepositoryProvider.authRepository }
+    val pathRepository = remember { RepositoryProvider.pathRepository }
+    val completionCache = remember { RepositoryProvider.completionCacheInstance }
 
     NavHost(navController = navController, startDestination = "home") {
         composable("home") {
-            HomeScreen(onNavigate = { route -> navController.navigate(route) })
+            PathHomeScreen(
+                pathRepository = pathRepository,
+                completionCache = completionCache,
+                onOpenUnit = { unitId -> navController.navigate("unit/$unitId") },
+                onOpenSettings = { navController.navigate("settings") },
+                onAuthExpired = { navController.navigate("auth_login") }
+            )
+        }
+        composable(
+            route = "unit/{unitId}",
+            arguments = listOf(navArgument("unitId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val unitId = backStackEntry.arguments?.getString("unitId").orEmpty()
+            UnitReaderScreen(
+                pathRepository = pathRepository,
+                unitId = unitId,
+                onAuthExpired = { navController.navigate("auth_login") }
+            )
         }
         composable("glossary") {
             GlossaryLibraryScreen(repository = glossaryRepository)

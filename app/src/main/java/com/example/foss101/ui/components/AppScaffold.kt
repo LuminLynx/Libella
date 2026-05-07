@@ -2,6 +2,7 @@ package com.example.foss101.ui.components
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -18,6 +19,7 @@ import androidx.compose.ui.unit.dp
 fun AppScreenScaffold(
     title: String,
     subtitle: String,
+    actions: @Composable RowScope.() -> Unit = {},
     content: @Composable (PaddingValues) -> Unit
 ) {
     Scaffold(
@@ -32,7 +34,8 @@ fun AppScreenScaffold(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                }
+                },
+                actions = actions
             )
         }
     ) { innerPadding ->
