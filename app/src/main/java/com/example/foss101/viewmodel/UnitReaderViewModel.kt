@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.foss101.data.remote.api.PathApiException
+import com.example.foss101.data.repository.CompletionCache
 import com.example.foss101.data.repository.PathRepository
 import com.example.foss101.model.UnitDetail
 import kotlinx.coroutines.channels.Channel
@@ -23,7 +24,14 @@ sealed interface UnitReaderUiState {
         val depthExpanded: Boolean = false,
         val markCompleteInProgress: Boolean = false,
         val markCompleteFailure: String? = null,
-        val completedAt: String? = null
+        /**
+         * True if this unit is already completed for the current user — either
+         * because the user just tapped "Mark complete" in this session, or
+         * because the local CompletionCache (populated by prior POSTs) already
+         * had the unit id when the screen loaded. The screen shows "Marked
+         * complete." instead of the CTA when this is true.
+         */
+        val isCompleted: Boolean = false
     ) : UnitReaderUiState
 }
 
@@ -33,6 +41,7 @@ sealed interface UnitReaderEvent {
 
 class UnitReaderViewModel(
     private val pathRepository: PathRepository,
+    private val completionCache: CompletionCache,
     private val unitId: String
 ) : ViewModel() {
 
@@ -51,7 +60,10 @@ class UnitReaderViewModel(
         viewModelScope.launch {
             uiState = try {
                 val unit = pathRepository.getUnit(unitId)
-                UnitReaderUiState.Loaded(unit = unit)
+                UnitReaderUiState.Loaded(
+                    unit = unit,
+                    isCompleted = unit.id in completionCache.completedUnitIds()
+                )
             } catch (error: PathApiException) {
                 if (error.statusCode == 401) {
                     _events.send(UnitReaderEvent.AuthExpired)
@@ -87,10 +99,10 @@ class UnitReaderViewModel(
         uiState = current.copy(markCompleteInProgress = true, markCompleteFailure = null)
         viewModelScope.launch {
             uiState = try {
-                val record = pathRepository.markComplete(current.unit.id)
+                pathRepository.markComplete(current.unit.id)
                 current.copy(
                     markCompleteInProgress = false,
-                    completedAt = record.completedAt
+                    isCompleted = true
                 )
             } catch (error: PathApiException) {
                 if (error.statusCode == 401) {
@@ -116,11 +128,12 @@ class UnitReaderViewModel(
     companion object {
         fun factory(
             pathRepository: PathRepository,
+            completionCache: CompletionCache,
             unitId: String
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return UnitReaderViewModel(pathRepository, unitId) as T
+                return UnitReaderViewModel(pathRepository, completionCache, unitId) as T
             }
         }
     }

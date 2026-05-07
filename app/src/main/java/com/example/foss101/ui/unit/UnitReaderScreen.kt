@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.foss101.data.repository.CompletionCache
 import com.example.foss101.data.repository.PathRepository
 import com.example.foss101.model.CalibrationTag
 import com.example.foss101.model.UnitDetail
@@ -51,12 +52,13 @@ import com.example.foss101.viewmodel.UnitReaderViewModel
 @Composable
 fun UnitReaderScreen(
     pathRepository: PathRepository,
+    completionCache: CompletionCache,
     unitId: String,
     onAuthExpired: () -> Unit
 ) {
     val viewModel: UnitReaderViewModel = viewModel(
         key = unitId,
-        factory = UnitReaderViewModel.factory(pathRepository, unitId)
+        factory = UnitReaderViewModel.factory(pathRepository, completionCache, unitId)
     )
 
     val state = viewModel.uiState
@@ -164,7 +166,7 @@ private fun LoadedBody(
             }
         }
 
-        if (state.completedAt != null) {
+        if (state.isCompleted) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),

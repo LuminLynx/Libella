@@ -1,6 +1,7 @@
 package com.example.foss101.viewmodel
 
 import com.example.foss101.data.remote.api.PathApiException
+import com.example.foss101.data.repository.CompletionCache
 import com.example.foss101.data.repository.PathRepository
 import com.example.foss101.model.CompletionRecord
 import com.example.foss101.model.Path
@@ -34,20 +35,33 @@ class UnitReaderViewModelTest {
 
     @Test
     fun `loaded state exposes the unit`() = runTest(dispatcher) {
-        val viewModel = UnitReaderViewModel(
-            pathRepository = FakeRepo(unit = sampleUnit("u-1")),
-            unitId = "u-1"
+        val viewModel = newViewModel(
+            repo = FakeRepo(unit = sampleUnit("u-1")),
+            cache = FakeCache()
         )
         advanceUntilIdle()
 
         val state = viewModel.uiState as UnitReaderUiState.Loaded
         assertEquals("u-1", state.unit.id)
         assertFalse(state.depthExpanded)
+        assertFalse(state.isCompleted)
+    }
+
+    @Test
+    fun `loaded state reads completion from cache so prior-session completions show as complete`() = runTest(dispatcher) {
+        val viewModel = newViewModel(
+            repo = FakeRepo(unit = sampleUnit("u-1")),
+            cache = FakeCache(initial = setOf("u-1"))
+        )
+        advanceUntilIdle()
+
+        val state = viewModel.uiState as UnitReaderUiState.Loaded
+        assertTrue("isCompleted must reflect the local cache on load", state.isCompleted)
     }
 
     @Test
     fun `toggleDepth flips the disclosure`() = runTest(dispatcher) {
-        val viewModel = UnitReaderViewModel(FakeRepo(unit = sampleUnit("u-1")), "u-1")
+        val viewModel = newViewModel(repo = FakeRepo(unit = sampleUnit("u-1")), cache = FakeCache())
         advanceUntilIdle()
 
         viewModel.toggleDepth()
@@ -57,16 +71,16 @@ class UnitReaderViewModelTest {
     }
 
     @Test
-    fun `markComplete stamps completedAt and clears in-progress`() = runTest(dispatcher) {
+    fun `markComplete sets isCompleted and clears in-progress`() = runTest(dispatcher) {
         val repo = FakeRepo(unit = sampleUnit("u-1"))
-        val viewModel = UnitReaderViewModel(repo, "u-1")
+        val viewModel = newViewModel(repo = repo, cache = FakeCache())
         advanceUntilIdle()
 
         viewModel.markComplete()
         advanceUntilIdle()
 
         val state = viewModel.uiState as UnitReaderUiState.Loaded
-        assertEquals("now", state.completedAt)
+        assertTrue(state.isCompleted)
         assertFalse(state.markCompleteInProgress)
         assertNull(state.markCompleteFailure)
         assertEquals(1, repo.markCompleteCalls)
@@ -78,7 +92,7 @@ class UnitReaderViewModelTest {
             unit = sampleUnit("u-1"),
             markCompleteError = PathApiException("expired", statusCode = 401)
         )
-        val viewModel = UnitReaderViewModel(repo, "u-1")
+        val viewModel = newViewModel(repo = repo, cache = FakeCache())
         advanceUntilIdle()
 
         viewModel.markComplete()
@@ -94,7 +108,7 @@ class UnitReaderViewModelTest {
         val repo = FakeRepo(
             getUnitError = PathApiException("expired", statusCode = 401)
         )
-        val viewModel = UnitReaderViewModel(repo, "u-1")
+        val viewModel = newViewModel(repo = repo, cache = FakeCache())
         advanceUntilIdle()
 
         val state = viewModel.uiState as UnitReaderUiState.Error
@@ -103,9 +117,9 @@ class UnitReaderViewModelTest {
 
     @Test
     fun `401 emits a single AuthExpired event (one-shot)`() = runTest(dispatcher) {
-        val viewModel = UnitReaderViewModel(
-            FakeRepo(getUnitError = PathApiException("expired", statusCode = 401)),
-            "u-1"
+        val viewModel = newViewModel(
+            repo = FakeRepo(getUnitError = PathApiException("expired", statusCode = 401)),
+            cache = FakeCache()
         )
         advanceUntilIdle()
 
@@ -116,6 +130,12 @@ class UnitReaderViewModelTest {
         val second = withTimeoutOrNull(50) { viewModel.events.first() }
         assertNull("AuthExpired must not re-emit while state lingers", second)
     }
+
+    private fun newViewModel(
+        repo: PathRepository,
+        cache: CompletionCache,
+        unitId: String = "u-1"
+    ): UnitReaderViewModel = UnitReaderViewModel(repo, cache, unitId)
 
     private fun sampleUnit(id: String): UnitDetail = UnitDetail(
         id = id,
@@ -156,4 +176,11 @@ private class FakeRepo(
         markCompleteError?.let { throw it }
         return CompletionRecord(1L, "u", "p", unitId, "now")
     }
+}
+
+private class FakeCache(initial: Set<String> = emptySet()) : CompletionCache {
+    private val store = initial.toMutableSet()
+    override fun completedUnitIds(): Set<String> = store.toSet()
+    override fun add(unitId: String) { store.add(unitId) }
+    override fun clear() { store.clear() }
 }
