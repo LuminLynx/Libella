@@ -17,6 +17,7 @@ from .auth import (
     verify_password,
 )
 from .migrations import run_migrations
+from .repositories import completion_repository, path_repository, unit_repository
 from .repository import (
     create_user,
     get_term_by_id,
@@ -25,33 +26,14 @@ from .repository import (
     list_categories,
     list_terms,
     list_terms_by_category,
-    record_learning_completion,
     search_terms,
 )
 
 app = FastAPI(title="AI-101 Backend", version="0.3.0")
 
 
-class TaskStatePayload(BaseModel):
-    index: int
-    checked: bool = False
-    note: str | None = None
-
-
-class CriterionGradePayload(BaseModel):
-    index: int
-    met: bool = False
-    note: str | None = None
-
-
-class LearningCompletionRequest(BaseModel):
-    termId: str = Field(min_length=1)
-    artifactType: str
-    confidence: str
-    reflectionNotes: str | None = None
-    taskStates: list[TaskStatePayload] | None = None
-    challengeResponse: str | None = None
-    criteriaGrades: list[CriterionGradePayload] | None = None
+class CompletionRequest(BaseModel):
+    unitId: str = Field(min_length=1)
 
 
 class SignupRequest(BaseModel):
@@ -194,43 +176,48 @@ def get_me(current_user_id: str = Depends(required_user_id)) -> JSONResponse:
     return _envelope_response(data=user)
 
 
-@app.post("/api/v1/learning-completions")
-def post_learning_completion(
-    request: LearningCompletionRequest,
-    current_user_id: str = Depends(required_user_id),
-) -> JSONResponse:
-    if get_term_by_id(request.termId) is None:
+@app.get("/api/v1/paths/{path_id}")
+def get_path(path_id: str) -> JSONResponse:
+    path = path_repository.get_path(path_id)
+    if path is None:
         return _envelope_response(
             status_code=404,
             data=None,
-            error={"code": "TERM_NOT_FOUND", "message": f"No term found for id '{request.termId}'."},
+            error={"code": "PATH_NOT_FOUND", "message": f"No path found for id '{path_id}'."},
         )
+    return _envelope_response(data=path)
 
-    task_states_payload = (
-        [item.model_dump() for item in request.taskStates] if request.taskStates is not None else None
-    )
-    criteria_grades_payload = (
-        [item.model_dump() for item in request.criteriaGrades]
-        if request.criteriaGrades is not None
-        else None
-    )
 
-    try:
-        result = record_learning_completion(
-            user_id=current_user_id,
-            term_id=request.termId,
-            artifact_type=request.artifactType,
-            confidence=request.confidence,
-            reflection_notes=request.reflectionNotes,
-            task_states=task_states_payload,
-            challenge_response=request.challengeResponse,
-            criteria_grades=criteria_grades_payload,
-        )
-    except ValueError as error:
+@app.get("/api/v1/units/{unit_id}")
+def get_unit(
+    unit_id: str,
+    current_user_id: str = Depends(required_user_id),  # noqa: ARG001 — auth gate
+) -> JSONResponse:
+    unit = unit_repository.get_unit(unit_id)
+    if unit is None:
         return _envelope_response(
-            status_code=400,
+            status_code=404,
             data=None,
-            error={"code": "INVALID_COMPLETION", "message": str(error)},
+            error={"code": "UNIT_NOT_FOUND", "message": f"No unit found for id '{unit_id}'."},
+        )
+    return _envelope_response(data=unit)
+
+
+@app.post("/api/v1/completions")
+def post_completion(
+    request: CompletionRequest,
+    current_user_id: str = Depends(required_user_id),
+) -> JSONResponse:
+    try:
+        result = completion_repository.record_completion(
+            user_id=current_user_id,
+            unit_id=request.unitId,
+        )
+    except completion_repository.UnitNotFoundError:
+        return _envelope_response(
+            status_code=404,
+            data=None,
+            error={"code": "UNIT_NOT_FOUND", "message": f"No unit found for id '{request.unitId}'."},
         )
 
     status_code = 200 if result["alreadyCompleted"] else 201
