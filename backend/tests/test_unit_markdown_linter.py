@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from backend.scripts.lint_unit_markdown import lint_paths
+from scripts.lint_unit_markdown import lint_paths
 
 FIXTURES = Path(__file__).parent / "fixtures" / "units"
 
