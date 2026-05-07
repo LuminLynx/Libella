@@ -19,11 +19,20 @@ Exit codes:
 unit's `path_id` matches the canonical Phase 1 path. It does not open a
 DB connection — useful as a CI guardrail in the no-DB matrix.
 
-Replace-on-write semantics for each unit's child rows: on each ingest,
-the existing `unit_sources`, `calibration_tags`, and `decision_prompts`
-rows for the unit are deleted and re-inserted (CASCADE handles the
-rubric subtree). The `paths` and `units` rows themselves are UPSERTed
-on `id` so external FKs (e.g. `completions.unit_id`) survive.
+Write semantics per child table:
+  - `unit_sources`, `calibration_tags`: replace-on-write (delete + insert).
+    Nothing FKs into these, so churn is safe.
+  - `decision_prompts`: UPSERT on `unit_id` (UNIQUE), preserving id.
+  - `rubrics` + `rubric_criteria`: append-only versions. Authored
+    criteria are diffed against the latest stored version; if
+    identical, no-op; if different, a new `rubrics` row at
+    `version = max+1` is inserted with a fresh criteria set. Old
+    versions stay because `grades.criterion_id` FKs into
+    `rubric_criteria` (migration 019) — deleting criteria would
+    cascade-delete grade history, which we never want during a
+    routine re-ingest.
+  - `paths`, `units`: UPSERT on `id`, so external FKs
+    (`completions.unit_id`, etc.) survive.
 """
 from __future__ import annotations
 
@@ -249,7 +258,94 @@ def _upsert_unit(connection: Any, unit: UnitData) -> None:
     )
 
 
+def _sync_decision_prompt_and_rubric(connection: Any, unit: UnitData) -> None:
+    """UPSERT the decision prompt; insert a new rubric version only on change.
+
+    Rubric versions and rubric_criteria rows are append-only. `grades.criterion_id`
+    FKs into `rubric_criteria` (migration 019), so deleting criteria would
+    cascade-delete grades. When the authored criteria match the latest
+    stored version verbatim, we no-op; otherwise we insert a new
+    `rubrics` row at `version = max+1` with a fresh set of criteria, leaving
+    the prior version intact for audit + grade history.
+    """
+    if not unit.decision_prompt_md.strip():
+        return
+
+    prompt_row = connection.execute(
+        """
+        INSERT INTO decision_prompts (unit_id, prompt_md)
+        VALUES (%s, %s)
+        ON CONFLICT (unit_id) DO UPDATE SET
+            prompt_md = EXCLUDED.prompt_md,
+            updated_at = NOW()
+        RETURNING id
+        """,
+        (unit.unit_id, unit.decision_prompt_md),
+    ).fetchone()
+    prompt_id = prompt_row["id"]
+
+    if not unit.rubric_criteria:
+        return
+
+    latest = connection.execute(
+        """
+        SELECT id, version
+        FROM rubrics
+        WHERE decision_prompt_id = %s
+        ORDER BY version DESC
+        LIMIT 1
+        """,
+        (prompt_id,),
+    ).fetchone()
+
+    if latest is not None:
+        existing_criteria = connection.execute(
+            """
+            SELECT position, criterion_text
+            FROM rubric_criteria
+            WHERE rubric_id = %s
+            ORDER BY position ASC
+            """,
+            (latest["id"],),
+        ).fetchall()
+        existing = [(r["position"], r["criterion_text"]) for r in existing_criteria]
+        new = [(i + 1, t) for i, t in enumerate(unit.rubric_criteria)]
+        if existing == new:
+            return
+        next_version = latest["version"] + 1
+    else:
+        next_version = 1
+
+    rubric_json = json.dumps(
+        {
+            "criteria": [
+                {"position": i + 1, "text": t}
+                for i, t in enumerate(unit.rubric_criteria)
+            ]
+        }
+    )
+    rubric_row = connection.execute(
+        """
+        INSERT INTO rubrics (decision_prompt_id, version, rubric_json)
+        VALUES (%s, %s, %s::jsonb)
+        RETURNING id
+        """,
+        (prompt_id, next_version, rubric_json),
+    ).fetchone()
+    for i, criterion in enumerate(unit.rubric_criteria, start=1):
+        connection.execute(
+            """
+            INSERT INTO rubric_criteria (rubric_id, position, criterion_text)
+            VALUES (%s, %s, %s)
+            """,
+            (rubric_row["id"], i, criterion),
+        )
+
+
 def _replace_unit_children(connection: Any, unit: UnitData) -> None:
+    """Replace unit_sources + calibration_tags (no FKs into them); version
+    decision_prompt + rubric so grade history survives.
+    """
     connection.execute("DELETE FROM unit_sources WHERE unit_id = %s", (unit.unit_id,))
     for s in unit.sources:
         connection.execute(
@@ -269,43 +365,7 @@ def _replace_unit_children(connection: Any, unit: UnitData) -> None:
             (unit.unit_id, t["claim"], t["tier"]),
         )
 
-    connection.execute(
-        "DELETE FROM decision_prompts WHERE unit_id = %s", (unit.unit_id,)
-    )
-    if unit.decision_prompt_md.strip():
-        prompt_row = connection.execute(
-            """
-            INSERT INTO decision_prompts (unit_id, prompt_md)
-            VALUES (%s, %s)
-            RETURNING id
-            """,
-            (unit.unit_id, unit.decision_prompt_md),
-        ).fetchone()
-        if unit.rubric_criteria:
-            rubric_json = json.dumps(
-                {
-                    "criteria": [
-                        {"position": i + 1, "text": t}
-                        for i, t in enumerate(unit.rubric_criteria)
-                    ]
-                }
-            )
-            rubric_row = connection.execute(
-                """
-                INSERT INTO rubrics (decision_prompt_id, version, rubric_json)
-                VALUES (%s, 1, %s::jsonb)
-                RETURNING id
-                """,
-                (prompt_row["id"], rubric_json),
-            ).fetchone()
-            for i, criterion in enumerate(unit.rubric_criteria, start=1):
-                connection.execute(
-                    """
-                    INSERT INTO rubric_criteria (rubric_id, position, criterion_text)
-                    VALUES (%s, %s, %s)
-                    """,
-                    (rubric_row["id"], i, criterion),
-                )
+    _sync_decision_prompt_and_rubric(connection, unit)
 
 
 def ingest(roots: list[Path], *, check_only: bool = False) -> int:

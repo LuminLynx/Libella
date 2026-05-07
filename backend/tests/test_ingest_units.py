@@ -172,19 +172,174 @@ def test_clean_ingest_writes_full_subtree(
         assert "When this matters" in unit["trade_off_framing"]
 
 
+def _criterion_ids(get_connection: Callable[[], Any], unit_id: str) -> list[int]:
+    with get_connection() as conn:
+        rows = conn.execute(
+            """
+            SELECT rc.id
+            FROM rubric_criteria rc
+            JOIN rubrics r ON r.id = rc.rubric_id
+            JOIN decision_prompts dp ON dp.id = r.decision_prompt_id
+            WHERE dp.unit_id = %s
+            ORDER BY r.version ASC, rc.position ASC
+            """,
+            (unit_id,),
+        ).fetchall()
+    return [r["id"] for r in rows]
+
+
 def test_ingest_is_idempotent(
     gated_db: Callable[[], Any], tmp_path: Path
 ) -> None:
+    """Re-ingest with unchanged content is a true no-op: row counts stable
+    AND criterion ids stable (so anything FK'd to them — most importantly
+    `grades.criterion_id` — survives).
+    """
     from scripts.ingest_units import ingest
 
     _write_unit(tmp_path / "units", _LINT_CLEAN_UNIT)
     assert ingest([tmp_path / "units"], check_only=False) == 0
-    first = _row_counts(gated_db, "ingest-test-unit-0")
+    first_counts = _row_counts(gated_db, "ingest-test-unit-0")
+    first_criterion_ids = _criterion_ids(gated_db, "ingest-test-unit-0")
 
     assert ingest([tmp_path / "units"], check_only=False) == 0
-    second = _row_counts(gated_db, "ingest-test-unit-0")
+    second_counts = _row_counts(gated_db, "ingest-test-unit-0")
+    second_criterion_ids = _criterion_ids(gated_db, "ingest-test-unit-0")
 
-    assert first == second
+    assert first_counts == second_counts
+    assert first_criterion_ids == second_criterion_ids
+
+
+def test_grade_survives_unchanged_reingest(
+    gated_db: Callable[[], Any], tmp_path: Path
+) -> None:
+    """A grade pointing at a criterion must survive a routine re-ingest.
+
+    Regression: the original chunk-6 ingest deleted decision_prompts on
+    every run, which cascaded through rubrics → rubric_criteria → grades
+    (mig 019), silently wiping grade history. Append-only rubric versioning
+    fixes that.
+    """
+    from scripts.ingest_units import ingest
+
+    _write_unit(tmp_path / "units", _LINT_CLEAN_UNIT)
+    assert ingest([tmp_path / "units"], check_only=False) == 0
+
+    with gated_db() as conn:
+        criterion = conn.execute(
+            """
+            SELECT rc.id
+            FROM rubric_criteria rc
+            JOIN rubrics r ON r.id = rc.rubric_id
+            JOIN decision_prompts dp ON dp.id = r.decision_prompt_id
+            WHERE dp.unit_id = 'ingest-test-unit-0'
+            ORDER BY rc.position ASC
+            LIMIT 1
+            """,
+        ).fetchone()
+        criterion_id = criterion["id"]
+
+        user_row = conn.execute(
+            """
+            INSERT INTO users (id, email, password_hash, display_name)
+            VALUES ('grader-test-user', 'g@example.com', 'x', 'Grader Test')
+            RETURNING id
+            """,
+        ).fetchone()
+        completion = conn.execute(
+            """
+            INSERT INTO completions (user_id, path_id, unit_id)
+            VALUES (%s, 'llm-systems-for-pms', 'ingest-test-unit-0')
+            RETURNING id
+            """,
+            (user_row["id"],),
+        ).fetchone()
+        conn.execute(
+            """
+            INSERT INTO grades (completion_id, criterion_id, met, confidence, rationale)
+            VALUES (%s, %s, TRUE, 0.92, 'good')
+            """,
+            (completion["id"], criterion_id),
+        )
+        conn.commit()
+
+    assert ingest([tmp_path / "units"], check_only=False) == 0
+
+    with gated_db() as conn:
+        grade = conn.execute(
+            "SELECT criterion_id, met, confidence FROM grades WHERE completion_id = %s",
+            (completion["id"],),
+        ).fetchone()
+
+    assert grade is not None, "grade was wiped by re-ingest"
+    assert grade["criterion_id"] == criterion_id
+    assert grade["met"] is True
+
+
+def test_rubric_change_creates_new_version_preserving_old(
+    gated_db: Callable[[], Any], tmp_path: Path
+) -> None:
+    """Editing a rubric criterion appends a new version; old version + its
+    criteria stay so historical grades remain valid.
+    """
+    from scripts.ingest_units import ingest
+
+    _write_unit(tmp_path / "units", _LINT_CLEAN_UNIT)
+    assert ingest([tmp_path / "units"], check_only=False) == 0
+
+    with gated_db() as conn:
+        old_criterion_ids = [
+            r["id"]
+            for r in conn.execute(
+                """
+                SELECT rc.id FROM rubric_criteria rc
+                JOIN rubrics r ON r.id = rc.rubric_id
+                JOIN decision_prompts dp ON dp.id = r.decision_prompt_id
+                WHERE dp.unit_id = 'ingest-test-unit-0'
+                ORDER BY rc.position ASC
+                """,
+            ).fetchall()
+        ]
+
+    edited = _LINT_CLEAN_UNIT.replace("Names the trade-off.", "Names the dominant trade-off.")
+    _write_unit(tmp_path / "units", edited)
+    assert ingest([tmp_path / "units"], check_only=False) == 0
+
+    with gated_db() as conn:
+        versions = conn.execute(
+            """
+            SELECT r.version FROM rubrics r
+            JOIN decision_prompts dp ON dp.id = r.decision_prompt_id
+            WHERE dp.unit_id = 'ingest-test-unit-0'
+            ORDER BY r.version ASC
+            """,
+        ).fetchall()
+        all_criteria = conn.execute(
+            """
+            SELECT rc.id FROM rubric_criteria rc
+            JOIN rubrics r ON r.id = rc.rubric_id
+            JOIN decision_prompts dp ON dp.id = r.decision_prompt_id
+            WHERE dp.unit_id = 'ingest-test-unit-0'
+            """,
+        ).fetchall()
+
+    assert [v["version"] for v in versions] == [1, 2]
+    surviving = {r["id"] for r in all_criteria}
+    for old_id in old_criterion_ids:
+        assert old_id in surviving, f"old criterion {old_id} was deleted"
+
+    with gated_db() as conn:
+        v2_criteria = conn.execute(
+            """
+            SELECT rc.position, rc.criterion_text
+            FROM rubric_criteria rc
+            JOIN rubrics r ON r.id = rc.rubric_id
+            JOIN decision_prompts dp ON dp.id = r.decision_prompt_id
+            WHERE dp.unit_id = 'ingest-test-unit-0' AND r.version = 2
+            ORDER BY rc.position ASC
+            """,
+        ).fetchall()
+    assert v2_criteria[0]["criterion_text"] == "Names the dominant trade-off."
 
 
 def test_source_edit_replaces_cleanly(
