@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Auto Backup rules for Android 6 (API 23) – 11 (API 30).
+  Excludes the EncryptedSharedPreferences file used by EncryptedTokenStorage
+  because the AndroidKeyStore master key it depends on is never backed up.
+  Backing up the encrypted file without the key produces an
+  AEADBadTagException on first read after restore, crashing the app.
+
+  Everything else (e.g. completion cache prefs) backs up normally.
+-->
+<full-backup-content>
+    <exclude domain="sharedpref" path="ai101_auth_prefs.xml" />
+</full-backup-content>
