@@ -17,7 +17,7 @@ calibration_tags:
     tier: contested
 sources:
   - url: "https://arxiv.org/abs/1508.07909"
-    title: "Neural Machine Translation of Rare Words with Subword Units (Sennrich, Haddush, Birch — the BPE paper)"
+    title: "Neural Machine Translation of Rare Words with Subword Units (Sennrich, Haddow, Birch — the BPE paper)"
     date: 2015-08-31
     primary_source: true
   - url: "https://platform.openai.com/tokenizer"
@@ -83,7 +83,7 @@ invisible.
 The dominant tokenization scheme across frontier models is **byte-pair
 encoding** (BPE) and its variants (SentencePiece, tiktoken's
 cl100k_base / o200k_base). The original BPE algorithm comes from
-data compression — *Sennrich, Haddush, and Birch (2015)* adapted it
+data compression — *Sennrich, Haddow, and Birch (2015)* adapted it
 for neural MT, and it's now the default. The mechanic: start from
 characters, repeatedly merge the most frequent adjacent pair into a
 new symbol, stop when the vocabulary hits a target size (typically

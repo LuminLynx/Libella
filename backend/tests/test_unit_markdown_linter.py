@@ -127,3 +127,68 @@ def test_template_files_are_skipped() -> None:
             "this file is malformed on purpose\n", encoding="utf-8"
         )
         assert lint_paths([tmp_path]) == []
+
+
+def test_template_file_skipped_when_passed_directly() -> None:
+    # The skip rule applies whether the underscore-prefixed file is reached
+    # via directory traversal or passed as an explicit path (e.g. by a
+    # changed-files pre-commit hook).
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_path = Path(tmp)
+        template = tmp_path / "_TEMPLATE.md"
+        template.write_text("this file is malformed on purpose\n", encoding="utf-8")
+        assert lint_paths([template]) == []
+
+
+def test_malformed_date_string_is_flagged() -> None:
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_path = Path(tmp)
+        (tmp_path / "a.md").write_text(
+            """---
+id: bad-date
+slug: bad-date
+path_id: llm-systems-for-pms
+position: 1
+prereq_unit_ids: []
+status: draft
+definition: A fixture whose source date is not YYYY-MM-DD.
+calibration_tags:
+  - claim: "A claim."
+    tier: settled
+sources:
+  - url: "https://example.com/source"
+    title: "Source Title"
+    date: "not-a-date"
+rubric:
+  - text: "A rubric criterion."
+---
+
+# Bad Date
+
+## Trade-off framing
+
+Trade-off.
+
+## 90-second bite
+
+Bite.
+
+## Depth
+
+Depth.
+
+## Decision prompt
+
+Prompt.
+""",
+            encoding="utf-8",
+        )
+        rendered = [v.render() for v in lint_paths([tmp_path])]
+        assert any(
+            "'date' must be YYYY-MM-DD" in line and "'not-a-date'" in line
+            for line in rendered
+        ), rendered
