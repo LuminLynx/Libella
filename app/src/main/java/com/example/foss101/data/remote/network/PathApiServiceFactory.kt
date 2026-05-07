@@ -52,6 +52,12 @@ private class HttpPathApiService(
         parseCompletion(completionObj)
     }
 
+    override suspend fun listCompletions(): List<CompletionRecord> = withContext(Dispatchers.IO) {
+        val envelope = request("GET", "api/v1/completions", payload = null)
+        val array = envelope.optJSONArray("data") ?: JSONArray()
+        array.map(::parseCompletion)
+    }
+
     private fun request(method: String, path: String, payload: JSONObject?): JSONObject {
         val requestUrl = URL(config.baseUrl.trimEnd('/') + "/" + path)
         val connection = (requestUrl.openConnection() as HttpURLConnection).apply {

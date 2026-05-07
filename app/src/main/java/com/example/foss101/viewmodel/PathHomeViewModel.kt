@@ -53,6 +53,13 @@ class PathHomeViewModel(
         uiState = PathHomeUiState.Loading
         viewModelScope.launch {
             uiState = try {
+                // Best-effort: pull completion state from the server before
+                // we read the local cache, so completion syncs across devices
+                // for the same account. Failures (offline, 401, server down)
+                // are intentionally swallowed — we fall through to whatever
+                // is already cached locally, which is the v1 baseline.
+                runCatching { pathRepository.syncCompletedUnits() }
+
                 val path = pathRepository.getPath(pathId)
                 val completed = completionCache.completedUnitIds()
                 PathHomeUiState.Loaded(

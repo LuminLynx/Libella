@@ -108,6 +108,53 @@ class PathHomeViewModelTest {
     }
 
     @Test
+    fun `load syncs server completions into the local cache before computing nextUnit`() = runTest(dispatcher) {
+        // Cache starts empty (e.g. fresh install on a new device); the
+        // server reports the user already completed u-1. After load we
+        // expect u-1 to appear in the cache so "Continue" advances to u-2.
+        val path = samplePath(
+            UnitManifestEntry("u-1", "a", "A", 1, "draft"),
+            UnitManifestEntry("u-2", "b", "B", 2, "draft")
+        )
+        val cache = FakeCompletionCache()
+        val repository = FakePathRepository(
+            path = path,
+            cacheToSeed = cache,
+            syncedUnitIds = setOf("u-1")
+        )
+        val viewModel = PathHomeViewModel(repository, cache)
+
+        advanceUntilIdle()
+
+        val state = viewModel.uiState as PathHomeUiState.Loaded
+        assertTrue("u-1" in state.completedUnitIds)
+        assertEquals("u-2", state.nextUnit?.id)
+        assertEquals(1, repository.syncCalls)
+    }
+
+    @Test
+    fun `sync failure does not break load (best-effort)`() = runTest(dispatcher) {
+        // If the sync call fails (offline, transient 500, etc.) the load
+        // must still succeed using whatever is already cached locally.
+        val path = samplePath(
+            UnitManifestEntry("u-1", "a", "A", 1, "draft")
+        )
+        val cache = FakeCompletionCache(initial = emptySet())
+        val repository = FakePathRepository(
+            path = path,
+            syncError = PathApiException("offline", statusCode = null)
+        )
+        val viewModel = PathHomeViewModel(repository, cache)
+
+        advanceUntilIdle()
+
+        val state = viewModel.uiState as PathHomeUiState.Loaded
+        assertEquals("u-1", state.nextUnit?.id)
+        assertEquals(1, repository.syncCalls)
+        assertEquals(1, repository.getPathCalls)
+    }
+
+    @Test
     fun `refreshFromCache recomputes nextUnit without re-loading`() = runTest(dispatcher) {
         val path = samplePath(
             UnitManifestEntry("u-1", "a", "A", 1, "draft"),
@@ -137,9 +184,14 @@ class PathHomeViewModelTest {
 private class FakePathRepository(
     private val path: Path? = null,
     private val unit: UnitDetail? = null,
-    private val error: Throwable? = null
+    private val error: Throwable? = null,
+    private val cacheToSeed: FakeCompletionCache? = null,
+    private val syncedUnitIds: Set<String> = emptySet(),
+    private val syncError: Throwable? = null
 ) : PathRepository {
     var getPathCalls = 0
+        private set
+    var syncCalls = 0
         private set
 
     override suspend fun getPath(pathId: String): Path {
@@ -157,11 +209,21 @@ private class FakePathRepository(
         error?.let { throw it }
         return CompletionRecord(1L, "u", "p", unitId, "now")
     }
+
+    override suspend fun syncCompletedUnits() {
+        syncCalls++
+        syncError?.let { throw it }
+        cacheToSeed?.replaceAll(syncedUnitIds)
+    }
 }
 
 private class FakeCompletionCache(initial: Set<String> = emptySet()) : CompletionCache {
     private val store = initial.toMutableSet()
     override fun completedUnitIds(): Set<String> = store.toSet()
     override fun add(unitId: String) { store.add(unitId) }
+    override fun replaceAll(unitIds: Set<String>) {
+        store.clear()
+        store.addAll(unitIds)
+    }
     override fun clear() { store.clear() }
 }

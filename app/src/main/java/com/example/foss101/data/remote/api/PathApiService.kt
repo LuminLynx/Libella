@@ -8,6 +8,8 @@ interface PathApiService {
     suspend fun getPath(pathId: String): Path
     suspend fun getUnit(unitId: String): UnitDetail
     suspend fun postCompletion(unitId: String): CompletionRecord
+    /** Returns every completion for the authenticated user, newest first. */
+    suspend fun listCompletions(): List<CompletionRecord>
 }
 
 class PathApiException(

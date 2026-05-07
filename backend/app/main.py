@@ -222,3 +222,17 @@ def post_completion(
 
     status_code = 200 if result["alreadyCompleted"] else 201
     return _envelope_response(status_code=status_code, data=result)
+
+
+@app.get("/api/v1/completions")
+def list_completions(
+    current_user_id: str = Depends(required_user_id),
+) -> JSONResponse:
+    """Return every completion for the authenticated user, newest first.
+
+    Lets clients seed their local completion cache after sign-in or when
+    moving to a new device, so per-user completion state survives across
+    installs.
+    """
+    completions = completion_repository.list_completions(user_id=current_user_id)
+    return _envelope_response(data=completions)
