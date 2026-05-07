@@ -19,46 +19,45 @@ interface TokenStorage {
 
 class EncryptedTokenStorage(context: Context) : TokenStorage {
 
-    private val prefs: SharedPreferences = openOrReset(context.applicationContext)
-
     /**
-     * Open the encrypted prefs, recovering once if decryption fails.
+     * Encrypted prefs, with one-shot recovery if decryption fails.
      *
      * Failure here typically means the prefs file on disk was encrypted
      * with an AndroidKeyStore master key that's no longer present —
      * commonly because Android's auto-backup restored the file on a
      * fresh install but the master key wasn't (and can't be) backed up.
      * The result is `AEADBadTagException` on the first read, which
-     * crashes the app at MainActivity.onCreate.
+     * otherwise crashes the app at `MainActivity.onCreate`.
      *
-     * Recovery: delete the corrupted prefs file and create a new one.
-     * Cost: the user is signed out and must sign in again on first
-     * launch. The fullBackupContent / dataExtractionRules entries in
+     * The fullBackupContent / dataExtractionRules entries in
      * AndroidManifest.xml + res/xml/* are the primary defense (they
-     * stop the file from being backed up in the first place); this
-     * try/catch is defense in depth for any device that's already in
-     * a corrupted state from a prior install.
+     * stop the encrypted file from being backed up in the first place).
+     * This try/catch is defense in depth for any device already in a
+     * corrupted state from a prior install: wipe the unreadable file
+     * and create a new one. Cost: the user is signed out on that
+     * launch — far better than a startup crash.
      */
-    private fun openOrReset(ctx: Context): SharedPreferences {
+    private val prefs: SharedPreferences = run {
+        val ctx = context.applicationContext
         val masterKey = MasterKey.Builder(ctx)
             .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
             .build()
-        return try {
-            buildPrefs(ctx, masterKey)
-        } catch (_: Exception) {
-            ctx.deleteSharedPreferences(FILE_NAME)
-            buildPrefs(ctx, masterKey)
-        }
-    }
 
-    private fun buildPrefs(ctx: Context, masterKey: MasterKey): SharedPreferences =
-        EncryptedSharedPreferences.create(
+        fun build(): SharedPreferences = EncryptedSharedPreferences.create(
             ctx,
             FILE_NAME,
             masterKey,
             EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
         )
+
+        try {
+            build()
+        } catch (_: Exception) {
+            ctx.deleteSharedPreferences(FILE_NAME)
+            build()
+        }
+    }
 
     override fun getToken(): String? = prefs.getString(KEY_TOKEN, null)?.takeIf { it.isNotBlank() }
 
