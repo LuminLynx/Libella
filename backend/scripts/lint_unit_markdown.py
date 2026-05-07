@@ -19,12 +19,16 @@ the rest of the backend; it can run in CI before any database is up.
 
 from __future__ import annotations
 
+import datetime as _datetime
+import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable
 
 import yaml
+
+_ISO_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 VALID_TIERS = ("settled", "contested", "unsettled")
 VALID_STATUSES = ("draft", "published", "archived")
@@ -272,6 +276,36 @@ def _validate_sources(parsed: ParsedUnit) -> None:
             parsed.violations.append(
                 Violation(path, 1, f"sources[{index}] missing 'date' (YYYY-MM-DD)")
             )
+        elif isinstance(date, _datetime.date):
+            pass
+        elif isinstance(date, str):
+            if not _ISO_DATE_RE.match(date.strip()):
+                parsed.violations.append(
+                    Violation(
+                        path,
+                        1,
+                        f"sources[{index}] 'date' must be YYYY-MM-DD, got {date!r}",
+                    )
+                )
+            else:
+                try:
+                    _datetime.date.fromisoformat(date.strip())
+                except ValueError:
+                    parsed.violations.append(
+                        Violation(
+                            path,
+                            1,
+                            f"sources[{index}] 'date' must be a valid YYYY-MM-DD date, got {date!r}",
+                        )
+                    )
+        else:
+            parsed.violations.append(
+                Violation(
+                    path,
+                    1,
+                    f"sources[{index}] 'date' must be YYYY-MM-DD, got {type(date).__name__}",
+                )
+            )
 
 
 def _validate_rubric(parsed: ParsedUnit) -> None:
@@ -346,6 +380,8 @@ def lint_paths(paths: Iterable[Path]) -> list[Violation]:
     files: list[Path] = []
     for root in paths:
         if root.is_file():
+            if root.name.startswith("_"):
+                continue
             files.append(root)
             continue
         if not root.exists():
