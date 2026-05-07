@@ -32,6 +32,7 @@ fun AppNav() {
                 pathRepository = pathRepository,
                 completionCache = completionCache,
                 onOpenUnit = { unitId -> navController.navigate("unit/$unitId") },
+                onOpenSettings = { navController.navigate("settings") },
                 onAuthExpired = { navController.navigate("auth_login") }
             )
         }

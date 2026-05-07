@@ -12,11 +12,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Circle
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,6 +35,7 @@ import com.example.foss101.ui.components.AppScreenScaffold
 import com.example.foss101.ui.components.PrimaryActionButton
 import com.example.foss101.ui.components.SectionHeader
 import com.example.foss101.ui.components.screenContentPadding
+import com.example.foss101.viewmodel.PathHomeEvent
 import com.example.foss101.viewmodel.PathHomeUiState
 import com.example.foss101.viewmodel.PathHomeViewModel
 
@@ -41,6 +44,7 @@ fun PathHomeScreen(
     pathRepository: PathRepository,
     completionCache: CompletionCache,
     onOpenUnit: (String) -> Unit,
+    onOpenSettings: () -> Unit,
     onAuthExpired: () -> Unit
 ) {
     val viewModel: PathHomeViewModel = viewModel(
@@ -54,15 +58,25 @@ fun PathHomeScreen(
 
     val state = viewModel.uiState
 
-    LaunchedEffect(state) {
-        if (state is PathHomeUiState.Error && state.authExpired) {
-            onAuthExpired()
+    LaunchedEffect(viewModel) {
+        viewModel.events.collect { event ->
+            when (event) {
+                PathHomeEvent.AuthExpired -> onAuthExpired()
+            }
         }
     }
 
     AppScreenScaffold(
         title = "LLM Systems for PMs",
-        subtitle = "Path home"
+        subtitle = "Path home",
+        actions = {
+            IconButton(onClick = onOpenSettings) {
+                Icon(
+                    imageVector = Icons.Filled.Settings,
+                    contentDescription = "Settings"
+                )
+            }
+        }
     ) { contentPadding ->
         when (val current = state) {
             is PathHomeUiState.Loading -> LoadingBox(modifier = Modifier.screenContentPadding(contentPadding))

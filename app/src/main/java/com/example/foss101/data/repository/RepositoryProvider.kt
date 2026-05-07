@@ -18,7 +18,11 @@ object RepositoryProvider {
             tokenStorage = EncryptedTokenStorage(context.applicationContext)
         }
         if (completionCache == null) {
-            completionCache = SharedPrefsCompletionCache(context.applicationContext)
+            val storage = tokenStorage!!
+            completionCache = SharedPrefsCompletionCache(
+                context = context.applicationContext,
+                userIdProvider = { storage.getUserId() }
+            )
         }
     }
 

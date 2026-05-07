@@ -9,7 +9,19 @@ interface CompletionCache {
     fun clear()
 }
 
-class SharedPrefsCompletionCache(context: Context) : CompletionCache {
+/**
+ * SharedPreferences-backed completion cache keyed per authenticated user id.
+ *
+ * Reads / writes silently no-op when no user is signed in (the cache is only
+ * meaningful for an authenticated session anyway, since the backing
+ * `POST /completions` endpoint is JWT-protected). Keying entries per user
+ * id prevents one account's progress from leaking into another's "Continue"
+ * computation when multiple accounts are used on the same device.
+ */
+class SharedPrefsCompletionCache(
+    context: Context,
+    private val userIdProvider: () -> String?
+) : CompletionCache {
 
     private val prefs: SharedPreferences = context.applicationContext.getSharedPreferences(
         FILE_NAME,
@@ -17,21 +29,27 @@ class SharedPrefsCompletionCache(context: Context) : CompletionCache {
     )
 
     override fun completedUnitIds(): Set<String> {
-        return prefs.getStringSet(KEY_UNIT_IDS, emptySet())?.toSet() ?: emptySet()
+        val userId = userIdProvider() ?: return emptySet()
+        return prefs.getStringSet(keyFor(userId), emptySet())?.toSet() ?: emptySet()
     }
 
     override fun add(unitId: String) {
-        val current = completedUnitIds()
+        val userId = userIdProvider() ?: return
+        val key = keyFor(userId)
+        val current = prefs.getStringSet(key, emptySet()) ?: emptySet()
         if (unitId in current) return
-        prefs.edit().putStringSet(KEY_UNIT_IDS, current + unitId).apply()
+        prefs.edit().putStringSet(key, current + unitId).apply()
     }
 
     override fun clear() {
-        prefs.edit().remove(KEY_UNIT_IDS).apply()
+        val userId = userIdProvider() ?: return
+        prefs.edit().remove(keyFor(userId)).apply()
     }
+
+    private fun keyFor(userId: String): String = "$KEY_PREFIX:$userId"
 
     private companion object {
         const val FILE_NAME = "ai101_completion_cache"
-        const val KEY_UNIT_IDS = "completed_unit_ids"
+        const val KEY_PREFIX = "completed_unit_ids"
     }
 }

@@ -11,6 +11,9 @@ import com.example.foss101.data.repository.CompletionCache
 import com.example.foss101.data.repository.PathRepository
 import com.example.foss101.model.Path
 import com.example.foss101.model.UnitManifestEntry
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 const val CANONICAL_PATH_ID: String = "llm-systems-for-pms"
@@ -25,6 +28,11 @@ sealed interface PathHomeUiState {
     ) : PathHomeUiState
 }
 
+/** One-shot UI event emitted at most once per occurrence (Channel-backed). */
+sealed interface PathHomeEvent {
+    object AuthExpired : PathHomeEvent
+}
+
 class PathHomeViewModel(
     private val pathRepository: PathRepository,
     private val completionCache: CompletionCache,
@@ -33,6 +41,9 @@ class PathHomeViewModel(
 
     var uiState: PathHomeUiState by mutableStateOf(PathHomeUiState.Loading)
         private set
+
+    private val _events = Channel<PathHomeEvent>(Channel.BUFFERED)
+    val events: Flow<PathHomeEvent> = _events.receiveAsFlow()
 
     init {
         load()
@@ -50,6 +61,9 @@ class PathHomeViewModel(
                     nextUnit = path.units.firstOrNull { it.id !in completed }
                 )
             } catch (error: PathApiException) {
+                if (error.statusCode == 401) {
+                    _events.send(PathHomeEvent.AuthExpired)
+                }
                 PathHomeUiState.Error(
                     message = error.message.ifBlank { "Couldn't load the path." },
                     authExpired = error.statusCode == 401

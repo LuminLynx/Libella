@@ -8,13 +8,16 @@ import com.example.foss101.model.Path
 import com.example.foss101.model.UnitDetail
 import com.example.foss101.model.UnitManifestEntry
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -83,6 +86,25 @@ class PathHomeViewModelTest {
 
         val state = viewModel.uiState as PathHomeUiState.Error
         assertTrue(state.authExpired)
+    }
+
+    @Test
+    fun `401 emits a single AuthExpired event (no re-emit while state lingers)`() = runTest(dispatcher) {
+        val viewModel = PathHomeViewModel(
+            pathRepository = FakePathRepository(
+                error = PathApiException("expired", statusCode = 401)
+            ),
+            completionCache = FakeCompletionCache()
+        )
+
+        advanceUntilIdle()
+        val first = withTimeoutOrNull(1_000) { viewModel.events.first() }
+        assertNotNull("expected one AuthExpired event", first)
+
+        // No second event should arrive while the screen sits on the same Error state.
+        advanceUntilIdle()
+        val second = withTimeoutOrNull(50) { viewModel.events.first() }
+        assertNull("AuthExpired must be one-shot, not re-emitted from stale state", second)
     }
 
     @Test

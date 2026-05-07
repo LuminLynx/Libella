@@ -9,6 +9,9 @@ import androidx.lifecycle.viewModelScope
 import com.example.foss101.data.remote.api.PathApiException
 import com.example.foss101.data.repository.PathRepository
 import com.example.foss101.model.UnitDetail
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 sealed interface UnitReaderUiState {
@@ -23,6 +26,10 @@ sealed interface UnitReaderUiState {
     ) : UnitReaderUiState
 }
 
+sealed interface UnitReaderEvent {
+    object AuthExpired : UnitReaderEvent
+}
+
 class UnitReaderViewModel(
     private val pathRepository: PathRepository,
     private val unitId: String
@@ -30,6 +37,9 @@ class UnitReaderViewModel(
 
     var uiState: UnitReaderUiState by mutableStateOf(UnitReaderUiState.Loading)
         private set
+
+    private val _events = Channel<UnitReaderEvent>(Channel.BUFFERED)
+    val events: Flow<UnitReaderEvent> = _events.receiveAsFlow()
 
     init {
         load()
@@ -42,6 +52,9 @@ class UnitReaderViewModel(
                 val unit = pathRepository.getUnit(unitId)
                 UnitReaderUiState.Loaded(unit = unit)
             } catch (error: PathApiException) {
+                if (error.statusCode == 401) {
+                    _events.send(UnitReaderEvent.AuthExpired)
+                }
                 UnitReaderUiState.Error(
                     message = error.message.ifBlank { "Couldn't load this unit." },
                     authExpired = error.statusCode == 401
@@ -72,6 +85,9 @@ class UnitReaderViewModel(
                     completedAt = record.completedAt
                 )
             } catch (error: PathApiException) {
+                if (error.statusCode == 401) {
+                    _events.send(UnitReaderEvent.AuthExpired)
+                }
                 current.copy(
                     markCompleteInProgress = false,
                     markCompleteFailure = if (error.statusCode == 401) {

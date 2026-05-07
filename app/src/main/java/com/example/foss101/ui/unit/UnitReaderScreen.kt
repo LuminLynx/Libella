@@ -43,6 +43,7 @@ import com.example.foss101.ui.components.AppScreenScaffold
 import com.example.foss101.ui.components.PrimaryActionButton
 import com.example.foss101.ui.components.SectionHeader
 import com.example.foss101.ui.components.screenContentPadding
+import com.example.foss101.viewmodel.UnitReaderEvent
 import com.example.foss101.viewmodel.UnitReaderUiState
 import com.example.foss101.viewmodel.UnitReaderViewModel
 
@@ -59,9 +60,11 @@ fun UnitReaderScreen(
 
     val state = viewModel.uiState
 
-    LaunchedEffect(state) {
-        if (state is UnitReaderUiState.Error && state.authExpired) {
-            onAuthExpired()
+    LaunchedEffect(viewModel) {
+        viewModel.events.collect { event ->
+            when (event) {
+                UnitReaderEvent.AuthExpired -> onAuthExpired()
+            }
         }
     }
 

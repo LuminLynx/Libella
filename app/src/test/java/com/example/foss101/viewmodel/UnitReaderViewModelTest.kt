@@ -6,11 +6,13 @@ import com.example.foss101.model.CompletionRecord
 import com.example.foss101.model.Path
 import com.example.foss101.model.UnitDetail
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -97,6 +99,22 @@ class UnitReaderViewModelTest {
 
         val state = viewModel.uiState as UnitReaderUiState.Error
         assertTrue(state.authExpired)
+    }
+
+    @Test
+    fun `401 emits a single AuthExpired event (one-shot)`() = runTest(dispatcher) {
+        val viewModel = UnitReaderViewModel(
+            FakeRepo(getUnitError = PathApiException("expired", statusCode = 401)),
+            "u-1"
+        )
+        advanceUntilIdle()
+
+        val first = withTimeoutOrNull(1_000) { viewModel.events.first() }
+        assertNotNull("expected one AuthExpired event", first)
+
+        advanceUntilIdle()
+        val second = withTimeoutOrNull(50) { viewModel.events.first() }
+        assertNull("AuthExpired must not re-emit while state lingers", second)
     }
 
     private fun sampleUnit(id: String): UnitDetail = UnitDetail(
