@@ -1,3 +1,18 @@
+> **⚠️ Historical document — kept for research / context only.**
+>
+> This is the **pre-reset** roadmap from the original AI-101 glossary
+> direction. The project was rebuilt around the path-centric "LLM
+> Systems for PMs" curriculum; the current source-of-truth planning
+> documents are **`docs/STRATEGY.md`**, **`docs/EXECUTION.md`**, and
+> **`docs/AUDIT.md`**. Anything in this file that conflicts with those
+> three is **out of date and should not be acted on.**
+>
+> Retained intentionally so future contributors (and Claude sessions)
+> can revisit the earlier direction if needed. Do not update it in
+> place; treat it as read-only history.
+
+---
+
 # AI-101 Project Roadmap
 
 ## 1. Project Overview
