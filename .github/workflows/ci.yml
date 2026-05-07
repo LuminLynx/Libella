@@ -50,6 +50,9 @@ jobs:
       - name: Lint authored units
         run: python -m backend.scripts.lint_unit_markdown content/units/
 
+      - name: Validate unit ingest (--check, no DB writes)
+        run: python -m backend.scripts.ingest_units --check content/units/
+
   android:
     name: Android (assembleDebug)
     runs-on: ubuntu-latest
