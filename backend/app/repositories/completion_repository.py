@@ -37,6 +37,15 @@ def record_completion(user_id: str, unit_id: str) -> dict[str, Any]:
     is looked up from the unit row — callers don't pass it.
 
     Raises UnitNotFoundError if no unit with that id exists.
+
+    Concurrency: the INSERT uses ON CONFLICT DO NOTHING against the
+    UNIQUE (user_id, unit_id) constraint from migration 019. A naive
+    SELECT-then-INSERT would race under concurrent submissions for the
+    same pair (both transactions see no row, both INSERT, second hits
+    the unique constraint and surfaces an integrity error). The
+    conflict path here re-reads the existing row and reports
+    alreadyCompleted=True, matching the documented idempotent shape
+    whether the duplicate came from a sequential retry or a race.
     """
     with get_connection() as connection:
         unit_row = connection.execute(
@@ -47,24 +56,30 @@ def record_completion(user_id: str, unit_id: str) -> dict[str, Any]:
             raise UnitNotFoundError(unit_id)
         path_id = unit_row["path_id"]
 
-        existing = connection.execute(
-            "SELECT * FROM completions WHERE user_id = %s AND unit_id = %s",
-            (user_id, unit_id),
-        ).fetchone()
-        if existing is not None:
-            return {
-                "completion": _map_completion_row(existing),
-                "alreadyCompleted": True,
-            }
-
         row = connection.execute(
             """
             INSERT INTO completions (user_id, path_id, unit_id)
             VALUES (%s, %s, %s)
+            ON CONFLICT (user_id, unit_id) DO NOTHING
             RETURNING *
             """,
             (user_id, path_id, unit_id),
         ).fetchone()
+
+        if row is None:
+            # Either a sequential re-submit or a concurrent insert just
+            # won the race. The conflicting row is committed by the time
+            # ON CONFLICT fires, so READ COMMITTED can see it now.
+            row = connection.execute(
+                "SELECT * FROM completions WHERE user_id = %s AND unit_id = %s",
+                (user_id, unit_id),
+            ).fetchone()
+            connection.commit()
+            return {
+                "completion": _map_completion_row(row),
+                "alreadyCompleted": True,
+            }
+
         connection.commit()
 
     return {
