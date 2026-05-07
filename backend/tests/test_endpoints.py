@@ -48,6 +48,33 @@ def test_completions_endpoint_requires_auth(client: TestClient) -> None:
     assert response.json()["detail"]["code"] == "AUTH_REQUIRED"
 
 
+def test_list_completions_endpoint_requires_auth(client: TestClient) -> None:
+    response = client.get("/api/v1/completions")
+    assert response.status_code == 401
+    assert response.json()["detail"]["code"] == "AUTH_REQUIRED"
+
+
+def test_list_completions_returns_user_completions(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch, auth_header: dict[str, str]
+) -> None:
+    captured: dict[str, Any] = {}
+
+    def _list(user_id: str) -> list[dict[str, Any]]:
+        captured["user_id"] = user_id
+        return [
+            {"id": 2, "userId": user_id, "pathId": "p1", "unitId": "u2", "completedAt": None},
+            {"id": 1, "userId": user_id, "pathId": "p1", "unitId": "u1", "completedAt": None},
+        ]
+
+    monkeypatch.setattr(completion_repository, "list_completions", _list)
+
+    response = client.get("/api/v1/completions", headers=auth_header)
+    assert response.status_code == 200
+    body = response.json()
+    assert [row["unitId"] for row in body["data"]] == ["u2", "u1"]
+    assert "user_id" in captured
+
+
 # ----- 404 (resource missing) — repository monkeypatched, no DB needed -----
 
 

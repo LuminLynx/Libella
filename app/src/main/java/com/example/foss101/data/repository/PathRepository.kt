@@ -9,6 +9,13 @@ interface PathRepository {
     suspend fun getPath(pathId: String): Path
     suspend fun getUnit(unitId: String): UnitDetail
     suspend fun markComplete(unitId: String): CompletionRecord
+    /**
+     * Pull the authenticated user's completion list from the server and
+     * replace the local cache with it. Used to seed the cache after sign-in
+     * or on a fresh install so completion state syncs across devices for
+     * the same account.
+     */
+    suspend fun syncCompletedUnits()
 }
 
 class ApiPathRepository(
@@ -24,5 +31,10 @@ class ApiPathRepository(
         val record = pathApiService.postCompletion(unitId)
         completionCache.add(record.unitId)
         return record
+    }
+
+    override suspend fun syncCompletedUnits() {
+        val records = pathApiService.listCompletions()
+        completionCache.replaceAll(records.map { it.unitId }.toSet())
     }
 }

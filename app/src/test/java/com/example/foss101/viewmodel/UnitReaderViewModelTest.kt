@@ -176,11 +176,17 @@ private class FakeRepo(
         markCompleteError?.let { throw it }
         return CompletionRecord(1L, "u", "p", unitId, "now")
     }
+
+    override suspend fun syncCompletedUnits() { /* no-op for these tests */ }
 }
 
 private class FakeCache(initial: Set<String> = emptySet()) : CompletionCache {
     private val store = initial.toMutableSet()
     override fun completedUnitIds(): Set<String> = store.toSet()
     override fun add(unitId: String) { store.add(unitId) }
+    override fun replaceAll(unitIds: Set<String>) {
+        store.clear()
+        store.addAll(unitIds)
+    }
     override fun clear() { store.clear() }
 }

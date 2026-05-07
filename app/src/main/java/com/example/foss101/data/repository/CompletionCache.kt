@@ -6,6 +6,12 @@ import android.content.SharedPreferences
 interface CompletionCache {
     fun completedUnitIds(): Set<String>
     fun add(unitId: String)
+    /**
+     * Replace the cached set for the current user with `unitIds` exactly.
+     * Used to seed the cache from a fresh `GET /api/v1/completions` so
+     * completion state syncs across devices for the same account.
+     */
+    fun replaceAll(unitIds: Set<String>)
     fun clear()
 }
 
@@ -39,6 +45,11 @@ class SharedPrefsCompletionCache(
         val current = prefs.getStringSet(key, emptySet()) ?: emptySet()
         if (unitId in current) return
         prefs.edit().putStringSet(key, current + unitId).apply()
+    }
+
+    override fun replaceAll(unitIds: Set<String>) {
+        val userId = userIdProvider() ?: return
+        prefs.edit().putStringSet(keyFor(userId), unitIds.toSet()).apply()
     }
 
     override fun clear() {
