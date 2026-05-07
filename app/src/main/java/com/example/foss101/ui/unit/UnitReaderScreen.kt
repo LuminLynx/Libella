@@ -40,6 +40,7 @@ import com.example.foss101.model.CalibrationTag
 import com.example.foss101.model.UnitDetail
 import com.example.foss101.model.UnitSource
 import com.example.foss101.ui.components.AppScreenScaffold
+import com.example.foss101.ui.components.MarkdownText
 import com.example.foss101.ui.components.PrimaryActionButton
 import com.example.foss101.ui.components.SectionHeader
 import com.example.foss101.ui.components.screenContentPadding
@@ -113,11 +114,11 @@ private fun LoadedBody(
         )
 
         Section(title = "Trade-off framing") {
-            Text(text = unit.tradeOffFraming, style = MaterialTheme.typography.bodyMedium)
+            MarkdownText(markdown = unit.tradeOffFraming)
         }
 
         Section(title = "90-second bite") {
-            Text(text = unit.biteMd, style = MaterialTheme.typography.bodyMedium)
+            MarkdownText(markdown = unit.biteMd)
         }
 
         DepthDisclosure(
@@ -144,7 +145,7 @@ private fun LoadedBody(
 
         unit.decisionPrompt?.let { prompt ->
             Section(title = "Decision prompt") {
-                Text(text = prompt.promptMd, style = MaterialTheme.typography.bodyMedium)
+                MarkdownText(markdown = prompt.promptMd)
             }
         }
 
@@ -214,9 +215,8 @@ private fun DepthDisclosure(
             )
         }
         AnimatedVisibility(visible = expanded) {
-            Text(
-                text = depthMd,
-                style = MaterialTheme.typography.bodyMedium,
+            MarkdownText(
+                markdown = depthMd,
                 modifier = Modifier.padding(top = 4.dp)
             )
         }
