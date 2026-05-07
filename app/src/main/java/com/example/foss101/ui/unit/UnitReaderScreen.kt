@@ -115,6 +115,15 @@ private fun LoadedBody(
             style = MaterialTheme.typography.bodyLarge
         )
 
+        // Order follows the Loop in STRATEGY.md (line 108–115):
+        //   2. Bite — read the concept.
+        //   3. Decide — answer the prompt before seeing the consensus.
+        //   4. Calibrate — settled / contested + sources, after the answer.
+        // Trade-off framing and Depth are tap-to-expand reference material
+        // (P4 "bite first, depth on tap"). Showing calibration / sources
+        // before the decision prompt would prime the answer, which is
+        // what P2 ("calibrate, don't bluff") explicitly avoids.
+
         Section(title = "90-second bite") {
             MarkdownText(markdown = unit.biteMd)
         }
@@ -133,6 +142,12 @@ private fun LoadedBody(
             onToggle = onToggleDepth
         )
 
+        unit.decisionPrompt?.let { prompt ->
+            Section(title = "Decision prompt") {
+                MarkdownText(markdown = prompt.promptMd)
+            }
+        }
+
         if (unit.calibrationTags.isNotEmpty()) {
             Section(title = "Calibration") {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -146,12 +161,6 @@ private fun LoadedBody(
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     unit.sources.forEach { source -> SourceRow(source) }
                 }
-            }
-        }
-
-        unit.decisionPrompt?.let { prompt ->
-            Section(title = "Decision prompt") {
-                MarkdownText(markdown = prompt.promptMd)
             }
         }
 
