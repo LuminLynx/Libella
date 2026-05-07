@@ -19,6 +19,7 @@ sealed interface UnitReaderUiState {
     data class Error(val message: String, val authExpired: Boolean = false) : UnitReaderUiState
     data class Loaded(
         val unit: UnitDetail,
+        val tradeOffExpanded: Boolean = false,
         val depthExpanded: Boolean = false,
         val markCompleteInProgress: Boolean = false,
         val markCompleteFailure: String? = null,
@@ -62,6 +63,13 @@ class UnitReaderViewModel(
             } catch (error: Exception) {
                 UnitReaderUiState.Error(message = "Network error. Pull to retry.")
             }
+        }
+    }
+
+    fun toggleTradeOff() {
+        val current = uiState
+        if (current is UnitReaderUiState.Loaded) {
+            uiState = current.copy(tradeOffExpanded = !current.tradeOffExpanded)
         }
     }
 

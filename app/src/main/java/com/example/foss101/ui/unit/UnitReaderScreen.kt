@@ -82,12 +82,13 @@ fun UnitReaderScreen(
         when (state) {
             is UnitReaderUiState.Loading -> LoadingBox(modifier = Modifier.screenContentPadding(contentPadding))
             is UnitReaderUiState.Error -> ErrorBox(
-                message = state.message,
+                message = if (state.authExpired) "Sign in to continue." else state.message,
                 onRetry = viewModel::load,
                 modifier = Modifier.screenContentPadding(contentPadding)
             )
             is UnitReaderUiState.Loaded -> LoadedBody(
                 state = state,
+                onToggleTradeOff = viewModel::toggleTradeOff,
                 onToggleDepth = viewModel::toggleDepth,
                 onMarkComplete = viewModel::markComplete,
                 modifier = Modifier.screenContentPadding(contentPadding)
@@ -99,6 +100,7 @@ fun UnitReaderScreen(
 @Composable
 private fun LoadedBody(
     state: UnitReaderUiState.Loaded,
+    onToggleTradeOff: () -> Unit,
     onToggleDepth: () -> Unit,
     onMarkComplete: () -> Unit,
     modifier: Modifier = Modifier
@@ -113,16 +115,20 @@ private fun LoadedBody(
             style = MaterialTheme.typography.bodyLarge
         )
 
-        Section(title = "Trade-off framing") {
-            MarkdownText(markdown = unit.tradeOffFraming)
-        }
-
         Section(title = "90-second bite") {
             MarkdownText(markdown = unit.biteMd)
         }
 
-        DepthDisclosure(
-            depthMd = unit.depthMd,
+        MarkdownDisclosure(
+            label = "Trade-off framing",
+            markdown = unit.tradeOffFraming,
+            expanded = state.tradeOffExpanded,
+            onToggle = onToggleTradeOff
+        )
+
+        MarkdownDisclosure(
+            label = "Depth",
+            markdown = unit.depthMd,
             expanded = state.depthExpanded,
             onToggle = onToggleDepth
         )
@@ -193,12 +199,13 @@ private fun Section(title: String, body: @Composable () -> Unit) {
 }
 
 @Composable
-private fun DepthDisclosure(
-    depthMd: String,
+private fun MarkdownDisclosure(
+    label: String,
+    markdown: String,
     expanded: Boolean,
     onToggle: () -> Unit
 ) {
-    if (depthMd.isBlank()) return
+    if (markdown.isBlank()) return
     Column {
         Row(
             modifier = Modifier
@@ -208,15 +215,15 @@ private fun DepthDisclosure(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(text = "Depth", style = MaterialTheme.typography.titleSmall)
+            Text(text = label, style = MaterialTheme.typography.titleSmall)
             Icon(
                 imageVector = if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                contentDescription = if (expanded) "Hide depth" else "Show depth"
+                contentDescription = if (expanded) "Hide $label" else "Show $label"
             )
         }
         AnimatedVisibility(visible = expanded) {
             MarkdownText(
-                markdown = depthMd,
+                markdown = markdown,
                 modifier = Modifier.padding(top = 4.dp)
             )
         }
