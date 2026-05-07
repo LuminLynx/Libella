@@ -43,8 +43,20 @@ fun AppNav() {
             val unitId = backStackEntry.arguments?.getString("unitId").orEmpty()
             UnitReaderScreen(
                 pathRepository = pathRepository,
+                completionCache = completionCache,
                 unitId = unitId,
-                onAuthExpired = { navController.navigate("auth_login") }
+                onAuthExpired = {
+                    // Pop the unit reader off the back stack on the way to
+                    // auth_login. Otherwise hitting back from the sign-in
+                    // screen drops the user back onto the unit reader's
+                    // lingering Error(authExpired) state, which looks like
+                    // a server error to the user. After auth they re-tap
+                    // Continue from path home — one extra tap, no confusing
+                    // error screen.
+                    navController.navigate("auth_login") {
+                        popUpTo("home") { inclusive = false }
+                    }
+                }
             )
         }
         composable("glossary") {
