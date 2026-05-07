@@ -10,6 +10,22 @@ jobs:
   backend:
     name: Backend (pytest + unit-markdown linter)
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: foss101
+          POSTGRES_PASSWORD: foss101
+          POSTGRES_DB: foss101_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U foss101 -d foss101_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
     steps:
       - uses: actions/checkout@v4
 
@@ -27,6 +43,8 @@ jobs:
 
       - name: Run pytest
         working-directory: backend
+        env:
+          TEST_DATABASE_URL: postgresql://foss101:foss101@localhost:5432/foss101_test
         run: python -m pytest tests/
 
       - name: Lint authored units
