@@ -81,7 +81,7 @@ fun PathHomeScreen(
         when (val current = state) {
             is PathHomeUiState.Loading -> LoadingBox(modifier = Modifier.screenContentPadding(contentPadding))
             is PathHomeUiState.Error -> ErrorBox(
-                message = current.message,
+                message = if (current.authExpired) "Sign in to continue." else current.message,
                 onRetry = viewModel::load,
                 modifier = Modifier.screenContentPadding(contentPadding)
             )
