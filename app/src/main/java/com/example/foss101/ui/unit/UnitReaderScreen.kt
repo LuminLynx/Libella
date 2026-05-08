@@ -41,8 +41,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.foss101.data.repository.CompletionCache
 import com.example.foss101.data.repository.PathRepository
 import com.example.foss101.model.CalibrationTag
-import Grade
-import RubricCriterion
+import com.example.foss101.model.Grade
+import com.example.foss101.model.RubricCriterion
 import com.example.foss101.model.UnitDetail
 import com.example.foss101.model.UnitSource
 import com.example.foss101.ui.components.AppScreenScaffold
