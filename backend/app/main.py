@@ -16,6 +16,7 @@ from .auth import (
     validate_password,
     verify_password,
 )
+from .config import validate_production_config
 from .migrations import run_migrations
 from .repositories import (
     completion_repository,
@@ -63,6 +64,14 @@ def _envelope_response(*, data, error=None, status_code: int = 200) -> JSONRespo
 
 @app.on_event("startup")
 def on_startup() -> None:
+    # Refuse to start in production with default secrets. No-op in dev /
+    # test / ci. See backend/app/config.py for the gate.
+    validate_production_config()
+    # run_migrations() acquires a Postgres advisory lock, so it's
+    # race-safe under horizontal scale, but the recommended deploy
+    # pattern is still to run `python -m backend.scripts.migrate` as
+    # a release/pre-deploy command and have this be a no-op verification.
+    # See docs/BACKEND_BEST_PRACTICES.md.
     run_migrations()
 
 
