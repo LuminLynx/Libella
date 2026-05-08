@@ -110,6 +110,13 @@ class UnitReaderViewModel(
      * the per-criterion grade payload populates `gradeResult` and
      * `isCompleted` flips to true (grading IS completion under T2).
      * Re-submitting replaces the prior grade output.
+     *
+     * The grader call takes 3–8 seconds. While it's in flight the user
+     * can keep interacting (toggle trade-off / depth disclosures, edit
+     * the draft, etc.). When the response arrives we merge the result
+     * into the **latest** uiState rather than overwriting from the
+     * snapshot taken before the call, so concurrent toggles aren't
+     * silently undone.
      */
     fun submitAnswer() {
         val current = uiState
@@ -117,35 +124,54 @@ class UnitReaderViewModel(
         val answer = current.answerDraft.trim()
         if (answer.isBlank()) return
 
+        val unitId = current.unit.id
         uiState = current.copy(submitInProgress = true, submitFailure = null)
+
         viewModelScope.launch {
-            uiState = try {
-                val result = pathRepository.submitGrade(current.unit.id, answer)
-                current.copy(
-                    submitInProgress = false,
-                    submitFailure = null,
-                    gradeResult = result,
-                    isCompleted = true
-                )
-            } catch (error: PathApiException) {
-                if (error.statusCode == 401) {
-                    _events.send(UnitReaderEvent.AuthExpired)
-                }
-                current.copy(
-                    submitInProgress = false,
-                    submitFailure = when (error.statusCode) {
-                        401 -> "Your session expired. Sign in again to submit your answer."
-                        409 -> "This unit doesn't have a graded decision prompt yet."
-                        502 -> "The grader is temporarily unavailable. Try again in a moment."
-                        else -> error.message.ifBlank { "Couldn't grade your answer." }
-                    }
-                )
-            } catch (error: Exception) {
-                current.copy(
-                    submitInProgress = false,
-                    submitFailure = "Network error. Try again."
-                )
+            val outcome: Result<com.example.foss101.model.GradeResult> = runCatching {
+                pathRepository.submitGrade(unitId, answer)
             }
+            val pathError = outcome.exceptionOrNull() as? PathApiException
+            if (pathError?.statusCode == 401) {
+                _events.send(UnitReaderEvent.AuthExpired)
+            }
+
+            // Merge into the LATEST state, not the captured snapshot. If
+            // the screen has navigated away or reloaded mid-flight we
+            // drop the result silently — the user has moved on.
+            val latest = uiState
+            if (latest !is UnitReaderUiState.Loaded) return@launch
+
+            uiState = outcome.fold(
+                onSuccess = { result ->
+                    latest.copy(
+                        submitInProgress = false,
+                        submitFailure = null,
+                        gradeResult = result,
+                        isCompleted = true
+                    )
+                },
+                onFailure = { error ->
+                    latest.copy(
+                        submitInProgress = false,
+                        submitFailure = mapSubmitFailure(error)
+                    )
+                }
+            )
+        }
+    }
+
+    private fun mapSubmitFailure(error: Throwable): String {
+        return when {
+            error is PathApiException && error.statusCode == 401 ->
+                "Your session expired. Sign in again to submit your answer."
+            error is PathApiException && error.statusCode == 409 ->
+                "This unit doesn't have a graded decision prompt yet."
+            error is PathApiException && error.statusCode == 502 ->
+                "The grader is temporarily unavailable. Try again in a moment."
+            error is PathApiException ->
+                error.message.ifBlank { "Couldn't grade your answer." }
+            else -> "Network error. Try again."
         }
     }
 

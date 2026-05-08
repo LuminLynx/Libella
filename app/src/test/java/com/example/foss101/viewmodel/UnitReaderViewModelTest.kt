@@ -8,6 +8,7 @@ import com.example.foss101.model.Grade
 import com.example.foss101.model.GradeResult
 import com.example.foss101.model.Path
 import com.example.foss101.model.UnitDetail
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -142,6 +143,46 @@ class UnitReaderViewModelTest {
     }
 
     @Test
+    fun `submitAnswer merges into latest state, preserving in-flight toggles`() = runTest(dispatcher) {
+        // Reviewer regression: the prior implementation captured `current`
+        // before launching the network call and rebuilt state from that
+        // stale snapshot. A user toggling depth or trade-off framing
+        // during the 3–8s grader wait would have those toggles silently
+        // overwritten. The fix merges results into the latest state.
+        val gate = CompletableDeferred<GradeResult>()
+        val repo = FakeRepo(unit = sampleUnit("u-1"), submitGradeGate = gate)
+        val viewModel = newViewModel(repo = repo, cache = FakeCache())
+        advanceUntilIdle()
+
+        viewModel.onAnswerChanged("a real answer")
+        viewModel.submitAnswer()
+        advanceUntilIdle()
+        // submitInProgress=true while we wait on the gate
+        assertTrue((viewModel.uiState as UnitReaderUiState.Loaded).submitInProgress)
+
+        // User toggles depth while the grader is still working
+        viewModel.toggleDepth()
+        assertTrue((viewModel.uiState as UnitReaderUiState.Loaded).depthExpanded)
+
+        // Grader finally returns
+        gate.complete(
+            GradeResult(
+                completion = CompletionRecord(1L, "u", "p", "u-1", "now"),
+                grades = listOf(
+                    Grade(1L, 11L, met = true, confidence = 0.9, rationale = "ok", flagged = false, answerQuote = "x")
+                ),
+                flagged = false
+            )
+        )
+        advanceUntilIdle()
+
+        val state = viewModel.uiState as UnitReaderUiState.Loaded
+        assertTrue("depth toggle made during in-flight submit must be preserved", state.depthExpanded)
+        assertNotNull(state.gradeResult)
+        assertFalse(state.submitInProgress)
+    }
+
+    @Test
     fun `error state surfaces authExpired on initial 401`() = runTest(dispatcher) {
         val repo = FakeRepo(
             getUnitError = PathApiException("expired", statusCode = 401)
@@ -197,7 +238,13 @@ class UnitReaderViewModelTest {
 private class FakeRepo(
     private val unit: UnitDetail? = null,
     private val getUnitError: Throwable? = null,
-    private val submitGradeError: Throwable? = null
+    private val submitGradeError: Throwable? = null,
+    /**
+     * Optional gate the test resolves manually, so the fake suspends in
+     * `submitGrade` until the test signals. Used to verify in-flight
+     * state-merge behavior.
+     */
+    private val submitGradeGate: CompletableDeferred<GradeResult>? = null
 ) : PathRepository {
     var submitGradeCalls = 0
         private set
@@ -219,6 +266,7 @@ private class FakeRepo(
     override suspend fun submitGrade(unitId: String, answer: String): GradeResult {
         submitGradeCalls++
         submitGradeError?.let { throw it }
+        submitGradeGate?.let { return it.await() }
         return GradeResult(
             completion = CompletionRecord(1L, "u", "p", unitId, "now"),
             grades = listOf(
