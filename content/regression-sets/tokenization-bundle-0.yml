@@ -1,0 +1,113 @@
+# Regression set for the Tokenization unit (tokenization-bundle-0).
+#
+# Tokenization is the first authored unit and is treated as
+# **flagship** under STRATEGY.md § T2 — target is >= 20 pairs before
+# the Phase 2 gate is evaluated. The four pairs below are seeds
+# (not the full set); the authoring task is to extend this to >= 20,
+# covering: confidently-correct answers, partially-correct answers,
+# common misconceptions, off-topic answers that should flag, and
+# edge cases (very short answers, non-English, code-shaped answers).
+#
+# Position-to-criterion mapping (from content/units/tokenization-bundle-0.md
+# slot 8 rubric, in authored order):
+#
+#   1. "Identifies that token count — not character or word count — is what
+#      drives cost, latency, and the context-window ceiling."
+#   2. "Names a concrete scenario where tokenization choice changes a
+#      product outcome (non-English text, code, emoji, names inflating
+#      token counts vs. expectations)."
+#   3. "Distinguishes when tokenization matters for a PM decision (cost
+#      forecasting, prompt length budgeting, multilingual support) from
+#      when it can be safely ignored (most English-only, short-prompt
+#      features)."
+
+unit_id: tokenization-bundle-0
+
+description: |
+  Phase 2 gate seed set. Authored 2026-05-08 from the Tokenization
+  unit's rubric. Mix is intentionally skewed easy at the moment —
+  the harder cases (partial credit, multi-criterion confusion,
+  off-topic answers that should flag) need to be added before the
+  P2.5 gate evaluation.
+
+pairs:
+  - id: p001
+    label: Confident, criteria 1 + 2 covered, criterion 3 missed
+    answer: |
+      Tokens, not characters or words, drive cost. A 100-word Hindi
+      prompt costs 3-5x more than a 100-word English prompt because
+      tokenizers split non-Latin scripts into more tokens. For the
+      resume-summary feature I would measure exact token counts on
+      real Spanish, Portuguese, and Hindi samples using the vendor
+      tokenizer rather than averaging word counts.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p002
+    label: All three criteria clearly met
+    answer: |
+      Token counts — not characters or words — determine API cost,
+      response latency, and what fits in the context window. The
+      same prompt is a different number of tokens on each vendor's
+      tokenizer, so estimates that ignore tokenization will drift.
+
+      A concrete example: when our team scoped a feature that
+      summarised job descriptions, ~25% of users pasted Spanish or
+      Hindi text. Those inputs ran 2-3x the token count of equivalent
+      English, so the cost forecast we built on average word counts
+      under-estimated by ~3x.
+
+      That said, this matters most for cost forecasting, prompt
+      budgeting, and multilingual or code-heavy inputs. For an
+      English-only feature with short fixed-length prompts, refining
+      the token estimate further than "use a vendor counter once"
+      is over-engineering — the variance is small and the cost is
+      dominated by other factors.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p003
+    label: Off-topic — should flag
+    answer: |
+      I would estimate the per-call cost by surveying ten product
+      managers and averaging their gut-feel pricing. Then I'd add
+      a 20% margin for safety.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: true
+
+  - id: p004
+    label: Wrong unit of cost — common misconception
+    answer: |
+      I would multiply the average word count of a job description
+      (let's say 600 words) by a per-word price from the OpenAI pricing
+      page. Most users paste English so I expect this to be accurate.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false

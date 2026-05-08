@@ -119,6 +119,40 @@ def test_validator_rejects_top_level_missing_flagged() -> None:
         _validate_grader_output(payload, expected_criterion_ids={1})
 
 
+def test_extract_usage_pulls_known_fields() -> None:
+    """Real Anthropic responses carry usage on a SDK Pydantic model.
+    `_extract_usage` must read the cache-related fields too; the
+    Phase 2 gate uses them as cost-relevance signal.
+    """
+    from app.ai_service import _extract_usage
+
+    class _Usage:
+        input_tokens = 1500
+        output_tokens = 200
+        cache_creation_input_tokens = 0
+        cache_read_input_tokens = 1300
+
+    class _Response:
+        usage = _Usage()
+
+    out = _extract_usage(_Response())
+    assert out == {
+        "input_tokens": 1500,
+        "output_tokens": 200,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 1300,
+    }
+
+
+def test_extract_usage_returns_empty_when_response_lacks_usage() -> None:
+    from app.ai_service import _extract_usage
+
+    class _ResponseNoUsage:
+        pass
+
+    assert _extract_usage(_ResponseNoUsage()) == {}
+
+
 # ---------------------------------------------------------------------------
 # Endpoint
 # ---------------------------------------------------------------------------

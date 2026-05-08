@@ -53,6 +53,16 @@ jobs:
       - name: Validate unit ingest (--check, no DB writes)
         run: python -m backend.scripts.ingest_units --check content/units/
 
+      - name: Validate regression-set YAML schemas (--check, no API calls)
+        run: |
+          for f in content/regression-sets/*.yml; do
+            [ -e "$f" ] || continue
+            case "$(basename "$f")" in
+              _*) continue ;;
+            esac
+            python -m backend.scripts.run_regression_set "$f" --check
+          done
+
   android:
     name: Android (assembleDebug)
     runs-on: ubuntu-latest

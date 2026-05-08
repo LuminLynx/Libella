@@ -33,7 +33,7 @@ from __future__ import annotations
 
 import json
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from .config import AI_MODEL, AI_PROVIDER, AI_PROVIDER_API_KEY
@@ -109,6 +109,15 @@ class AIUnavailableError(AIServiceError):
 class GraderOutput:
     grades: list[dict[str, Any]]
     flagged: bool
+    # Provider-reported token counts, copied verbatim from the
+    # Anthropic response.usage block. Empty dict when unavailable
+    # (offline tests, very old SDKs, providers we haven't mapped).
+    # Keys we expect: input_tokens, output_tokens,
+    # cache_creation_input_tokens, cache_read_input_tokens.
+    # The regression-set runner reports these as cost-relevance
+    # signal at the Phase 2 gate (T2-E prompt-cache hit-rate is
+    # load-bearing on unit economics).
+    usage: dict[str, int] = field(default_factory=dict)
 
 
 def ai_service_metadata() -> dict[str, str | None]:
@@ -296,4 +305,32 @@ def grade_decision_answer(unit: dict[str, Any], answer: str) -> GraderOutput:
     if tool_use_payload is None:
         raise AIServiceError("Grader did not produce a submit_grades tool call.")
 
-    return _validate_grader_output(tool_use_payload, expected_ids)
+    output = _validate_grader_output(tool_use_payload, expected_ids)
+    output.usage = _extract_usage(response)
+    return output
+
+
+def _extract_usage(response: Any) -> dict[str, int]:
+    """Pull provider-reported token counts off an Anthropic response.
+
+    The SDK exposes `response.usage` as an object with `input_tokens`,
+    `output_tokens`, and (when prompt caching is active)
+    `cache_creation_input_tokens` + `cache_read_input_tokens`. None of
+    these are guaranteed to be present — the function is defensive and
+    drops back to {} when the response shape is unexpected, so the
+    grader never fails just because usage couldn't be read.
+    """
+    usage_obj = getattr(response, "usage", None)
+    if usage_obj is None:
+        return {}
+    out: dict[str, int] = {}
+    for key in (
+        "input_tokens",
+        "output_tokens",
+        "cache_creation_input_tokens",
+        "cache_read_input_tokens",
+    ):
+        value = getattr(usage_obj, key, None)
+        if isinstance(value, int) and value >= 0:
+            out[key] = value
+    return out
