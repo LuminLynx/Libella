@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.foss101.data.remote.api.PathApiException
 import com.example.foss101.data.repository.CompletionCache
 import com.example.foss101.data.repository.PathRepository
+import com.example.foss101.model.GradeResult
 import com.example.foss101.model.UnitDetail
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -22,14 +23,19 @@ sealed interface UnitReaderUiState {
         val unit: UnitDetail,
         val tradeOffExpanded: Boolean = false,
         val depthExpanded: Boolean = false,
-        val markCompleteInProgress: Boolean = false,
-        val markCompleteFailure: String? = null,
+        /** Current value of the open-ended decision-prompt answer field (F3). */
+        val answerDraft: String = "",
+        /** True while a grade submission is in flight. */
+        val submitInProgress: Boolean = false,
+        /** Non-null when the most recent grade submission failed. */
+        val submitFailure: String? = null,
+        /** Non-null after a successful grade submission. Drives the F4 grade UI. */
+        val gradeResult: GradeResult? = null,
         /**
          * True if this unit is already completed for the current user — either
-         * because the user just tapped "Mark complete" in this session, or
-         * because the local CompletionCache (populated by prior POSTs) already
-         * had the unit id when the screen loaded. The screen shows "Marked
-         * complete." instead of the CTA when this is true.
+         * because the user just submitted an answer (which records a completion
+         * server-side under T2), or because the local CompletionCache already
+         * had the unit id when the screen loaded.
          */
         val isCompleted: Boolean = false
     ) : UnitReaderUiState
@@ -92,16 +98,33 @@ class UnitReaderViewModel(
         }
     }
 
-    fun markComplete() {
+    fun onAnswerChanged(answer: String) {
         val current = uiState
-        if (current !is UnitReaderUiState.Loaded || current.markCompleteInProgress) return
+        if (current is UnitReaderUiState.Loaded) {
+            uiState = current.copy(answerDraft = answer, submitFailure = null)
+        }
+    }
 
-        uiState = current.copy(markCompleteInProgress = true, markCompleteFailure = null)
+    /**
+     * F4 — submit the user's open-ended answer to the grader. On success
+     * the per-criterion grade payload populates `gradeResult` and
+     * `isCompleted` flips to true (grading IS completion under T2).
+     * Re-submitting replaces the prior grade output.
+     */
+    fun submitAnswer() {
+        val current = uiState
+        if (current !is UnitReaderUiState.Loaded || current.submitInProgress) return
+        val answer = current.answerDraft.trim()
+        if (answer.isBlank()) return
+
+        uiState = current.copy(submitInProgress = true, submitFailure = null)
         viewModelScope.launch {
             uiState = try {
-                pathRepository.markComplete(current.unit.id)
+                val result = pathRepository.submitGrade(current.unit.id, answer)
                 current.copy(
-                    markCompleteInProgress = false,
+                    submitInProgress = false,
+                    submitFailure = null,
+                    gradeResult = result,
                     isCompleted = true
                 )
             } catch (error: PathApiException) {
@@ -109,17 +132,18 @@ class UnitReaderViewModel(
                     _events.send(UnitReaderEvent.AuthExpired)
                 }
                 current.copy(
-                    markCompleteInProgress = false,
-                    markCompleteFailure = if (error.statusCode == 401) {
-                        "Your session expired. Sign in again to mark this complete."
-                    } else {
-                        error.message.ifBlank { "Couldn't save your completion." }
+                    submitInProgress = false,
+                    submitFailure = when (error.statusCode) {
+                        401 -> "Your session expired. Sign in again to submit your answer."
+                        409 -> "This unit doesn't have a graded decision prompt yet."
+                        502 -> "The grader is temporarily unavailable. Try again in a moment."
+                        else -> error.message.ifBlank { "Couldn't grade your answer." }
                     }
                 )
             } catch (error: Exception) {
                 current.copy(
-                    markCompleteInProgress = false,
-                    markCompleteFailure = "Network error. Try again."
+                    submitInProgress = false,
+                    submitFailure = "Network error. Try again."
                 )
             }
         }

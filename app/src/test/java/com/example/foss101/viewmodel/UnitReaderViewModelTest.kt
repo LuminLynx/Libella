@@ -4,6 +4,8 @@ import com.example.foss101.data.remote.api.PathApiException
 import com.example.foss101.data.repository.CompletionCache
 import com.example.foss101.data.repository.PathRepository
 import com.example.foss101.model.CompletionRecord
+import com.example.foss101.model.Grade
+import com.example.foss101.model.GradeResult
 import com.example.foss101.model.Path
 import com.example.foss101.model.UnitDetail
 import kotlinx.coroutines.Dispatchers
@@ -45,6 +47,8 @@ class UnitReaderViewModelTest {
         assertEquals("u-1", state.unit.id)
         assertFalse(state.depthExpanded)
         assertFalse(state.isCompleted)
+        assertEquals("", state.answerDraft)
+        assertNull(state.gradeResult)
     }
 
     @Test
@@ -71,36 +75,70 @@ class UnitReaderViewModelTest {
     }
 
     @Test
-    fun `markComplete sets isCompleted and clears in-progress`() = runTest(dispatcher) {
+    fun `onAnswerChanged updates the draft and clears prior failure`() = runTest(dispatcher) {
+        val viewModel = newViewModel(repo = FakeRepo(unit = sampleUnit("u-1")), cache = FakeCache())
+        advanceUntilIdle()
+
+        viewModel.onAnswerChanged("draft text")
+        val state = viewModel.uiState as UnitReaderUiState.Loaded
+        assertEquals("draft text", state.answerDraft)
+        assertNull(state.submitFailure)
+    }
+
+    @Test
+    fun `submitAnswer no-ops on a blank draft`() = runTest(dispatcher) {
         val repo = FakeRepo(unit = sampleUnit("u-1"))
         val viewModel = newViewModel(repo = repo, cache = FakeCache())
         advanceUntilIdle()
 
-        viewModel.markComplete()
+        viewModel.onAnswerChanged("   ")
+        viewModel.submitAnswer()
         advanceUntilIdle()
 
         val state = viewModel.uiState as UnitReaderUiState.Loaded
-        assertTrue(state.isCompleted)
-        assertFalse(state.markCompleteInProgress)
-        assertNull(state.markCompleteFailure)
-        assertEquals(1, repo.markCompleteCalls)
+        assertEquals(0, repo.submitGradeCalls)
+        assertFalse(state.submitInProgress)
+        assertNull(state.gradeResult)
     }
 
     @Test
-    fun `401 on markComplete surfaces a session-expired message`() = runTest(dispatcher) {
+    fun `submitAnswer populates gradeResult and flips isCompleted`() = runTest(dispatcher) {
+        val repo = FakeRepo(unit = sampleUnit("u-1"))
+        val viewModel = newViewModel(repo = repo, cache = FakeCache())
+        advanceUntilIdle()
+
+        viewModel.onAnswerChanged("a real answer")
+        viewModel.submitAnswer()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState as UnitReaderUiState.Loaded
+        assertNotNull(state.gradeResult)
+        assertEquals(2, state.gradeResult!!.grades.size)
+        assertFalse(state.gradeResult!!.flagged)
+        assertTrue(state.isCompleted)
+        assertFalse(state.submitInProgress)
+        assertNull(state.submitFailure)
+        assertEquals(1, repo.submitGradeCalls)
+    }
+
+    @Test
+    fun `401 on submit surfaces a session-expired failure (no gradeResult)`() = runTest(dispatcher) {
         val repo = FakeRepo(
             unit = sampleUnit("u-1"),
-            markCompleteError = PathApiException("expired", statusCode = 401)
+            submitGradeError = PathApiException("expired", statusCode = 401)
         )
         val viewModel = newViewModel(repo = repo, cache = FakeCache())
         advanceUntilIdle()
 
-        viewModel.markComplete()
+        viewModel.onAnswerChanged("answer")
+        viewModel.submitAnswer()
         advanceUntilIdle()
 
         val state = viewModel.uiState as UnitReaderUiState.Loaded
-        assertNotNull(state.markCompleteFailure)
-        assertTrue(state.markCompleteFailure!!.contains("session", ignoreCase = true))
+        assertNull(state.gradeResult)
+        assertNotNull(state.submitFailure)
+        assertTrue(state.submitFailure!!.contains("session", ignoreCase = true))
+        assertFalse(state.isCompleted)
     }
 
     @Test
@@ -159,9 +197,9 @@ class UnitReaderViewModelTest {
 private class FakeRepo(
     private val unit: UnitDetail? = null,
     private val getUnitError: Throwable? = null,
-    private val markCompleteError: Throwable? = null
+    private val submitGradeError: Throwable? = null
 ) : PathRepository {
-    var markCompleteCalls = 0
+    var submitGradeCalls = 0
         private set
 
     override suspend fun getPath(pathId: String): Path = error("not used")
@@ -172,9 +210,23 @@ private class FakeRepo(
     }
 
     override suspend fun markComplete(unitId: String): CompletionRecord {
-        markCompleteCalls++
-        markCompleteError?.let { throw it }
+        // Path home flow uses this; the unit reader's CTA in P2.3 routes
+        // through submitGrade instead. Tests for the path home cover the
+        // markComplete branch.
         return CompletionRecord(1L, "u", "p", unitId, "now")
+    }
+
+    override suspend fun submitGrade(unitId: String, answer: String): GradeResult {
+        submitGradeCalls++
+        submitGradeError?.let { throw it }
+        return GradeResult(
+            completion = CompletionRecord(1L, "u", "p", unitId, "now"),
+            grades = listOf(
+                Grade(1L, 11L, met = true, confidence = 0.9, rationale = "ok", flagged = false, answerQuote = "x"),
+                Grade(2L, 12L, met = false, confidence = 0.85, rationale = "missed", flagged = false, answerQuote = "")
+            ),
+            flagged = false
+        )
     }
 
     override suspend fun syncCompletedUnits() { /* no-op for these tests */ }
