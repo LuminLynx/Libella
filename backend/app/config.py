@@ -40,14 +40,15 @@ JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 JWT_EXPIRATION_DAYS = int(os.getenv("JWT_EXPIRATION_DAYS", "30"))
 
 
-# Default values that must NOT appear in a production deployment. Each
-# entry is (variable name as displayed, getter, the default we refuse
-# to ship in prod). The getter is a callable so tests can monkeypatch
-# the module-level constant and have validate_production_config see
-# the new value without re-importing.
+# Default values that must NOT appear in a production deployment.
+# POSTGRES_PASSWORD is intentionally absent from this tuple — it's
+# only consulted when DATABASE_URL is unset (see the conditional in
+# validate_production_config below). The Railway-style deploy pattern
+# is to set DATABASE_URL directly with strong credentials inside, in
+# which case the POSTGRES_* fallbacks are dead code; gating on them
+# unconditionally would refuse perfectly valid deploys.
 _PRODUCTION_FORBIDDEN_DEFAULTS = (
     ("JWT_SECRET", lambda: JWT_SECRET, "change-me-in-production"),
-    ("POSTGRES_PASSWORD", lambda: POSTGRES_PASSWORD, "postgres"),
 )
 
 
@@ -77,6 +78,17 @@ def validate_production_config() -> None:
                 f"{name} is still the development default ({forbidden_default!r}); "
                 f"set it via the deploy environment."
             )
+
+    # POSTGRES_PASSWORD is only consulted when DATABASE_URL is unset
+    # (see RESOLVED_DATABASE_URL above). Skip the gate when the
+    # operator has provided a full DATABASE_URL — its credentials are
+    # the operator's explicit choice and the fallback never runs.
+    if not DATABASE_URL and POSTGRES_PASSWORD == "postgres":
+        problems.append(
+            "POSTGRES_PASSWORD is still the development default ('postgres') "
+            "and DATABASE_URL is unset; set DATABASE_URL to a complete "
+            "connection string (recommended) or set POSTGRES_PASSWORD."
+        )
 
     # AI_PROVIDER_API_KEY's default is empty; in production we require
     # any non-empty value. Per-provider validity is checked at first

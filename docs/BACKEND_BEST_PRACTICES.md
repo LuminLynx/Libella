@@ -42,8 +42,12 @@ and refuses to boot when `APP_ENV=production` is set but any of these
 config values are still defaults:
 
 - `JWT_SECRET` is the literal `"change-me-in-production"`.
-- `POSTGRES_PASSWORD` is the literal `"postgres"`.
 - `AI_PROVIDER_API_KEY` is empty.
+- `POSTGRES_PASSWORD` is the literal `"postgres"` **and**
+  `DATABASE_URL` is unset. When operators provide a complete
+  `DATABASE_URL` (Railway's default pattern), the `POSTGRES_*`
+  fallbacks are dead code — gating on them unconditionally would
+  refuse perfectly valid deploys.
 
 In any other environment (development, test, ci, staging — anything
 other than the literal string `"production"`) the gate is a no-op so
