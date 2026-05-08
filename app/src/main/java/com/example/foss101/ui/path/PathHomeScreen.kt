@@ -51,8 +51,16 @@ fun PathHomeScreen(
         factory = PathHomeViewModel.factory(pathRepository, completionCache)
     )
 
+    // Drive every load from the lifecycle: each time this screen reaches
+    // RESUMED — first composition, return from settings/auth_login,
+    // return from the unit reader — re-fetch the path and sync the
+    // user's completion state from the server. Single source of truth,
+    // no flags, no `remember`/`rememberSaveable` guards. Cost: one extra
+    // path GET + completions GET per resume. Acceptable for v1; aligns
+    // with Google's "VM exposes state, UI drives effects" guidance for
+    // Compose state production. See docs/ANDROID_BEST_PRACTICES.md.
     LifecycleResumeEffect(Unit) {
-        viewModel.refreshFromCache()
+        viewModel.load()
         onPauseOrDispose { }
     }
 
