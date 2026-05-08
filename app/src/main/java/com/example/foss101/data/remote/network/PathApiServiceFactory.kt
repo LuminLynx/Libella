@@ -5,6 +5,8 @@ import com.example.foss101.data.remote.api.PathApiService
 import com.example.foss101.model.CalibrationTag
 import com.example.foss101.model.CompletionRecord
 import com.example.foss101.model.DecisionPrompt
+import com.example.foss101.model.Grade
+import com.example.foss101.model.GradeResult
 import com.example.foss101.model.Path
 import com.example.foss101.model.Rubric
 import com.example.foss101.model.RubricCriterion
@@ -56,6 +58,42 @@ private class HttpPathApiService(
         val envelope = request("GET", "api/v1/completions", payload = null)
         val array = envelope.optJSONArray("data") ?: JSONArray()
         array.map(::parseCompletion)
+    }
+
+    override suspend fun submitGrade(unitId: String, answer: String): GradeResult = withContext(Dispatchers.IO) {
+        val encodedId = URLEncoder.encode(unitId, Charsets.UTF_8.name())
+        val payload = JSONObject().put("answer", answer)
+        val envelope = request("POST", "api/v1/units/$encodedId/grade", payload = payload)
+        val data = envelope.requireData()
+        val completion = parseCompletion(
+            data.optJSONObject("completion")
+                ?: throw PathApiException("Grade response missing 'completion' object.")
+        )
+        val gradesArray = data.optJSONArray("grades") ?: JSONArray()
+        val quotesArray = data.optJSONArray("answerQuotes") ?: JSONArray()
+        val quoteByCriterion: Map<Long, String> = buildMap {
+            for (i in 0 until quotesArray.length()) {
+                val q = quotesArray.getJSONObject(i)
+                put(q.optLong("criterionId"), q.optString("quote"))
+            }
+        }
+        val grades = gradesArray.map { item ->
+            val criterionId = item.optLong("criterionId")
+            Grade(
+                id = item.optLong("id"),
+                criterionId = criterionId,
+                met = item.optBoolean("met"),
+                confidence = item.optDouble("confidence", 0.0),
+                rationale = item.optString("rationale"),
+                flagged = item.optBoolean("flagged"),
+                answerQuote = quoteByCriterion[criterionId].orEmpty()
+            )
+        }
+        GradeResult(
+            completion = completion,
+            grades = grades,
+            flagged = data.optBoolean("flagged")
+        )
     }
 
     private fun request(method: String, path: String, payload: JSONObject?): JSONObject {

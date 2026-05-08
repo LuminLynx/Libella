@@ -217,6 +217,9 @@ private class FakePathRepository(
         return CompletionRecord(1L, "u", "p", unitId, "now")
     }
 
+    override suspend fun submitGrade(unitId: String, answer: String): com.example.foss101.model.GradeResult =
+        error("not used in PathHomeViewModelTest")
+
     override suspend fun syncCompletedUnits() {
         syncCalls++
         syncError?.let { throw it }

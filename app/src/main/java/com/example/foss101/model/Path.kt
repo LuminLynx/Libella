@@ -72,3 +72,27 @@ data class CompletionRecord(
     val unitId: String,
     val completedAt: String
 )
+
+/**
+ * One per-criterion grade returned by the F4 grader. Mirrors the
+ * backend `grades` table + the inline `answer_quote` echoed in the
+ * grade endpoint response (the column doesn't exist on `grades`
+ * yet — see backend/app/repositories/grade_repository.py).
+ */
+data class Grade(
+    val id: Long,
+    val criterionId: Long,
+    val met: Boolean,
+    val confidence: Double,
+    val rationale: String,
+    val flagged: Boolean,
+    /** Verbatim span the grader quoted from the user's answer. Empty when met=false. */
+    val answerQuote: String
+)
+
+data class GradeResult(
+    val completion: CompletionRecord,
+    val grades: List<Grade>,
+    /** True when the grader flagged the answer for review (T2-B). */
+    val flagged: Boolean
+)

@@ -10,11 +10,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
@@ -26,6 +28,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -38,6 +41,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.foss101.data.repository.CompletionCache
 import com.example.foss101.data.repository.PathRepository
 import com.example.foss101.model.CalibrationTag
+import com.example.foss101.model.Grade
+import com.example.foss101.model.RubricCriterion
 import com.example.foss101.model.UnitDetail
 import com.example.foss101.model.UnitSource
 import com.example.foss101.ui.components.AppScreenScaffold
@@ -92,7 +97,8 @@ fun UnitReaderScreen(
                 state = state,
                 onToggleTradeOff = viewModel::toggleTradeOff,
                 onToggleDepth = viewModel::toggleDepth,
-                onMarkComplete = viewModel::markComplete,
+                onAnswerChanged = viewModel::onAnswerChanged,
+                onSubmitAnswer = viewModel::submitAnswer,
                 modifier = Modifier.screenContentPadding(contentPadding)
             )
         }
@@ -104,7 +110,8 @@ private fun LoadedBody(
     state: UnitReaderUiState.Loaded,
     onToggleTradeOff: () -> Unit,
     onToggleDepth: () -> Unit,
-    onMarkComplete: () -> Unit,
+    onAnswerChanged: (String) -> Unit,
+    onSubmitAnswer: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val unit = state.unit
@@ -148,6 +155,23 @@ private fun LoadedBody(
             Section(title = "Decision prompt") {
                 MarkdownText(markdown = prompt.promptMd)
             }
+
+            // F3 — open-ended answer input. F4 — submit + render grade output.
+            // Decide before Calibrate (Loop step 3 → 4) so the consensus
+            // signal doesn't prime the answer.
+            DecisionAnswerSection(
+                state = state,
+                onAnswerChanged = onAnswerChanged,
+                onSubmit = onSubmitAnswer
+            )
+
+            state.gradeResult?.let { result ->
+                GradeOutputSection(
+                    grades = result.grades,
+                    flagged = result.flagged,
+                    rubricCriteriaById = unit.rubric?.criteria.orEmpty().associateBy { it.id }
+                )
+            }
         }
 
         if (unit.calibrationTags.isNotEmpty()) {
@@ -166,7 +190,9 @@ private fun LoadedBody(
             }
         }
 
-        if (state.isCompleted) {
+        if (state.isCompleted && state.gradeResult == null) {
+            // Completed in a prior session — the grade output isn't loaded
+            // (we don't fetch grades on unit open today), so just confirm.
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -178,20 +204,61 @@ private fun LoadedBody(
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "Marked complete.",
+                    text = "You completed this unit in a previous session.",
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
-        } else {
-            PrimaryActionButton(
-                text = if (state.markCompleteInProgress) "Saving…" else "Mark complete",
-                onClick = onMarkComplete,
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !state.markCompleteInProgress
-            )
         }
+    }
+}
 
-        state.markCompleteFailure?.let {
+@Composable
+private fun Section(title: String, body: @Composable () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        SectionHeader(title = title)
+        body()
+    }
+}
+
+@Composable
+private fun DecisionAnswerSection(
+    state: UnitReaderUiState.Loaded,
+    onAnswerChanged: (String) -> Unit,
+    onSubmit: () -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedTextField(
+            value = state.answerDraft,
+            onValueChange = onAnswerChanged,
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 120.dp),
+            label = { Text("Your answer") },
+            placeholder = {
+                Text(
+                    "Be specific about what you'd measure, what you'd ignore, " +
+                        "and where your estimate might still be wrong."
+                )
+            },
+            enabled = !state.submitInProgress,
+            minLines = 4,
+            maxLines = 12
+        )
+
+        val canSubmit = state.answerDraft.trim().isNotEmpty() && !state.submitInProgress
+        val ctaLabel = when {
+            state.submitInProgress -> "Grading…"
+            state.gradeResult != null -> "Re-submit"
+            else -> "Submit answer"
+        }
+        PrimaryActionButton(
+            text = ctaLabel,
+            onClick = onSubmit,
+            modifier = Modifier.fillMaxWidth(),
+            enabled = canSubmit
+        )
+
+        state.submitFailure?.let {
             Text(
                 text = it,
                 color = MaterialTheme.colorScheme.error,
@@ -202,10 +269,100 @@ private fun LoadedBody(
 }
 
 @Composable
-private fun Section(title: String, body: @Composable () -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        SectionHeader(title = title)
-        body()
+private fun GradeOutputSection(
+    grades: List<Grade>,
+    flagged: Boolean,
+    rubricCriteriaById: Map<Long, RubricCriterion>
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        if (flagged) {
+            // STRATEGY.md T2-B: "If the grader is uncertain anywhere, the
+            // answer is flagged 'review needed' and the canonical answer
+            // is shown instead of a pass/fail." We deliberately do NOT
+            // render the per-criterion GradeRow cards in this branch:
+            // showing Met/Not-Met chips next to a "we're not confident"
+            // banner is contradictory and undermines the flagged-or-graded
+            // contract.
+            //
+            // v1 doesn't yet store a separate authored canonical answer,
+            // so the banner points the user at the calibration tags +
+            // sources below as the surrogate. Adding canonical-answer
+            // content is tracked as Phase-2 polish.
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                )
+            ) {
+                Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = "Review needed",
+                        style = MaterialTheme.typography.titleSmall
+                    )
+                    Text(
+                        text = "We're not confident enough to grade this fairly. " +
+                            "Compare your answer to the calibration tags and sources below, then try again.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+            return@Column
+        }
+
+        SectionHeader(title = "Your grade")
+        // Sort grades by the criterion's authored position so the UI
+        // mirrors the rubric order, not the order grades came back in.
+        val ordered = grades.sortedBy { rubricCriteriaById[it.criterionId]?.position ?: Int.MAX_VALUE }
+        ordered.forEach { grade ->
+            val criterion = rubricCriteriaById[grade.criterionId]
+            GradeRow(grade = grade, criterionText = criterion?.text ?: "Criterion ${grade.criterionId}")
+        }
+    }
+}
+
+@Composable
+private fun GradeRow(
+    grade: Grade,
+    criterionText: String
+) {
+    val tint = if (grade.met) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Icon(
+                    imageVector = if (grade.met) Icons.Filled.CheckCircle else Icons.Filled.Cancel,
+                    contentDescription = if (grade.met) "Met" else "Not met",
+                    tint = tint
+                )
+                Text(
+                    text = criterionText,
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.weight(1f)
+                )
+                AssistChip(
+                    onClick = {},
+                    label = { Text("${(grade.confidence * 100).toInt()}%") }
+                )
+            }
+            Text(
+                text = grade.rationale,
+                style = MaterialTheme.typography.bodyMedium
+            )
+            if (grade.answerQuote.isNotBlank()) {
+                Text(
+                    text = "“${grade.answerQuote}”",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
     }
 }
 
