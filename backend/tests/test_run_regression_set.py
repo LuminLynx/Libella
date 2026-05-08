@@ -205,6 +205,31 @@ def test_score_pair_grader_error_does_not_propagate() -> None:
     assert outcome.matched_criteria == 0
 
 
+def test_score_pair_propagates_provider_usage() -> None:
+    """Token counts the grader reports must reach PairOutcome so the
+    Phase 2 cost summary is real, not zeros.
+    """
+    unit = _unit([1])
+
+    def grader(_unit: Any, _answer: str) -> GraderOutput:
+        return GraderOutput(
+            grades=[
+                {"criterion_id": 101, "met": True, "confidence": 0.9, "rationale": "x", "answer_quote": "y"},
+            ],
+            flagged=False,
+            usage={
+                "input_tokens": 1500,
+                "output_tokens": 200,
+                "cache_read_input_tokens": 1300,
+            },
+        )
+
+    outcome = score_pair(_pair([(1, True)]), unit, grader)
+    assert outcome.input_tokens == 1500
+    assert outcome.output_tokens == 200
+    assert outcome.cache_read_tokens == 1300
+
+
 def test_score_pair_flags_stale_yaml_when_position_missing() -> None:
     unit = _unit([1])  # rubric only has position 1
     grader_called = {"count": 0}
