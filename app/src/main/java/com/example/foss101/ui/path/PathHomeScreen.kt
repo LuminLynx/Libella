@@ -26,6 +26,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -59,10 +60,15 @@ fun PathHomeScreen(
     // resumes (returning from the unit reader, from settings, or from
     // a successful sign-in via auth_login), trigger a fresh load() so
     // the cross-device completion sync picks up server-side state and
-    // any auth changes are reflected. The cheap path-only refresh from
-    // the local cache stays as the default to avoid unnecessary network
-    // — load() is the strict superset that also re-syncs from the API.
-    var initialMount by remember { mutableStateOf(true) }
+    // any auth changes are reflected.
+    //
+    // The flag uses rememberSaveable so it survives the composition
+    // teardown/recreation that happens when this screen leaves and
+    // re-enters via Compose Navigation. Plain `remember` would be
+    // reset on every return from another destination, sending us
+    // back into the `refreshFromCache()` branch and skipping the
+    // server sync — exactly the bug PR #66's first attempt missed.
+    var initialMount by rememberSaveable { mutableStateOf(true) }
     LifecycleResumeEffect(Unit) {
         if (initialMount) {
             initialMount = false
