@@ -1,0 +1,55 @@
+# Regression-set template — copy to <unit_id>.yml and author pairs.
+#
+# Per docs/STRATEGY.md § T2-C, every published unit ships with a
+# regression set used to verify the grader stays calibrated:
+#
+#   - flagship units: >= 20 pairs
+#   - standard units: >= 10 pairs
+#   - never zero
+#
+# A regression "pair" is one ground-truth input + the per-criterion
+# verdict a fair human grader would assign. The runner feeds each
+# `answer` through the live grader (Anthropic Claude Sonnet 4.6 per
+# T2-E) and reports agreement against `expected`.
+#
+# Authoring guidance:
+#
+#   * Mix easy and hard cases. The grader will look impressively
+#     accurate on softball pairs alone.
+#   * Include at least one "off-topic / refuse to grade" pair (an
+#     answer that should trigger flagged=true) so confidence
+#     calibration is exercised.
+#   * Reference criteria by `position` (1-indexed, stable from the
+#     authored markdown). Database criterion ids are NOT stable
+#     across environments, so the runner translates position → id
+#     at run time.
+#   * Keep `answer` strings under 8000 characters (matches the
+#     grade endpoint's request schema).
+
+unit_id: <unit-slug-id>           # the unit's `id` field (e.g. tokenization-bundle-0)
+
+description: |
+  Short note about what this set is testing — typical authoring
+  date, source of pairs (real student answers? synthetic? both?),
+  and any known weak spots the next operator should know about.
+
+pairs:
+  - id: p001                         # short stable identifier; appears in the runner's report
+    label: All criteria fully met    # one-line human-readable summary
+
+    answer: |
+      The full text of the learner's answer. Multiline yaml block
+      preserves paragraph breaks. Authors should write this in the
+      voice and length of a real engaged learner — not a canned
+      perfect answer (the grader sees enough of those during dev
+      that it learns to over-grade them).
+
+    expected:
+      criteria:
+        - position: 1                # criterion at position 1 in the rubric
+          met: true                  # boolean — what a fair human grader would say
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false                 # true if the answer is off-topic / un-gradable
