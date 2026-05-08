@@ -20,16 +20,32 @@ interface TokenStorage {
 class EncryptedTokenStorage(context: Context) : TokenStorage {
 
     private val prefs: SharedPreferences = run {
-        val masterKey = MasterKey.Builder(context.applicationContext)
+        val ctx = context.applicationContext
+        val masterKey = MasterKey.Builder(ctx)
             .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
             .build()
-        EncryptedSharedPreferences.create(
-            context.applicationContext,
-            FILE_NAME,
-            masterKey,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-        )
+        try {
+            EncryptedSharedPreferences.create(
+                ctx,
+                FILE_NAME,
+                masterKey,
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            )
+        } catch (failure: Exception) {
+            // Encrypted prefs unreadable (e.g. backed-up file restored on
+            // a fresh install where the AndroidKeyStore master key was
+            // not backed up). Wipe and retry. User signs in again on
+            // first launch — far better than crashing on app start.
+            ctx.deleteSharedPreferences(FILE_NAME)
+            EncryptedSharedPreferences.create(
+                ctx,
+                FILE_NAME,
+                masterKey,
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            )
+        }
     }
 
     override fun getToken(): String? = prefs.getString(KEY_TOKEN, null)?.takeIf { it.isNotBlank() }
