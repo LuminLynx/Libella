@@ -275,14 +275,19 @@ private fun GradeOutputSection(
     rubricCriteriaById: Map<Long, RubricCriterion>
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        SectionHeader(title = "Your grade")
-
         if (flagged) {
-            // T2-B — flagged means the grader couldn't grade fairly, so
-            // the per-criterion pass/fail isn't reliable. Surface the
-            // calibration tags + sources below as the canonical answer
-            // and tell the user explicitly. v1 doesn't yet store a
-            // separate authored canonical answer; tracked for later.
+            // STRATEGY.md T2-B: "If the grader is uncertain anywhere, the
+            // answer is flagged 'review needed' and the canonical answer
+            // is shown instead of a pass/fail." We deliberately do NOT
+            // render the per-criterion GradeRow cards in this branch:
+            // showing Met/Not-Met chips next to a "we're not confident"
+            // banner is contradictory and undermines the flagged-or-graded
+            // contract.
+            //
+            // v1 doesn't yet store a separate authored canonical answer,
+            // so the banner points the user at the calibration tags +
+            // sources below as the surrogate. Adding canonical-answer
+            // content is tracked as Phase-2 polish.
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
@@ -301,8 +306,10 @@ private fun GradeOutputSection(
                     )
                 }
             }
+            return@Column
         }
 
+        SectionHeader(title = "Your grade")
         // Sort grades by the criterion's authored position so the UI
         // mirrors the rubric order, not the order grades came back in.
         val ordered = grades.sortedBy { rubricCriteriaById[it.criterionId]?.position ?: Int.MAX_VALUE }
