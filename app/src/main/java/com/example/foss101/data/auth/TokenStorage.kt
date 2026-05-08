@@ -19,43 +19,32 @@ interface TokenStorage {
 
 class EncryptedTokenStorage(context: Context) : TokenStorage {
 
-    /**
-     * Encrypted prefs, with one-shot recovery if decryption fails.
-     *
-     * Failure here typically means the prefs file on disk was encrypted
-     * with an AndroidKeyStore master key that's no longer present —
-     * commonly because Android's auto-backup restored the file on a
-     * fresh install but the master key wasn't (and can't be) backed up.
-     * The result is `AEADBadTagException` on the first read, which
-     * otherwise crashes the app at `MainActivity.onCreate`.
-     *
-     * The fullBackupContent / dataExtractionRules entries in
-     * AndroidManifest.xml + res/xml/* are the primary defense (they
-     * stop the encrypted file from being backed up in the first place).
-     * This try/catch is defense in depth for any device already in a
-     * corrupted state from a prior install: wipe the unreadable file
-     * and create a new one. Cost: the user is signed out on that
-     * launch — far better than a startup crash.
-     */
     private val prefs: SharedPreferences = run {
         val ctx = context.applicationContext
         val masterKey = MasterKey.Builder(ctx)
             .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
             .build()
-
-        fun build(): SharedPreferences = EncryptedSharedPreferences.create(
-            ctx,
-            FILE_NAME,
-            masterKey,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-        )
-
         try {
-            build()
-        } catch (_: Exception) {
+            EncryptedSharedPreferences.create(
+                ctx,
+                FILE_NAME,
+                masterKey,
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            )
+        } catch (failure: Exception) {
+            // Encrypted prefs unreadable (e.g. backed-up file restored on
+            // a fresh install where the AndroidKeyStore master key was
+            // not backed up). Wipe and retry. User signs in again on
+            // first launch — far better than crashing on app start.
             ctx.deleteSharedPreferences(FILE_NAME)
-            build()
+            EncryptedSharedPreferences.create(
+                ctx,
+                FILE_NAME,
+                masterKey,
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            )
         }
     }
 
