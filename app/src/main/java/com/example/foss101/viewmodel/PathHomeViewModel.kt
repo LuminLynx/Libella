@@ -45,10 +45,6 @@ class PathHomeViewModel(
     private val _events = Channel<PathHomeEvent>(Channel.BUFFERED)
     val events: Flow<PathHomeEvent> = _events.receiveAsFlow()
 
-    init {
-        load()
-    }
-
     fun load() {
         uiState = PathHomeUiState.Loading
         viewModelScope.launch {

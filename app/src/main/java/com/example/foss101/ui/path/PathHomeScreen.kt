@@ -23,11 +23,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -56,26 +51,16 @@ fun PathHomeScreen(
         factory = PathHomeViewModel.factory(pathRepository, completionCache)
     )
 
-    // The VM's init already loads on first composition. On subsequent
-    // resumes (returning from the unit reader, from settings, or from
-    // a successful sign-in via auth_login), trigger a fresh load() so
-    // the cross-device completion sync picks up server-side state and
-    // any auth changes are reflected.
-    //
-    // The flag uses rememberSaveable so it survives the composition
-    // teardown/recreation that happens when this screen leaves and
-    // re-enters via Compose Navigation. Plain `remember` would be
-    // reset on every return from another destination, sending us
-    // back into the `refreshFromCache()` branch and skipping the
-    // server sync — exactly the bug PR #66's first attempt missed.
-    var initialMount by rememberSaveable { mutableStateOf(true) }
+    // Drive every load from the lifecycle: each time this screen reaches
+    // RESUMED — first composition, return from settings/auth_login,
+    // return from the unit reader — re-fetch the path and sync the
+    // user's completion state from the server. Single source of truth,
+    // no flags, no `remember`/`rememberSaveable` guards. Cost: one extra
+    // path GET + completions GET per resume. Acceptable for v1; aligns
+    // with Google's "VM exposes state, UI drives effects" guidance for
+    // Compose state production. See docs/ANDROID_BEST_PRACTICES.md.
     LifecycleResumeEffect(Unit) {
-        if (initialMount) {
-            initialMount = false
-            viewModel.refreshFromCache()
-        } else {
-            viewModel.load()
-        }
+        viewModel.load()
         onPauseOrDispose { }
     }
 

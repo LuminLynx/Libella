@@ -49,6 +49,7 @@ class PathHomeViewModelTest {
             completionCache = FakeCompletionCache(initial = setOf("u-1"))
         )
 
+        viewModel.load()
         advanceUntilIdle()
 
         val state = viewModel.uiState as PathHomeUiState.Loaded
@@ -67,6 +68,7 @@ class PathHomeViewModelTest {
             completionCache = FakeCompletionCache(initial = setOf("u-1", "u-2"))
         )
 
+        viewModel.load()
         advanceUntilIdle()
 
         val state = viewModel.uiState as PathHomeUiState.Loaded
@@ -82,6 +84,7 @@ class PathHomeViewModelTest {
             completionCache = FakeCompletionCache()
         )
 
+        viewModel.load()
         advanceUntilIdle()
 
         val state = viewModel.uiState as PathHomeUiState.Error
@@ -97,6 +100,7 @@ class PathHomeViewModelTest {
             completionCache = FakeCompletionCache()
         )
 
+        viewModel.load()
         advanceUntilIdle()
         val first = withTimeoutOrNull(1_000) { viewModel.events.first() }
         assertNotNull("expected one AuthExpired event", first)
@@ -124,6 +128,7 @@ class PathHomeViewModelTest {
         )
         val viewModel = PathHomeViewModel(repository, cache)
 
+        viewModel.load()
         advanceUntilIdle()
 
         val state = viewModel.uiState as PathHomeUiState.Loaded
@@ -146,6 +151,7 @@ class PathHomeViewModelTest {
         )
         val viewModel = PathHomeViewModel(repository, cache)
 
+        viewModel.load()
         advanceUntilIdle()
 
         val state = viewModel.uiState as PathHomeUiState.Loaded
@@ -163,6 +169,7 @@ class PathHomeViewModelTest {
         val cache = FakeCompletionCache()
         val repository = FakePathRepository(path = path)
         val viewModel = PathHomeViewModel(repository, cache)
+        viewModel.load()
         advanceUntilIdle()
         assertEquals("u-1", (viewModel.uiState as PathHomeUiState.Loaded).nextUnit?.id)
 
