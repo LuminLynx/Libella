@@ -23,6 +23,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -51,8 +55,21 @@ fun PathHomeScreen(
         factory = PathHomeViewModel.factory(pathRepository, completionCache)
     )
 
+    // The VM's init already loads on first composition. On subsequent
+    // resumes (returning from the unit reader, from settings, or from
+    // a successful sign-in via auth_login), trigger a fresh load() so
+    // the cross-device completion sync picks up server-side state and
+    // any auth changes are reflected. The cheap path-only refresh from
+    // the local cache stays as the default to avoid unnecessary network
+    // — load() is the strict superset that also re-syncs from the API.
+    var initialMount by remember { mutableStateOf(true) }
     LifecycleResumeEffect(Unit) {
-        viewModel.refreshFromCache()
+        if (initialMount) {
+            initialMount = false
+            viewModel.refreshFromCache()
+        } else {
+            viewModel.load()
+        }
         onPauseOrDispose { }
     }
 
