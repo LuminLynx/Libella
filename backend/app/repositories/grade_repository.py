@@ -59,14 +59,41 @@ def upsert_grades(
 ) -> list[dict[str, Any]]:
     """Replace this completion's grades atomically.
 
+    The grades table is keyed (completion_id, criterion_id), so a plain
+    INSERT … ON CONFLICT only refreshes rows whose criterion id appears
+    in the incoming submission. If the rubric's criterion set changed
+    between grading attempts (chunk 6's append-only versioning gives a
+    re-authored rubric a fresh set of criterion ids), prior rows for
+    retired criteria would linger and reads would mix old and new.
+
+    To prevent that, we DELETE every existing row for this completion
+    whose criterion_id is *not* in the incoming submission, then UPSERT
+    each incoming grade — all in a single transaction. After the call,
+    `grades` for this completion exactly mirrors what the grader just
+    returned.
+
     Each grade is { criterion_id, met, confidence, rationale, ... }.
     Returns the persisted rows in the order grades were submitted.
     """
     if not grades:
         return []
 
+    incoming_criterion_ids = [int(g["criterion_id"]) for g in grades]
+
     persisted: list[dict[str, Any]] = []
     with get_connection() as connection:
+        # Atomic with the UPSERTs below. Drop any prior rows whose
+        # criterion id isn't in the incoming submission — those reflect
+        # a rubric the grader no longer evaluated against.
+        connection.execute(
+            """
+            DELETE FROM grades
+            WHERE completion_id = %s
+              AND criterion_id <> ALL(%s::bigint[])
+            """,
+            (completion_id, incoming_criterion_ids),
+        )
+
         for grade in grades:
             row = connection.execute(
                 """

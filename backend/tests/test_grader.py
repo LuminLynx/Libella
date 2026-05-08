@@ -282,3 +282,54 @@ def test_grade_request_rejects_empty_answer(
     )
     # Pydantic Field min_length=1 → 422 before any handler runs.
     assert response.status_code == 422
+
+
+# ---------------------------------------------------------------------------
+# Repository — Postgres-gated
+# ---------------------------------------------------------------------------
+
+
+def test_upsert_drops_grades_for_criteria_not_in_submission(gated_db) -> None:
+    """A re-grade with a different criterion set must not leave stale rows.
+
+    Rubric versioning (chunk 6) means the criterion ids the grader sees
+    today may differ from the ids it saw on a previous attempt. The
+    repository must DELETE prior rows whose criterion id isn't in the
+    incoming submission, atomically with the UPSERT.
+    """
+    from .conftest import seed_path_with_units
+
+    seed = seed_path_with_units(gated_db)
+    user_id = seed["user_id"]
+    unit_id = seed["unit_a_id"]
+    crit_a, crit_b = seed["criterion_ids"]
+
+    # First grade — both criteria present.
+    completion = completion_repository.record_completion(user_id=user_id, unit_id=unit_id)["completion"]
+    grade_repository.upsert_grades(
+        completion_id=completion["id"],
+        grades=[
+            {"criterion_id": crit_a, "met": True, "confidence": 0.9, "rationale": "ok", "answer_quote": "x"},
+            {"criterion_id": crit_b, "met": False, "confidence": 0.7, "rationale": "no", "answer_quote": ""},
+        ],
+        flagged=False,
+    )
+
+    first = grade_repository.list_grades_for_completion(completion["id"])
+    assert {g["criterionId"] for g in first} == {crit_a, crit_b}
+
+    # Second grade — criterion B is no longer in the submission. The
+    # repository must remove the stale (completion_id, crit_b) row.
+    grade_repository.upsert_grades(
+        completion_id=completion["id"],
+        grades=[
+            {"criterion_id": crit_a, "met": True, "confidence": 0.95, "rationale": "still ok", "answer_quote": "y"},
+        ],
+        flagged=False,
+    )
+
+    second = grade_repository.list_grades_for_completion(completion["id"])
+    assert {g["criterionId"] for g in second} == {crit_a}, (
+        "stale criterion row should be deleted on re-grade"
+    )
+    assert second[0]["confidence"] == pytest.approx(0.95)
