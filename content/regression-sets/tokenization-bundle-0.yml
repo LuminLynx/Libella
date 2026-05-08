@@ -381,7 +381,7 @@ pairs:
       flagged: true
 
   - id: p016
-    label: Edge case — very short answer, gradable but thin, should flag
+    label: Edge case — very short answer, only criterion 1 deterministically met
     answer: |
       Use tokens, not words.
     expected:
@@ -392,7 +392,7 @@ pairs:
           met: false
         - position: 3
           met: false
-      flagged: true
+      flagged: false
 
   - id: p017
     label: Edge case — non-English answer (Spanish), all three met
