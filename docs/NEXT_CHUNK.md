@@ -54,3 +54,29 @@ DATABASE_URL=postgres://...  python -m backend.scripts.ingest_units content/unit
 
 Without this step, the path home renders an empty list. The ingest
 is idempotent; running it on a populated DB is safe.
+
+---
+
+## Post-chunk-7 polish (PR ledger)
+
+A short stretch of polish PRs landed after chunk 7 closed Phase 1's
+structural deliverables. They surfaced from real-device smoke tests
+(phone + tablet) and one Play-Store-readiness pass. Logged here so
+the post-chunk delta from spec is visible in one place.
+
+| PR | Type | Notes |
+|----|------|-------|
+| #59 | Aligned | Chunk 7 review fixes — restored Settings access from path home, made auth-expired nav a one-shot Channel event, scoped completion cache per user. |
+| #60 | Correction | Markdown rendering in unit reader — chunk 7 shipped raw text; EXECUTION.md L74 had explicitly required `markdown-rendered`. |
+| #61 | Aligned | Friendlier 401 message; collapsed trade-off framing behind a disclosure (P4 "bite first, depth on tap"). |
+| #62 | Correction | Re-ordered unit reader to **Bite → Decide → Calibrate** per STRATEGY.md Loop (chunk 7 had used the 9-slot anatomy order, which primes consensus answers before the question). Marked `docs/roadmap/ROADMAP.md` as historical. |
+| #63 | Bug fix | Unit reader loads completion state from cache on open; clean back-stack handling on auth-expired redirect. |
+| **#64** | **Extension** | Cross-device completion sync. **Adds `GET /api/v1/completions`** — not in chunk 7's spec, which deferred this as "v1 cache is fine." Doesn't contradict any locked decision; goes beyond. Phase 2 will inherit the same shape for grades. |
+| #65 | Bug fix | Encrypted-prefs crash on restored installs. Added Play-Store-aligned backup rules + recovery in `EncryptedTokenStorage`. |
+| #66 | Bug fix + new doc | Path-home reload on every resume so cross-device sync runs after sign-in. **Added `docs/ANDROID_BEST_PRACTICES.md`** capturing Android-specific decisions for Play Store readiness — see that file for the full ledger and maintenance discipline. |
+
+**Net spec impact:**
+- Two corrections of chunk-7 drift (#60, #62) brought us back to spec.
+- One extension (#64) added one auth-gated GET endpoint. Doesn't violate anything in STRATEGY/EXECUTION/AUDIT; flagged here so it's visible at the Phase 2 boundary.
+- One new doc category (`ANDROID_BEST_PRACTICES.md`) — complementary to existing source-of-truth docs, not a rewrite of any of them.
+- Zero modifications to STRATEGY.md, EXECUTION.md, or AUDIT.md.

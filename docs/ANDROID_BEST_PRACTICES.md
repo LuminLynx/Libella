@@ -2,9 +2,26 @@
 
 > **Scope.** Android-specific decisions made during Phase 1 to keep
 > the app aligned with Google Play Store guidelines and current
-> Jetpack / Compose best practices. Update this file whenever a new
-> Android-specific decision is made; it's the source of truth for
-> "why is the app shaped this way?" for future contributors.
+> Jetpack / Compose best practices. Complementary to `STRATEGY.md`
+> (product strategy) and `EXECUTION.md` (phase sequencing); not a
+> substitute for either.
+
+---
+
+## How this file is maintained
+
+**Update in the same PR** that makes the change when the PR:
+
+- Introduces a new architectural decision (new library, new pattern, new platform feature).
+- Reverses or significantly modifies an existing decision in this doc.
+- Touches Google Play–relevant config (target/minSdk, signing, permissions, backup, ProGuard/R8, data-extraction rules).
+- Adds a new platform subsystem with a "why is it shaped this way?" justification (payments, notifications, deep links, etc.).
+
+**Skip the update for** bug fixes that don't change the underlying decision, content tweaks, test-only changes, pure refactors, or one-off polish.
+
+**PR discipline.** The PR description should explicitly say either *"adds §N to ANDROID_BEST_PRACTICES.md"* or *"no documented decisions change."* Reviewers ask "should this be in the best-practices doc?" during review.
+
+**Periodic audit.** At each phase boundary, sweep the file: confirm each section still matches the code, retire entries replaced by new decisions, refresh external links if Google's docs moved.
 
 ---
 

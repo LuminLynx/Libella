@@ -230,6 +230,7 @@ If you are a new chat session reading this for the first time:
 3. **Open sub-decisions** are listed in `STRATEGY.md` § *"Open sub-decisions / what remains"*. This doc tracks which phase resolves each.
 4. **Locked decisions are not up for re-debate** unless flagged explicitly as a strategy revision. The wedge (P1 + P2 primary) and the soul (learning, not retrieval) are load-bearing. Change them with care.
 5. **The user has lived through losing prior chat sessions to API errors.** Documentation is their resilience strategy. Treat both `STRATEGY.md` and `EXECUTION.md` as the canonical record; treat chat history as ephemeral.
+6. **Android-specific implementation decisions** (backup rules, encrypted prefs, Compose state-production pattern, JWT propagation, per-user cache scoping, etc.) live in `docs/ANDROID_BEST_PRACTICES.md`. That file is complementary to this one, not a substitute — strategy stays in `STRATEGY.md`, execution sequencing here, Android platform decisions there. Cross-reference it when working on the Android client or preparing for a Play Store release.
 
 ---
 
