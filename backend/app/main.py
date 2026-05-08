@@ -5,7 +5,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from .ai_service import ai_service_metadata
+from .ai_service import AIServiceError, ai_service_metadata, grade_decision_answer
 from .auth import (
     AuthError,
     create_access_token,
@@ -17,7 +17,12 @@ from .auth import (
     verify_password,
 )
 from .migrations import run_migrations
-from .repositories import completion_repository, path_repository, unit_repository
+from .repositories import (
+    completion_repository,
+    grade_repository,
+    path_repository,
+    unit_repository,
+)
 from .repository import (
     create_user,
     get_term_by_id,
@@ -34,6 +39,10 @@ app = FastAPI(title="AI-101 Backend", version="0.3.0")
 
 class CompletionRequest(BaseModel):
     unitId: str = Field(min_length=1)
+
+
+class GradeRequest(BaseModel):
+    answer: str = Field(min_length=1, max_length=8000)
 
 
 class SignupRequest(BaseModel):
@@ -236,3 +245,79 @@ def list_completions(
     """
     completions = completion_repository.list_completions(user_id=current_user_id)
     return _envelope_response(data=completions)
+
+
+@app.post("/api/v1/units/{unit_id}/grade")
+def post_grade(
+    unit_id: str,
+    request: GradeRequest,
+    current_user_id: str = Depends(required_user_id),
+) -> JSONResponse:
+    """F4 — grade the user's open-ended decision-prompt answer.
+
+    Per docs/STRATEGY.md § Loop step 4 + T2: per-criterion Met/Not Met
+    with confidence + rationale + answer-quote. The unit's rubric and
+    decision prompt must already be authored (chunk 6 ingest).
+    """
+    unit = unit_repository.get_unit(unit_id)
+    if unit is None:
+        return _envelope_response(
+            status_code=404,
+            data=None,
+            error={"code": "UNIT_NOT_FOUND", "message": f"No unit found for id '{unit_id}'."},
+        )
+    rubric = unit.get("rubric") or {}
+    if not (rubric.get("criteria") or []):
+        return _envelope_response(
+            status_code=409,
+            data=None,
+            error={
+                "code": "UNIT_NOT_GRADABLE",
+                "message": f"Unit '{unit_id}' has no rubric criteria; nothing to grade.",
+            },
+        )
+
+    try:
+        grader_output = grade_decision_answer(unit, request.answer)
+    except AIServiceError as exc:
+        return _envelope_response(
+            status_code=502,
+            data=None,
+            error={"code": exc.code, "message": str(exc)},
+        )
+
+    # Only commit a completion + grades if the grader call succeeded.
+    try:
+        completion_result = completion_repository.record_completion(
+            user_id=current_user_id,
+            unit_id=unit_id,
+        )
+    except completion_repository.UnitNotFoundError:
+        # Race: unit deleted between the lookup above and now.
+        return _envelope_response(
+            status_code=404,
+            data=None,
+            error={"code": "UNIT_NOT_FOUND", "message": f"No unit found for id '{unit_id}'."},
+        )
+
+    completion = completion_result["completion"]
+    grades = grade_repository.upsert_grades(
+        completion_id=completion["id"],
+        grades=grader_output.grades,
+        flagged=grader_output.flagged,
+    )
+
+    return _envelope_response(
+        data={
+            "completion": completion,
+            "grades": grades,
+            "flagged": grader_output.flagged,
+            # answer_quote isn't persisted (no column in migration 019);
+            # return it inline so the UI can surface it without a schema
+            # change. Tracked as a follow-up.
+            "answerQuotes": [
+                {"criterionId": g["criterion_id"], "quote": g["answer_quote"]}
+                for g in grader_output.grades
+            ],
+        }
+    )
