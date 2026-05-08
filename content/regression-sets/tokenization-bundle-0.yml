@@ -2,11 +2,8 @@
 #
 # Tokenization is the first authored unit and is treated as
 # **flagship** under STRATEGY.md § T2 — target is >= 20 pairs before
-# the Phase 2 gate is evaluated. The four pairs below are seeds
-# (not the full set); the authoring task is to extend this to >= 20,
-# covering: confidently-correct answers, partially-correct answers,
-# common misconceptions, off-topic answers that should flag, and
-# edge cases (very short answers, non-English, code-shaped answers).
+# the Phase 2 gate is evaluated. p001-p004 were the original seeds;
+# p005-p020 round the set out to flagship size.
 #
 # Position-to-criterion mapping (from content/units/tokenization-bundle-0.md
 # slot 8 rubric, in authored order):
@@ -20,15 +17,33 @@
 #      forecasting, prompt length budgeting, multilingual support) from
 #      when it can be safely ignored (most English-only, short-prompt
 #      features)."
+#
+# Authoring distribution (target):
+#   * 3 pairs all-three-met (varied voices)             p002, p005, p006
+#   * 4 pairs partial credit (2 of 3)                   p001, p007, p008, p009
+#   * 3 pairs single-criterion-met                      p010, p011, p012
+#   * 2 pairs all-missed but on-topic                   p004, p013
+#   * 3 pairs off-topic / flagged-expected              p003, p014, p015
+#   * 4 pairs edge cases (very short, non-English,      p016, p017, p018,
+#     code-shaped, emoji/informal)                      p019, p020
+#
+# When the gate runs, watch for these calibration signals:
+#   - All-met pairs should NOT flag; all-missed-on-topic pairs should
+#     also NOT flag (the answer is gradable, just wrong).
+#   - Off-topic / very-short answers SHOULD flag.
+#   - Confidence on partial-credit pairs is the most informative
+#     signal — if the grader reports 95% confidence on a wrong
+#     judgement, the prompt needs tuning.
 
 unit_id: tokenization-bundle-0
 
 description: |
-  Phase 2 gate seed set. Authored 2026-05-08 from the Tokenization
-  unit's rubric. Mix is intentionally skewed easy at the moment —
-  the harder cases (partial credit, multi-criterion confusion,
-  off-topic answers that should flag) need to be added before the
-  P2.5 gate evaluation.
+  Phase 2 gate set. Originally seeded with 4 pairs on 2026-05-08
+  (p001-p004); extended to 20 pairs to hit the flagship target under
+  STRATEGY.md § T2-C. Variety bias: ~50% partial credit / single
+  criterion, since the all-met and all-missed cases are easy and
+  the partial-credit ones are where grader calibration is actually
+  tested.
 
 pairs:
   - id: p001
@@ -110,4 +125,377 @@ pairs:
           met: false
         - position: 3
           met: false
+      flagged: false
+
+  - id: p005
+    label: All three met, written in PM-pragmatic voice
+    answer: |
+      The estimate is wrong by default if it's in $/word. Vendors bill
+      and meter per token, and tokens aren't words — they're subword
+      pieces from a fixed vocabulary, with the split rule baked into
+      whichever model you call. So I'd build the estimate by sampling
+      a couple hundred real job descriptions per language, running
+      them through the actual tokenizer (tiktoken for OpenAI, the
+      counting endpoint for Claude), and pricing the input + an output
+      reserve at the published per-token rate.
+
+      The reason this matters here: the spec says ~25% of pastes are
+      Spanish, Portuguese, or Hindi. Hindi alone can be 2-3x English
+      tokens for the same word count, so a word-count-based estimate
+      under-shoots cost by a meaningful chunk. Code-heavy inputs and
+      emoji-heavy ones do the same thing in different directions.
+
+      Where I'd push back on this exercise: if it were an English-only
+      auto-complete with fixed 50-token prompts, I'd skip the sampling
+      and just use the published per-call number. Tokenization rigor
+      pays off only where input variance moves cost. This feature has
+      that variance; that one wouldn't.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p006
+    label: All three met, terse engineering-flavored voice
+    answer: |
+      Don't price in $/word. Anthropic and OpenAI both meter per
+      token (subword piece from a vendor-specific vocabulary), and
+      character/word ratios diverge wildly across languages and
+      content types.
+
+      Build the estimate empirically: sample N real inputs per
+      language bucket (English / es / pt / hi), run each through the
+      vendor's tokenizer, get input + output token distributions,
+      multiply by the published rate. Add a tail-risk pad — emoji
+      and rare names can balloon tokens 4-5x for individual inputs
+      even when the mean is fine.
+
+      Worth doing here because: ~25% non-English pastes is enough
+      input variance to break a word-count estimate. For an
+      English-only fixed-prompt feature it'd be over-engineering.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p007
+    label: Right unit + when-to-ignore, but no concrete scenario
+    answer: |
+      The word-count approach is the wrong unit. Models are billed
+      and metered in tokens, which are subword pieces, so cost,
+      latency, and context-window capacity all key off token counts
+      rather than words. Building an estimate in $/word will drift
+      from reality.
+
+      The right move is to measure tokens directly using the vendor's
+      tokenizer on representative inputs and use the per-token rate.
+      I'd also note that this kind of rigor only earns its keep when
+      input variance is real — for English-only fixed-prompt features
+      where the cost is dominated by other factors, the precise token
+      math doesn't matter and a coarse estimate is fine.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: false
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p008
+    label: Concrete scenario + when-to-ignore, but never says "tokens not words"
+    answer: |
+      The cost estimate Finance is asking for is sensitive to language
+      mix in a way the word-count model won't capture. About a quarter
+      of inputs will be Spanish, Portuguese, or Hindi. In our last
+      feature, Hindi pastes ran roughly twice the metered cost of
+      English pastes for the same word count — that asymmetry isn't
+      visible in a $/word number.
+
+      I'd produce the estimate by sampling real inputs per language,
+      running them through the vendor's counting tools, and computing
+      a weighted average per call. To be fair, this depth of work
+      isn't always worth it — for an English-only feature with short
+      fixed-length prompts, the variance is small enough that the
+      word-count number is good enough and a finer model is wasted
+      effort.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p009
+    label: Tokens-not-words + concrete scenario, but no when-to-ignore
+    answer: |
+      The first thing I'd correct is the unit: vendors charge per
+      token, not per word, and a token is a subword piece — so
+      estimates anchored on word counts mis-state cost wherever
+      tokens-per-word drifts from English-ASCII norms.
+
+      For this feature specifically, the 25% of users pasting non-Latin
+      script (Hindi, etc.) is the load-bearing variable. Hindi text
+      can be 2-3x the token count of an equivalent English JD. So the
+      estimate has to be empirical: sample real inputs per language,
+      tokenize them with the vendor's actual tokenizer, and average.
+      Anything else risks under-quoting Finance by ~3x on the
+      multilingual share.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p010
+    label: Only criterion 1 — right unit, no scenario, no nuance
+    answer: |
+      The fundamental issue with the word-count approach is that
+      it's the wrong unit. Language models bill and meter in tokens,
+      and tokens are not the same thing as words. To get a real
+      number, I would compute the cost in tokens using the published
+      per-token rate from whichever vendor we end up with.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p011
+    label: Only criterion 2 — concrete scenario, but never names the right unit
+    answer: |
+      The risk in the word-count approach is that 25% of pastes are
+      not English. Spanish and Hindi inputs will not behave like
+      English inputs, and the tokenizer treats them very differently.
+      In a previous feature my team shipped, this kind of language-mix
+      asymmetry caused us to underbudget API costs by a noticeable
+      margin. So the estimate has to factor in the multilingual mix
+      somehow — averaging across English alone won't capture the
+      real spread.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: true
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p012
+    label: Only criterion 3 — when-to-ignore, but missing core knowledge
+    answer: |
+      Whether to invest in a precise estimate depends on the feature.
+      For something like this — variable user input, multilingual
+      mix, real cost gating launch — it's worth doing real
+      measurement work. For a small English-only feature with short
+      fixed prompts and predictable usage, a back-of-the-envelope
+      estimate is fine and the engineering time is better spent
+      elsewhere. So my answer to Finance would be that we should do
+      the work here, even if we wouldn't elsewhere.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p013
+    label: All-missed, on-topic — confuses tokens with parameters
+    answer: |
+      I would estimate cost by looking up the model's parameter count
+      (Claude Sonnet 4.6 has tens of billions of parameters) and
+      dividing the published price by the number of parameters used
+      per call. The result is a per-parameter cost that I can multiply
+      by the JD length to get an estimate per call. Most JDs are
+      similar enough in size that the variance won't matter.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p014
+    label: Off-topic — generic AI vendor pitch
+    answer: |
+      For this feature I would recommend going with OpenAI because
+      they have the largest market share and the best documentation.
+      The per-call cost will be in line with industry standard rates
+      and we should be fine if we keep our user counts reasonable for
+      the first quarter.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: true
+
+  - id: p015
+    label: Off-topic — answers a different question
+    answer: |
+      The biggest risk with this feature is privacy. Job descriptions
+      and resumes contain personal data, and we should review with
+      legal before sending any of this to a third-party LLM provider.
+      I'd also want to make sure we have a data-retention agreement
+      in place. Cost is a secondary concern next to that.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: true
+
+  - id: p016
+    label: Edge case — very short answer, only criterion 1 deterministically met
+    answer: |
+      Use tokens, not words.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p017
+    label: Edge case — non-English answer (Spanish), all three met
+    answer: |
+      El error de la estimación por palabra es que los modelos cobran
+      por token, no por palabra — y un token es un fragmento de
+      subpalabra que depende del tokenizador del proveedor. Para esta
+      feature, donde el 25% de las entradas serán en español,
+      portugués o hindi, eso importa: el hindi puede llegar a 2-3x
+      tokens por la misma cantidad de palabras que el inglés, lo que
+      rompe cualquier estimación basada en palabras.
+
+      Lo correcto es muestrear entradas reales por idioma, pasarlas
+      por el tokenizador del proveedor (tiktoken para OpenAI, el
+      endpoint de conteo de Anthropic), y promediar. Y hay que aclarar:
+      este nivel de rigor solo se justifica cuando hay variabilidad
+      real en la entrada. Para una feature de inglés con prompts
+      cortos y fijos, una estimación gruesa basta.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p018
+    label: Edge case — code-shaped pseudocode answer, partial credit
+    answer: |
+      def estimate_cost(jd_corpus, language_mix):
+          # Token, not word, is the billing unit
+          total_tokens = 0
+          for lang, share in language_mix.items():
+              sample = jd_corpus.filter(lang=lang).sample(200)
+              tokens_in = sum(tokenizer(jd).count for jd in sample)
+              tokens_out = tokens_in * 0.3  # rough output ratio
+              total_tokens += (tokens_in + tokens_out) * share
+          return total_tokens * VENDOR_RATE_PER_TOKEN
+
+      # Note: this only gives a fair number because we sample real
+      # inputs per language. A 100-word Hindi JD is roughly 2-3x
+      # the tokens of a 100-word English JD, so any word-based
+      # estimate would lowball the multilingual share.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p019
+    label: Edge case — emoji-laden / informal voice, all three met
+    answer: |
+      OK so the word-count thing is broken 😅 because vendors charge
+      per *token* not per word — tokens are subword pieces and the
+      ratio shifts a lot by language. 100 words of Hindi != 100 words
+      of English in token-land 🌍 (more like 2-3x for non-Latin
+      scripts), and our spec says ~25% of inputs are Spanish / pt /
+      hi. So the word-count estimate is going to lowball cost by a
+      bunch on that share 📉.
+
+      What I'd actually do: pull a real sample of JDs per language,
+      run each through the vendor tokenizer (tiktoken for GPT,
+      Anthropic counting endpoint for Claude), get a per-call
+      distribution, multiply by the per-token rate, done ✅.
+
+      Caveat: this only earns its keep here because input variance
+      is real. For an English-only feature with fixed 200-token
+      prompts I would not bother — the cost would be dominated by
+      other things and the token math wouldn't move the answer 👍.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p020
+    label: Edge case — partially-correct answer with confident wrong claim
+    answer: |
+      The right way to estimate this is to count tokens, not words,
+      because that's the unit vendors charge on. For a 600-word JD
+      I'd use the standard 1-token-per-character rule — most LLM
+      tokenizers map 1:1 from characters to tokens, so a 3,000-character
+      JD is roughly 3,000 tokens regardless of language.
+
+      Where this matters most is high-volume features with long
+      prompts; for short user-facing features it's fine to skip the
+      detailed math.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: false
+        - position: 3
+          met: true
       flagged: false
