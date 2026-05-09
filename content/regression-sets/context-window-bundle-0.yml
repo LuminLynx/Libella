@@ -1,0 +1,666 @@
+# Regression set for the Context Window unit (context-window-bundle-0).
+#
+# Context Window is the second authored unit and is treated as
+# **flagship** under STRATEGY.md § T2 — target is >= 20 pairs before
+# the unit publishes. Authoring discipline mirrors
+# tokenization-bundle-0.yml (the Phase 2 gate-passing reference).
+#
+# Position-to-criterion mapping (from
+# content/units/context-window-bundle-0.md slot 8 rubric, in
+# authored order):
+#
+#   1. "Names the three-way trade-off the unit is built around —
+#      fits-more vs. costs-more vs. recall-can-degrade-over-long-
+#      context — and treats the context window as a budget, not a
+#      capacity number to be filled."
+#   2. "Identifies a concrete failure mode of 'just use the long
+#      window' beyond hitting the hard limit, AND identifies the
+#      mechanism behind it — e.g., per-call cost scales linearly
+#      because input tokens are priced linearly; effective recall
+#      can degrade mid-context, as documented in long-context
+#      recall evals; single-document architectures break under
+#      multi-document or growing-state load because retrieval and
+#      summarization weren't designed in."
+#   3. "Distinguishes a regime where 'use the long window' is a
+#      reasonable default (single bounded document, query shape
+#      verified on representative input, cost acceptable for
+#      projected volume) from a regime that forces retrieval or
+#      summarization (growing corpora, growing agent state, query
+#      shapes that benefit from focused context)."
+#
+# Authoring distribution (target 21 pairs, 6/4/4/3/2/2):
+#   * 6 pairs all-three-met (varied voices, incl. edge-case voices)
+#       p001, p002, p005, p016 (pt), p018 (emoji), p021 (concise)
+#   * 4 pairs partial credit (2 of 3)
+#       p006 (c1+c2), p007 (c1+c3), p008 (c2+c3), p017 (c1+c3, code)
+#   * 4 pairs single-criterion-met
+#       p009 (c1), p010 (c2), p011 (c3), p019 (c1)
+#   * 3 pairs all-missed but on-topic
+#       p004, p012, p020
+#   * 2 pairs off-topic, all-missed, gradable (NOT flagged)
+#       p003, p013
+#   * 2 pairs flagged-expected (too thin to grade fairly per T2-B)
+#       p014, p015
+#
+# T2-B locked interpretation (per docs/PHASE_2_GATE.md and PR #72):
+# flagged = grader *uncertainty*, NOT "answer is bad." An off-topic
+# answer the grader can confidently grade as all Not-Met is
+# gradable — flagged: false. A thin or punting answer the grader
+# cannot fairly grade — flagged: true.
+#
+# Five deliberate-borderline pairs (mirrors tokenization p008/p020
+# pattern; denser at 5/21 than tokenization's 2/20 because we have
+# learned what to look for since the Phase 2 gate, and each pair
+# tests a distinct grader-judgement shape):
+#   * p007 (c2 borderline — gestures-without-mechanism). Names the
+#     three-way trade-off but says the model "may not use the long
+#     context well" without naming the documented mechanism. c2
+#     expected false; grader may reasonably read as met.
+#   * p010 (c3 borderline — regime-flirt). Cost-mechanism only;
+#     "at any meaningful scale" and "if he's planning to extrapolate"
+#     flirt with regime distinction without committing. c3 expected
+#     false; grader may reasonably read as met.
+#   * p015 (flag borderline — verbose-punt). Rambling answer that
+#     never frames the trade-off, never names a failure mode, never
+#     distinguishes regimes. Could be read as confidently all-not-met
+#     (flagged: false) or as too-uncommitted-to-grade-fairly
+#     (flagged: true). Expected flagged: true; grader may reasonably
+#     read as false.
+#   * p017 (c2 borderline — code-comment-mechanism). Pseudocode
+#     comments gesture at "linear cost scales with corpus size" and
+#     "cross-doc multi-needle queries → recall degrades." Strictly
+#     doesn't cite the provenance ("as documented in long-context
+#     evals"), but the mechanism is named. c2 expected false; grader
+#     may reasonably read as met.
+#   * p019 (c1 borderline — vendor-claim-as-evidence). Uses the word
+#     "budget" once but collapses both phases under one architecture
+#     by trusting an OpenAI vendor claim that the recall problem is
+#     solved. The unit's own depth section warns against treating
+#     vendor claims as evidence; this pair tests whether the grader
+#     applies that warning. c1 expected true; grader may reasonably
+#     mark false because the framing is contradicted in practice.
+#
+# When the gate runs, watch for these calibration signals:
+#   - All-met pairs should NOT flag.
+#   - All-missed-on-topic pairs should ALSO not flag.
+#   - Off-topic-but-gradable should NOT flag (T2-B reading).
+#   - Thin/punting answers SHOULD flag.
+#   - Confidence on partial-credit pairs is the most informative
+#     signal — if the grader reports >90% confidence on a wrong
+#     judgement, the prompt or rubric phrasing needs tuning.
+#   - Disagreement on the five borderlines is *expected signal*, not
+#     noise. The PR-#72-equivalent triage applies: decide whether
+#     YAML or grader is more spec-faithful, realign the loser, do
+#     not pre-commit either reading. Audit lands in
+#     docs/UNIT_2_GATE.md after the gate run.
+
+unit_id: context-window-bundle-0
+
+description: |
+  Phase 3 / Unit 2 flagship gate set. Authored 2026-05-09 against
+  the locked T2-B reading (flagged = grader uncertainty, NOT
+  off-topic-but-gradable). 21 pairs; distribution biased toward
+  partial-credit and single-criterion since those are where
+  grader calibration is actually tested. Five deliberate borderline
+  pairs (p007, p010, p015, p017, p019) carry the most informative
+  signal — see header for what each tests and the expected
+  disagreement axis.
+
+pairs:
+  - id: p001
+    label: All three met, balanced two-phase answer
+    answer: |
+      The eng lead is right that "it fits" is true and that
+      retrieval is real engineering work. He's wrong about
+      treating the headline number as a budget. Context window
+      is a budget — input + output both billed against it,
+      scaling linearly with what you stuff in, and effective
+      recall on long inputs (especially mid-document) is not
+      the same fact as "the document fits."
+
+      For phase 1 (single 80-250 page doc) I'd actually ship
+      his stuff-it-all-in version — but with a recall verification
+      step before launch: a representative test set of real
+      policy questions where I check whether the model surfaces
+      the right clause, not just claims to have read everything.
+      With prompt caching on the document prefix, per-call cost
+      on a fixed doc is acceptable.
+
+      For phase 2 (20-50 doc library, needle-in-haystack queries
+      like the EU AI Act contradiction check) the regime
+      changes: cost scales 20-50x linearly, recall on multi-needle
+      / cross-document queries is exactly the failure mode
+      benchmarks show is hardest, and the architecture you ship
+      for one doc doesn't survive fifty. That phase needs
+      retrieval, designed in. The two-week-vs-two-month win on
+      phase 1 is real, but doesn't transfer.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p002
+    label: All three met, cost-led framing
+    answer: |
+      What the eng lead is missing is that the 1M-token context
+      isn't a fixed-cost budget — it's a per-call multiplier.
+      Each query that stuffs a 150k-token document pays for
+      150k input tokens. That works on phase 1 because the doc
+      is fixed, prompt caching can knock ~90% off the
+      repeat-prefix cost, and the cost-per-question stays small.
+
+      It breaks on phase 2. With 20-50 docs/user, even with
+      caching, the active prefix is much larger per query;
+      recall starts to bite (long-context evals show mid-input
+      recall degrades, especially on multi-needle queries like
+      "find a contradiction with the EU AI Act"); and a one-doc
+      architecture has no way to pick which of 50 documents to
+      consult.
+
+      The decision: ship phase 1 as proposed, but with a recall
+      test on representative queries before launch. Plan phase
+      2 as retrieval-from-the-start; treat the two-week phase-1
+      win as a deliverable that won't transfer architecturally.
+      The eng lead is right about phase 1 timeline, wrong about
+      extrapolating it.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p003
+    label: Off-topic — pivots to compliance/legal, all miss, gradable
+    answer: |
+      The biggest issue with this feature is that uploading
+      internal policy PDFs to a third-party LLM provider has
+      data-residency and confidentiality implications. We
+      should have a DPA in place, confirm SOC 2 Type II, and
+      ideally use a regional deployment if the provider offers
+      one. The technical architecture question (RAG vs.
+      stuff-it-in) is secondary — legal review needs to come
+      first, especially for the EU AI Act question shape, where
+      compliance with the EU AI Act itself is part of what's at
+      stake.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p004
+    label: All-missed on-topic — picks "always RAG" extreme
+    answer: |
+      The right answer is always RAG. The whole point of
+      retrieval-augmented generation is to avoid these kinds of
+      problems, and modern RAG pipelines are well-supported by
+      every major framework. I'd push back on the eng lead's
+      two-week timeline — proper RAG with chunking, embedding,
+      and a vector store is a six-week build at minimum — but
+      the architecture is non-negotiable. Stuffing documents
+      into context is an anti-pattern.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p005
+    label: All three met, terse engineering-flavored voice
+    answer: |
+      Three-axis problem: cost, recall, scale. The eng lead is
+      right that for one bounded doc the math is fine — cache
+      the doc prefix, pay 10% on repeats, ship in two weeks.
+      Wrong to extrapolate to 20-50 docs.
+
+      Failure modes: (1) input cost scales linearly per stuffed
+      token, so a 30-doc query is ~30× a one-doc query;
+      caching only helps the repeated prefix, not the inflated
+      active context. (2) Recall degrades mid-context on long
+      inputs (Lost in the Middle and replications); the EU AI
+      Act contradiction query is exactly the multi-needle
+      pattern that breaks. (3) Single-doc and multi-doc are
+      different systems, not the same system at higher N.
+
+      Phase 1: stuff-it-in, with a recall test on real queries
+      before launch. Phase 2: retrieval, designed in from the
+      start. Two-week win on phase 1 is fine if it doesn't
+      make us pretend phase 2 is the same architecture.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p006
+    label: c1 + c2 met, c3 missing (no regime distinction)
+    answer: |
+      Context window is a budget, not a capacity. Three things
+      are happening at once: input cost scales linearly with
+      what you stuff in (so doubling the doc roughly doubles
+      per-call cost), effective recall can fall on long inputs
+      especially mid-context, and the architecture decision you
+      make today shapes what's possible next quarter.
+
+      The eng lead's pitch ignores the linear cost scaling —
+      even with prompt caching the active query tokens are
+      billed per call, and a 30-doc query at 50k tokens each is
+      1.5M tokens of input cost compounded over user volume.
+      The recall problem is real too: needle-in-haystack queries
+      like the EU AI Act check are exactly where long-context
+      recall is weakest. So the answer isn't just "how fast can
+      we ship" — it's "what evidence do we have that recall
+      holds on representative queries."
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p007
+    label: c1 + c3 met, c2 missing — gestures at recall without mechanism (deliberate borderline)
+    answer: |
+      Context-window choice is a three-way trade-off: bigger
+      windows let you fit more, but they cost more linearly with
+      what you put in, and the model may not use the long
+      context well even when content technically fits. The eng
+      lead is collapsing this to "it fits, ship it."
+
+      For phase 1 — one 80-250 page document, well-bounded
+      queries about its own content, cost dominated by other
+      things — stuffing the whole doc into context is a
+      reasonable default. With prompt caching it's also
+      cost-efficient on repeats. I'd ship it.
+
+      For phase 2 — 20-50 docs per user, needle-in-haystack
+      queries that span the corpus and require contradiction-
+      detection against external references — the regime is
+      different and retrieval becomes the load-bearing
+      architecture, not an optimization. Different system, not
+      same system at scale.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: false
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p008
+    label: c2 + c3 met, c1 missing — failure modes + regime distinction without naming trade-off
+    answer: |
+      The pitch works for phase 1 and breaks for phase 2 for
+      two specific reasons. First, per-call input cost is
+      linear in tokens stuffed: phase 1 keeps that bounded (one
+      doc, prompt caching on repeats); phase 2 multiplies it by
+      20-50× without a corresponding caching win on the
+      cross-doc query. Second, the EU AI Act contradiction
+      query is a multi-needle pattern across documents — the
+      kind of query where long-context recall benchmarks show
+      models miss buried clauses, even when the corpus
+      technically fits in 1M tokens.
+
+      Phase 1 (single bounded doc, well-targeted queries, cost
+      acceptable per call) is a regime where stuff-it-all-in is
+      the right default — fast to ship, cost manageable, recall
+      verifiable with a small test set. Phase 2 (multi-doc,
+      growing corpus, needle-in-haystack) is the regime that
+      forces retrieval. Same product roadmap, different
+      architectures.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p009
+    label: c1 only — names trade-off / budget framing, no mechanism, no regime
+    answer: |
+      The fundamental issue with the eng lead's argument is
+      that he's treating the context window as a capacity to
+      fill rather than a budget to spend. The number on the
+      spec sheet is a ceiling, not a target. A PM scoping a
+      feature like this should be thinking in terms of three
+      trade-offs at once — fitting more, costing more, and the
+      question of whether the model actually uses the long
+      context well. Without that frame, you make the wrong
+      architectural choice.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p010
+    label: c2 only — cost mechanism, no trade-off, no regime (deliberate borderline)
+    answer: |
+      The cost math is the part that breaks first. Each query
+      that stuffs a 200-page document pays for ~150k input
+      tokens at the per-token rate. Even with prompt caching
+      dropping the repeat-prefix cost by ~90%, the active query
+      and any per-query content scales linearly with what's in
+      context. At 20-50 docs that's 30× the input cost
+      compounded across user volume. The eng lead's pitch
+      under-counts that.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: true
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p011
+    label: c3 only — regime distinction without trade-off framing or mechanism
+    answer: |
+      This is a phase-dependent decision. For a single bounded
+      document with well-targeted queries, the eng lead's
+      stuff-it-all-in approach is fine — fast to ship, simple
+      to reason about, easy to validate. For a 20-50 document
+      library with cross-corpus needle-in-haystack queries like
+      the EU AI Act check, the answer is retrieval. Trying to
+      force the multi-doc case into a stuff-it-all-in shape
+      would be a mistake. So I'd ship phase 1 as the eng lead
+      suggests, plan phase 2 as a different architecture, and
+      not pretend they're the same system.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p012
+    label: All-missed on-topic — RAM analogy, conflates concepts
+    answer: |
+      The 1M-token context window is what determines how much
+      memory the model has access to per query, similar to how
+      RAM works in a computer. Bigger context window = more
+      memory = better answers, basically. The eng lead is right
+      that it'll fit; the question is whether the model is fast
+      enough at processing that much memory. I'd benchmark
+      latency on a 200-page doc and if it's under 5 seconds we
+      should ship phase 1 as proposed. For phase 2 we'd need
+      the next-generation model with more memory, by then
+      probably 10M tokens.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p013
+    label: Off-topic — vendor pitch, gradable, NOT flagged
+    answer: |
+      For this kind of long-context feature I'd lead with
+      Google's Gemini family because they have the largest
+      context windows in the industry — 1 million tokens, with
+      2 million coming. The price-per-token is competitive and
+      the eng team would benefit from access to the rest of the
+      Google Cloud stack. Pick Gemini and ship; the architecture
+      question takes care of itself once we're on the right
+      model.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p014
+    label: Flagged-expected — three words, too thin to grade fairly
+    answer: |
+      Use RAG.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: true
+
+  - id: p015
+    label: Flag borderline — punts, gestures without committing (deliberate borderline)
+    answer: |
+      Honestly it depends. Both options have real pros and
+      cons, and there are a lot of variables here — cost,
+      latency, accuracy, team familiarity. I'd want to do more
+      research and probably consult the eng team and finance
+      before committing either way. Maybe we could do a hybrid
+      approach. I'd want to see more data before making a
+      recommendation.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: true
+
+  - id: p016
+    label: Edge case — Portuguese, all three met
+    answer: |
+      O eng lead está parcialmente certo: para a fase 1 (um
+      único documento de 80-250 páginas com perguntas bem
+      direcionadas sobre o seu conteúdo) faz sentido enviar
+      tudo para o contexto e poupar duas semanas. Mas a janela
+      de contexto é um orçamento, não uma capacidade — e três
+      pressões agem ao mesmo tempo: o custo é linear nos tokens
+      enviados, o recall pode degradar-se em entradas longas
+      (especialmente no meio do documento), e a arquitetura
+      escolhida para um documento não sobrevive a cinquenta.
+
+      Na fase 2 (biblioteca de 20-50 documentos por utilizador,
+      perguntas tipo "encontra uma política que contradiga o
+      regulamento da UE para IA") o regime muda: o custo
+      multiplica-se por 20-50×, o recall em queries
+      multi-needle é exatamente onde os modelos falham mesmo
+      quando o conteúdo cabe, e é necessário retrieval desde o
+      início. Não é a mesma arquitetura.
+
+      Antes de aprovar a fase 1 quero ver evidência: um
+      conjunto de queries reais sobre uma política
+      representativa, com confirmação de que o modelo encontra
+      a cláusula certa. Sem isso, "cabe" não é o mesmo que
+      "funciona com qualidade."
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p017
+    label: Edge case — pseudocode answer, c1 + c3 met, c2 borderline (deliberate borderline)
+    answer: |
+      def architecture_choice(phase, doc_count, query_shape):
+          # Three-axis check: cost, recall, volume
+          if phase == 1 and doc_count == 1 and query_shape == 'single-doc-lookup':
+              # Bounded input, cacheable prefix, cost acceptable
+              return 'stuff-in-context'
+          elif phase == 2 and doc_count > 5:
+              # Cross-doc multi-needle queries → recall degrades
+              # Linear cost scales with corpus size
+              return 'retrieval'
+          else:
+              # Run a recall test before committing
+              return verify_recall_on_representative_queries()
+
+      # Note: prompt caching helps phase 1 cost on repeats but
+      # doesn't rescue phase 2 — different architecture, not
+      # same system at scale.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: false
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p018
+    label: Edge case — emoji + informal voice, all three met
+    answer: |
+      OK so the 1M context window is real but the eng lead is
+      treating it like infinite RAM 🤦. It's a budget, not
+      capacity. Three things going on:
+
+      1. Input cost scales LINEARLY with what you stuff in 💸 —
+         even with caching dropping the repeat-prefix to ~10%,
+         the active query content is full price, and 20-50
+         docs/user ramps that fast.
+      2. Long-context recall is weird — models miss things
+         buried mid-document especially on multi-needle queries
+         🔍 (the EU AI Act contradiction check is exactly that
+         pattern). "It fits" is not "it works."
+      3. The architecture for 1 doc is just structurally
+         different from 20-50 docs.
+
+      So: phase 1 ship his way (with a recall test before
+      launch — non-negotiable), phase 2 plan as retrieval from
+      day 1, don't pretend phase 2 is just phase 1 at scale 🛠️.
+
+      Where he's right: phase 1 timeline, the unit economics on
+      a fixed cached doc, the value of two-weeks-vs-two-months
+      when the architecture is right for that scope. Where he's
+      quietly wrong: extrapolating the same architecture to
+      phase 2.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p019
+    label: c1 only — confident-wrong claim about vendor reliability (deliberate borderline)
+    answer: |
+      Context window is a budget — agree with the eng lead that
+      for phase 1 we should treat 1M as enough budget for the
+      doc and ship. Where I'd push back: phase 2 needs the same
+      answer, not retrieval. The new generation of models has
+      fixed long-context recall (OpenAI explicitly claims
+      GPT-4.1 retrieves needles accurately at all positions up
+      to 1M, and the latest Claude / Gemini models have similar
+      performance), so a 20-50 doc corpus that fits inside a 1M
+      window should handle multi-needle queries like the EU AI
+      Act check fine. Pick the model with the longest context +
+      best retrieval claims, skip the RAG complexity, ship both
+      phases the same way. Two-weeks-vs-two-months wins on both.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p020
+    label: All-missed on-topic — refuses prompt premise
+    answer: |
+      The premise is wrong. We shouldn't be building a generic
+      policy Q&A feature in the first place — the right answer
+      here is to push back on the product brief. Employees
+      searching policies is a known problem with mature
+      solutions (Confluence search, Slite, etc.). Adding an LLM
+      doesn't justify the eng cost or the legal risk of sending
+      policy docs to a third-party API. I'd send the eng lead
+      and finance back to the requirements stage to confirm
+      whether this feature actually solves a user problem worth
+      its cost. The architecture question is downstream of that.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p021
+    label: All three met, concise / punchy
+    answer: |
+      The headline number is a ceiling, not a target. Three
+      pressures act on it: linear input cost per call, recall
+      degradation on long inputs especially mid-document, and
+      architecture pivot when input volume grows.
+
+      Phase 1 (single doc, bounded queries) is in the regime
+      where stuff-it-in is fine — cache the prefix, ship in two
+      weeks, validate with a recall test on representative
+      queries before launch. Phase 2 (20-50 docs,
+      EU-AI-Act-style multi-needle queries) is in the regime
+      where retrieval is the load-bearing default — same
+      product, different architecture. The eng lead's win on
+      phase 1 doesn't transfer; planning to extrapolate is the
+      failure mode.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
