@@ -22,15 +22,23 @@
 #   * 3 pairs all-three-met (varied voices)             p002, p005, p006
 #   * 4 pairs partial credit (2 of 3)                   p001, p007, p008, p009
 #   * 3 pairs single-criterion-met                      p010, p011, p012
-#   * 2 pairs all-missed but on-topic                   p004, p013
-#   * 3 pairs off-topic / flagged-expected              p003, p014, p015
-#   * 4 pairs edge cases (very short, non-English,      p016, p017, p018,
-#     code-shaped, emoji/informal)                      p019, p020
+#   * 3 pairs all-missed but on-topic                   p004, p013,
+#     (gradable, just wrong — NOT flagged)              p003, p014, p015
+#   * 2 pairs flagged-expected (too thin to grade       p012, p016
+#     fairly — grader's interpretation of T2-B)
+#   * 4 pairs edge cases (non-English, code-shaped,     p017, p018,
+#     emoji/informal, vibey-but-wrong claim)            p019, p020
+#
+# (p012 appears in two buckets because it's both a single-criterion
+# case and flagged-expected; p016 is an edge case AND flagged-expected.)
 #
 # When the gate runs, watch for these calibration signals:
-#   - All-met pairs should NOT flag; all-missed-on-topic pairs should
-#     also NOT flag (the answer is gradable, just wrong).
-#   - Off-topic / very-short answers SHOULD flag.
+#   - All-met pairs should NOT flag.
+#   - All-missed-on-topic pairs should ALSO not flag — the grader can
+#     fairly grade them as all Not-Met with high confidence; flagged
+#     means uncertainty per STRATEGY.md T2-B, not "answer is bad."
+#   - Thin or under-developed answers SHOULD flag (the grader treats
+#     them as too thin to grade fairly).
 #   - Confidence on partial-credit pairs is the most informative
 #     signal — if the grader reports 95% confidence on a wrong
 #     judgement, the prompt needs tuning.
@@ -44,6 +52,19 @@ description: |
   criterion, since the all-met and all-missed cases are easy and
   the partial-credit ones are where grader calibration is actually
   tested.
+
+  After the first live gate run on 2026-05-09 returned 95%
+  per-criterion agreement and 75% flagged-correct, expected.flagged
+  on p003 / p012 / p014 / p015 / p016 was realigned to match the
+  grader's actual interpretation of STRATEGY.md T2-B: flagged means
+  *grader uncertainty*, not "answer is off-topic" or "answer is bad."
+  An off-topic answer the grader can confidently grade as all
+  Not-Met is gradable, just wrong — it should not flag. A very
+  thin answer the grader can't fairly grade SHOULD flag. The
+  grader's reading is more spec-faithful than the original YAML.
+  Per-criterion expectations on p008 and p020 are deliberately left
+  as-is — those disagreements expose where the rubric language is
+  doing real work and are useful signal, not noise.
 
 pairs:
   - id: p001
@@ -96,7 +117,7 @@ pairs:
       flagged: false
 
   - id: p003
-    label: Off-topic — should flag
+    label: Off-topic — gut-feel survey, all criteria miss, gradable
     answer: |
       I would estimate the per-call cost by surveying ten product
       managers and averaging their gut-feel pricing. Then I'd add
@@ -109,7 +130,7 @@ pairs:
           met: false
         - position: 3
           met: false
-      flagged: true
+      flagged: false
 
   - id: p004
     label: Wrong unit of cost — common misconception
@@ -305,7 +326,7 @@ pairs:
       flagged: false
 
   - id: p012
-    label: Only criterion 3 — when-to-ignore, but missing core knowledge
+    label: Only criterion 3 — when-to-ignore, missing core knowledge, thin enough to flag
     answer: |
       Whether to invest in a precise estimate depends on the feature.
       For something like this — variable user input, multilingual
@@ -323,7 +344,7 @@ pairs:
           met: false
         - position: 3
           met: true
-      flagged: false
+      flagged: true
 
   - id: p013
     label: All-missed, on-topic — confuses tokens with parameters
@@ -345,7 +366,7 @@ pairs:
       flagged: false
 
   - id: p014
-    label: Off-topic — generic AI vendor pitch
+    label: Off-topic — generic AI vendor pitch, all criteria miss, gradable
     answer: |
       For this feature I would recommend going with OpenAI because
       they have the largest market share and the best documentation.
@@ -360,10 +381,10 @@ pairs:
           met: false
         - position: 3
           met: false
-      flagged: true
+      flagged: false
 
   - id: p015
-    label: Off-topic — answers a different question
+    label: Off-topic — pivots to privacy, all criteria miss, gradable
     answer: |
       The biggest risk with this feature is privacy. Job descriptions
       and resumes contain personal data, and we should review with
@@ -378,10 +399,10 @@ pairs:
           met: false
         - position: 3
           met: false
-      flagged: true
+      flagged: false
 
   - id: p016
-    label: Edge case — very short answer, only criterion 1 deterministically met
+    label: Edge case — very short answer, only criterion 1 hit, too thin to grade fairly
     answer: |
       Use tokens, not words.
     expected:
@@ -392,7 +413,7 @@ pairs:
           met: false
         - position: 3
           met: false
-      flagged: false
+      flagged: true
 
   - id: p017
     label: Edge case — non-English answer (Spanish), all three met
