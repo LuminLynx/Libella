@@ -1,0 +1,741 @@
+# Regression set for the Evals unit (evals-bundle-0).
+#
+# Evals is the fourth authored unit and is treated as
+# **standard** (not flagship) under STRATEGY.md § T2 — minimum
+# 10 pairs; this set ships at 21 because the rubric has three
+# AND-structured criteria and partial-credit signal needs
+# density to distinguish AND-half-failures from single-
+# criterion misses.
+#
+# Authoring discipline carries forward three Unit 3 lessons:
+#
+#   1. Two deliberate borderlines (down from Unit 3's three).
+#      Each tests a distinct AND-structure shape on c1 or c2.
+#   2. Skip flagged-expected pairs. Two consecutive failed
+#      designs across Unit 2 (hedge) and Unit 3 (multi-
+#      borderline) — the grader's 0.6 confidence floor is
+#      genuinely hard to trip. Coverage gap accepted for v1.
+#   3. Pseudocode comments must name rubric vocabulary
+#      directly. Unit 3 p017 c1 stayed true because comments
+#      named "model-size, streaming, total-completion"
+#      explicitly. Unit 4 p017 names "human eval / LLM-as-
+#      judge / golden-set / live A/B" similarly.
+#   4. Moderate emoji density on the emoji-voice pair. Unit 3
+#      p018 (8 emojis) reproducibly errored. Unit 4 p018 caps
+#      at 4 emojis to stay safely below the T2-D structural-
+#      validation failure threshold.
+#
+# Position-to-criterion mapping (from
+# content/units/evals-bundle-0.md slot 8 rubric, in authored
+# order):
+#
+#   1. "Names evals as a multi-method choice (human eval /
+#      LLM-as-judge / golden-set / live A/B or live signal)
+#      AND treats the answer as a layered strategy, not a
+#      single-method pick — including the recognition that no
+#      single method answers the question alone."
+#   2. "Identifies a concrete failure mode of choosing one
+#      eval method exclusively AND explains the mechanism —
+#      e.g., golden-set passes don't catch unknown regressions;
+#      LLM-as-judge shares blind spots with the model being
+#      evaluated; CSAT lags real failures by days because
+#      users don't survey when they bounce; human eval is
+#      small-N and slow."
+#   3. "Distinguishes which method is load-bearing in which
+#      regime — golden-set for CI gates and migration sanity
+#      checks; LLM-as-judge for scaled breadth-checking;
+#      human eval for ambiguous-quality and edge cases pre-
+#      launch; live A/B or live signal (escalation rate,
+#      retry rate, conversation length) for shipped-feature
+#      decisions and lagging metrics."
+#
+# Authoring distribution (21 pairs, 7/4/3/5/2/0):
+#   * 7 pairs all-three-met (varied voices)
+#       p001, p002, p005, p016 (pt), p017 (pseudocode),
+#       p018 (emoji moderate), p021 (concise)
+#   * 4 pairs partial credit (2 of 3, incl. 2 borderlines)
+#       p006 (c1+c2), p007 (c1+c3, c2 borderline),
+#       p008 (c2+c3), p014 (c2+c3, c1 borderline)
+#   * 3 pairs single-criterion-met
+#       p009 (c1), p010 (c2), p011 (c3)
+#   * 5 pairs all-missed but on-topic
+#       p004, p012, p015, p019, p020
+#   * 2 pairs off-topic, all-missed, gradable (NOT flagged)
+#       p003, p013
+#   * 0 pairs flagged-expected (design failed twice; skip)
+#
+# Two deliberate borderlines:
+#
+#   * p007 (c2 borderline — gestures at LLM-judge bias without
+#     naming the self-enhancement mechanism). Tests c2's AND
+#     structure: is "LLM-judge has biases" alone the
+#     mechanism, or does the answer need to name self-
+#     enhancement / position / verbosity bias specifically?
+#     c2 expected false; grader may reasonably read as met
+#     (mirrors Unit 2/3 c2 grader-lenient pattern).
+#
+#   * p014 (c1 borderline — gestures at "multiple methods"
+#     without enumerating the four). Uses "use multiple eval
+#     approaches" language but never names human eval, LLM-
+#     as-judge, golden-set, or live A/B by name. Tests c1's
+#     AND structure: is "multiple methods" gesture enough, or
+#     does naming require enumeration? c1 expected false;
+#     grader may reasonably read as met if vocabulary alone
+#     crosses.
+
+unit_id: evals-bundle-0
+
+description: |
+  Phase 3 / Unit 4 standard gate set. Authored 2026-05-10
+  against the locked T2-B reading. 21 pairs against the
+  AND-structured rubric. Two deliberate borderlines (p007,
+  p014) tuned to mirror Unit 2/3 c2-lenient and c1-strict
+  patterns respectively. Zero flagged-expected pairs —
+  coverage gap deliberately accepted after two failed
+  designs across Units 2 + 3. See header for triage and
+  design notes.
+
+pairs:
+  - id: p001
+    label: All three met, balanced layered-strategy answer
+    answer: |
+      The CEO wants a 48-hour answer, and a single eval
+      method can't give one honestly. We need a layered
+      approach because each method catches a different
+      failure shape.
+
+      Order I'd run them in:
+
+      1. Golden-set first (already running, 98% pass). That
+         tells us nothing about the escalation spike because
+         golden-sets only catch *known* regressions — the
+         migration broke something we didn't write a pair
+         for. Pass-rate doesn't mean safe; it means safe
+         against what we already test.
+
+      2. Pull 50-100 escalated conversations from the last
+         48 hours, run LLM-as-judge on them. Fast, scales.
+         The catch: we're using Sonnet 4.6 as judge on
+         Sonnet 4.6 outputs, so self-enhancement bias is
+         real — set the judge to score against specific
+         rubric criteria (tone, accuracy, resolution) rather
+         than holistic quality, and weight the result
+         accordingly.
+
+      3. Sample 20-30 of those for human eval — focus on
+         cases where LLM-judge confidence was low or where
+         the escalation reason was ambiguous. This is the
+         expensive method but it's how we resolve LLM-judge
+         disagreements on the load-bearing cases.
+
+      4. Live signal: escalation rate is the early indicator
+         CSAT will eventually catch. We don't need to wait
+         for CSAT — escalation up 12% w/w with golden-set
+         passing is a strong signal that something
+         user-visible changed that our offline evals missed.
+
+      My recommendation: roll back temporarily while running
+      steps 2-3. The cost of a 48-hour rollback is small;
+      the cost of a 5-day CSAT-confirmed quality regression
+      is much larger.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p002
+    label: All three met, live-signal-led framing
+    answer: |
+      Escalation rate up 12% w/w is the eval result we
+      already have — we just need to read it correctly.
+      CSAT is unchanged because it lags by 5 days; users
+      who escalate today won't survey for a week. The
+      golden-set passing at 98% tells us only that the model
+      handles cases we knew to test; it's blind to the
+      regression that's driving escalations.
+
+      For a 48-hour answer we need to layer:
+
+      - Live signal (escalation rate) — already pointing at
+        a regression; treat it as the high-confidence
+        forward indicator.
+      - LLM-as-judge on the escalated conversations —
+        scales to all 48 hours of escalations, but watch
+        for self-enhancement bias since we're judging
+        Sonnet 4.6 with a Sonnet model.
+      - Sampled human eval — the load-bearing 20-30 cases
+        where LLM-judge confidence is low, or where the
+        escalation reason is ambiguous.
+      - Golden-set expansion — once we identify the failure
+        category from human eval, add pairs to the golden-
+        set so future migrations catch this category
+        deterministically.
+
+      The CEO call: roll back now, investigate, ship a
+      golden-set-expanded version after we understand the
+      failure. The escalation signal is already telling us
+      what CSAT will say in 5 days; we shouldn't wait for
+      the survey to catch up.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p003
+    label: Off-topic — pivots to data-residency, all miss, gradable
+    answer: |
+      The bigger issue is that the migration may have
+      changed the data flow for customer support
+      transcripts. Sonnet 4.6 uses a different inference
+      endpoint than 3.5 on Anthropic's infrastructure, and
+      we should confirm the data residency, retention
+      defaults, and SOC 2 scope haven't shifted. Before
+      eng makes another migration call, legal needs to
+      review what's actually changed on the provider side.
+      The escalation question is downstream of confirming
+      the data-flow is still compliant.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p004
+    label: All-missed on-topic — "just expand the golden-set"
+    answer: |
+      The fix is to expand the golden-set. Right now we're
+      only testing 200 pairs and obviously the migration
+      regressed on something not in our test suite. I'd
+      grow the golden-set to 500-1000 pairs covering more
+      edge cases, then re-run against both Sonnet 3.5 and
+      4.6 to compare. Once we have a comprehensive test
+      suite passing on 4.6, we're safe to keep the
+      migration. The escalation rate will normalize as the
+      golden-set catches more regressions. Six-week project.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p005
+    label: All three met, terse engineering voice
+    answer: |
+      Four methods, four failure shapes. Layer them.
+
+      Golden-set: 98% pass tells us nothing new — it's
+      blind to unknown regressions by definition. Don't
+      treat this as safety signal.
+
+      LLM-as-judge on escalated conversations: scales to
+      all of them in an hour. Bias: Sonnet-judging-Sonnet
+      shares blind spots. Mitigate by scoring against
+      specific criteria, not holistic.
+
+      Human eval: 20-30 hard cases sampled from LLM-judge
+      disagreements. Expensive but resolves the ambiguous
+      cases.
+
+      Live signal: escalation up 12% w/w with CSAT
+      unchanged = CSAT will catch up in 5 days. Don't wait.
+
+      Right call: roll back. 48-hour cost of rollback is
+      negligible; 5-day cost of a confirmed regression is
+      not. Investigate with steps 2-3 in parallel.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p006
+    label: c1 + c2 met, c3 missing (no regime distinction)
+    answer: |
+      The eval question has four methods on the table —
+      human eval, LLM-as-judge, golden-set, and live
+      signal/A/B — and the answer needs all of them
+      together, not any one alone.
+
+      The failure mode here is treating golden-set pass as
+      safety signal. Golden-set tests only the categories
+      we wrote pairs for; the migration broke a category
+      we didn't anticipate, which is exactly the kind of
+      regression a 98% golden-set pass is structurally
+      blind to. CSAT is the obvious next data source but
+      it lags by 5 days because users don't survey when
+      they escalate.
+
+      So we'd want to add LLM-judge on escalated
+      conversations and sampled human eval on the harder
+      cases, with the understanding that LLM-judge has
+      shared blind spots with the model it's grading. Most
+      important: don't treat any single method as the
+      answer.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p007
+    label: c1 + c3 met, c2 missing — gestures at LLM-judge bias without naming self-enhancement mechanism (deliberate borderline)
+    answer: |
+      The eval question has four methods — human, LLM-as-
+      judge, golden-set, live signal — and each is right
+      for a different decision shape. Layering matters
+      because no single one answers the migration question.
+
+      For CI gates and known regressions: golden-set. It's
+      already passing at 98%, which tells us about known
+      categories.
+
+      For scale on the escalated conversations: LLM-as-
+      judge can grade hundreds of them in minutes. The
+      catch is that LLM-judges have biases — worth keeping
+      that in mind when reading the results.
+
+      For pre-launch confidence and ambiguous cases: human
+      eval on a sampled subset, 20-30 conversations.
+
+      For shipped-feature decisions: live signal
+      (escalation rate) plus A/B if we have the traffic.
+      Escalation up 12% w/w is already telling us
+      something CSAT will confirm in 5 days.
+
+      Roll back temporarily, run methods 2 and 3 in
+      parallel, decide based on what they find.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: false
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p008
+    label: c2 + c3 met, c1 missing — failure modes + regime without naming multi-method choice as layered
+    answer: |
+      Two failure modes are pointing the same way. CSAT is
+      structurally lagged because users who escalate don't
+      fill in the survey; the 5-day lag is the mechanism.
+      Golden-set pass at 98% is blind to unknown
+      regressions by definition; if the migration broke a
+      category we didn't write a pair for, the pass-rate
+      tells us nothing about that category.
+
+      What we actually need depends on the decision. For
+      the 48-hour ship-or-roll-back call: live signal
+      (escalation rate is the early indicator) plus LLM-
+      as-judge on escalated conversations to identify the
+      failure category. For longer-term confidence: human
+      eval on 20-30 sampled escalations resolves cases
+      where LLM-judge is uncertain. For preventing this
+      next time: expand the golden-set with the failure
+      category once we identify it.
+
+      My recommendation: roll back temporarily, investigate
+      with LLM-judge + human eval, decide based on what
+      we find.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p009
+    label: c1 only — names multi-method as layered, no failure mode, no regime
+    answer: |
+      The question can't be answered with a single eval
+      method. There are four methods to think about — human
+      eval, LLM-as-judge, golden-set, and live A/B or live
+      signal — and the right approach for a decision like
+      this is a layered strategy that uses two or three of
+      them together. Picking one method and treating it as
+      the answer is the standard eval failure shape. We
+      need to think across the methods to get a defensible
+      answer in 48 hours.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p010
+    label: c2 only — failure mode + mechanism, no methods enumerated, no regime
+    answer: |
+      The thing the team keeps missing is that CSAT lags
+      real failures by days. The mechanism: users who
+      escalate are by definition the ones not surveying;
+      they bounce to a human agent before the post-
+      conversation survey fires. So a 5-day CSAT
+      observation window will show "no change" exactly
+      when the regression is biting hardest. Trusting CSAT
+      stability while escalations climb is the wrong call.
+      The 12% escalation spike is the signal CSAT will
+      eventually confirm.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: true
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p011
+    label: c3 only — regime distinction, no methods named as multi, no mechanism
+    answer: |
+      The right call depends on the decision window.
+      Within 48 hours, we'd lean on live signals (escalation
+      rate is already pointing somewhere) and quick LLM-
+      based grading on the affected conversations — both
+      give fast read-outs. For longer-term confidence,
+      sampled human review is the load-bearing method.
+      And for next time, the test suite is the right place
+      to harden — that's the CI gate that should catch
+      this category of regression deterministically going
+      forward. Different methods for different decision
+      windows.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p012
+    label: All-missed on-topic — "CSAT unchanged so we're fine"
+    answer: |
+      CSAT is the load-bearing metric for customer support
+      and it's unchanged at 4.2/5. That's the answer. The
+      escalation spike is probably noise or a separate
+      issue — maybe seasonal volume, maybe a marketing
+      campaign drove more confused users into support.
+      Until CSAT moves, we shouldn't roll back a migration
+      that gave us access to 1M context. The eng team's
+      golden-set passing at 98% confirms the model is
+      working as expected. Keep the migration, monitor
+      CSAT for another week.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p013
+    label: Off-topic — vendor pitch (Vertex AI evals), gradable, NOT flagged
+    answer: |
+      For an eval question like this I'd push the team
+      toward Google's Vertex AI Gen AI Evaluation Service.
+      It's a managed eval platform with built-in rubric
+      templates, A/B test orchestration, and integrations
+      with the rest of GCP. The eng team could set up a
+      proper evaluation pipeline in a day or two and we'd
+      have an industrial-grade answer to this kind of
+      migration question going forward. Pick Vertex AI
+      evals and the architecture question takes care of
+      itself once we're on the right tooling.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p014
+    label: c2 + c3 met, c1 missing — gestures at multiple methods without enumerating (deliberate borderline)
+    answer: |
+      We should use multiple eval approaches here — no
+      single method gives a complete answer. The failure
+      mode in the current setup is that golden-set pass
+      doesn't catch regressions in categories we didn't
+      test; the mechanism is that golden-sets are bounded
+      by construction. And CSAT lags by 5 days because
+      users who escalate are the ones who don't survey.
+
+      For the 48-hour decision: fast offline grading on the
+      escalated conversations is what gives us read-out
+      speed, and sampled deeper review on the ambiguous
+      ones is what gives us confidence. For prevention:
+      expanding the test suite once we know the failure
+      category is the CI play. For shipped-feature
+      monitoring: escalation rate is the early signal CSAT
+      will catch later.
+
+      Roll back, investigate, ship a hardened version.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p015
+    label: All-missed on-topic — verbose punt, confidently graded all-not-met (per Unit 2/3 p015 lesson)
+    answer: |
+      This is a tough call and I'd want more information
+      before recommending a path. The escalation spike
+      could be a lot of things — seasonal, a marketing
+      campaign, a specific feature change downstream of
+      the migration. Without more data it's hard to know
+      whether the migration is at fault. I'd want to talk
+      to support ops, look at the escalation reasons in
+      detail, maybe pull some example conversations, and
+      probably consult with the data team on what the CSAT
+      lag actually looks like in our data. We could
+      consider a hybrid approach or run more analysis
+      before deciding. I'd want more information before
+      making a recommendation.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p016
+    label: Edge case — Portuguese, all three met
+    answer: |
+      A pergunta de avaliação tem quatro métodos em jogo —
+      human eval, LLM-as-judge, golden-set e live A/B (ou
+      live signal) — e a resposta certa em 48 horas é uma
+      estratégia em camadas, não a escolha de um método.
+
+      A escalation rate em alta 12% w/w com CSAT inalterado
+      é o sinal que precisamos: o CSAT atrasa cerca de 5
+      dias porque os utilizadores que escalam não preenchem
+      o questionário, e o golden-set a passar a 98% é cego
+      a categorias que não testámos. Nenhum dos dois nos
+      diz que está tudo bem; apenas dizem que não vimos
+      esta falha específica nas nossas verificações
+      existentes.
+
+      Para uma resposta em 48 horas: corre LLM-as-judge nas
+      conversas escaladas (atenção ao viés de auto-
+      preferência quando o juiz é Sonnet a julgar Sonnet),
+      amostra 20-30 para human eval onde o LLM-judge tem
+      baixa confiança, e usa a escalation rate como
+      indicador principal. Recomendação: rollback temporário
+      enquanto investigamos. O custo de 48 horas de rollback
+      é pequeno; o custo de uma regressão confirmada por
+      CSAT daqui a 5 dias é maior.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p017
+    label: Edge case — pseudocode answer, all three met (comments name all four methods explicitly per Unit 3 lesson)
+    answer: |
+      def eval_strategy(decision_window_hours, has_traffic, failure_known):
+          # Four methods, layered: human_eval / llm_as_judge / golden_set / live_ab
+          # No single method answers a production-bearing question.
+          methods = []
+
+          if decision_window_hours <= 48:
+              # Fast read-out needed → live_signal + llm_as_judge
+              # live_signal: escalation_rate is early indicator; CSAT lags by ~5 days
+              methods.append('live_signal')
+              # llm_as_judge: scales to all escalated conversations
+              # Caveat: Sonnet-judging-Sonnet has self-enhancement bias
+              methods.append('llm_as_judge')
+
+          if failure_known:
+              # golden_set: deterministic CI gate, catches known regressions
+              # Blind to unknown regressions by construction
+              methods.append('golden_set')
+          else:
+              # human_eval: load-bearing on ambiguous quality
+              # Small N (~20-30), slow, but resolves llm_as_judge uncertainty
+              methods.append('human_eval')
+
+          if has_traffic:
+              # live_ab: definitive comparative signal on production
+              # Requires exposing users to the failure being tested
+              methods.append('live_ab')
+
+          return methods
+
+      # For the migration scenario:
+      #   decision_window_hours = 48, has_traffic = True, failure_known = False
+      #   → live_signal + llm_as_judge + human_eval + live_ab
+      #   Recommendation: roll back, investigate with offline methods,
+      #   re-ship with golden_set expansion once failure category identified.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p018
+    label: Edge case — emoji + informal voice (4 emojis, moderate density per Unit 3 lesson), all three met
+    answer: |
+      Four eval methods, no single one answers this 🧭:
+
+      1. **Golden-set** (already running, 98% pass). Useful
+         for known regressions but blind to unknown ones —
+         the migration broke something we didn't write a
+         pair for.
+      2. **LLM-as-judge** on escalated conversations. Fast
+         and scales, but Sonnet-judging-Sonnet has self-
+         enhancement bias — a regression that looks fine to
+         4.6 will be graded fine by 4.6-as-judge.
+      3. **Human eval** on 20-30 sampled hard cases. Slow,
+         expensive, but resolves the ambiguous LLM-judge
+         calls.
+      4. **Live signal** (escalation rate). Already pointing
+         at a regression; CSAT will confirm in 5 days
+         because it lags ⏳.
+
+      Roll back ⏪, run methods 2-3 in parallel, decide
+      based on what they find. The cost of a 48-hour
+      rollback is small; the cost of a 5-day-confirmed CSAT
+      regression is much larger 💸.
+
+      Critical: don't treat the golden-set 98% pass as
+      safety signal. It tests what we knew to test.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p019
+    label: All-missed on-topic — picks "always A/B test" extreme, ignores other methods
+    answer: |
+      The right answer is always A/B test. Set up Sonnet
+      3.5 on 50% of traffic and Sonnet 4.6 on the other
+      50%, run for two weeks, look at CSAT and escalation
+      rate side by side. Anything offline like golden-set
+      or LLM-as-judge is just noise compared to real user
+      data. The A/B will tell us definitively whether the
+      migration is safe — and if it isn't, we revert the
+      4.6 cohort. Two weeks isn't fast but it's the right
+      answer for any production decision like this.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p020
+    label: All-missed on-topic — refuses prompt premise
+    answer: |
+      The premise is wrong. We shouldn't have migrated to
+      Sonnet 4.6 without an eval plan in place beforehand
+      — that's the actual failure here. The right answer
+      to the CEO is "we shipped without an eval gate, so
+      we don't know if it's safe; roll back, build the
+      eval gate, re-migrate when we have one." This is a
+      process issue more than an eval-method issue. The
+      eng team should be running pre-migration evals
+      against a representative test set before any model
+      swap, and the fact that they didn't is what we need
+      to fix. The 48-hour question is a symptom; the
+      missing eval discipline is the cause.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p021
+    label: All three met, concise / punchy
+    answer: |
+      Four methods, no single one answers this. Golden-set
+      passes at 98% but is blind to unknown regressions.
+      LLM-as-judge can grade escalated conversations fast
+      but has self-enhancement bias when Sonnet judges
+      Sonnet. Human eval resolves ambiguous cases but is
+      slow and small-N. Live signal (escalation rate up
+      12%) is the early indicator that CSAT will confirm
+      in 5 days because CSAT structurally lags.
+
+      Roll back temporarily. Run LLM-as-judge on escalations
+      + sampled human eval on hard cases in parallel.
+      Decide based on what they find. The cost of 48-hour
+      rollback is small; the cost of a confirmed regression
+      after 5 days is large.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
