@@ -49,13 +49,15 @@
 #      retry rate, conversation length) for shipped-feature
 #      decisions and lagging metrics."
 #
-# Authoring distribution (21 pairs, 7/4/3/5/2/0):
-#   * 7 pairs all-three-met (varied voices)
-#       p001, p002, p005, p016 (pt), p017 (pseudocode),
-#       p018 (emoji moderate), p021 (concise)
-#   * 4 pairs partial credit (2 of 3, incl. 2 borderlines)
+# Authoring distribution (21 pairs, 8/3/3/5/2/0; corrected
+# pre-gate per reviewer flag on p008 — see header note):
+#   * 8 pairs all-three-met (varied voices)
+#       p001, p002, p005, p008, p016 (pt),
+#       p017 (pseudocode), p018 (emoji moderate),
+#       p021 (concise)
+#   * 3 pairs partial credit (2 of 3, incl. 2 borderlines)
 #       p006 (c1+c2), p007 (c1+c3, c2 borderline),
-#       p008 (c2+c3), p014 (c2+c3, c1 borderline)
+#       p014 (c2+c3, c1 borderline)
 #   * 3 pairs single-criterion-met
 #       p009 (c1), p010 (c2), p011 (c3)
 #   * 5 pairs all-missed but on-topic
@@ -63,6 +65,18 @@
 #   * 2 pairs off-topic, all-missed, gradable (NOT flagged)
 #       p003, p013
 #   * 0 pairs flagged-expected (design failed twice; skip)
+#
+# Pre-gate correction (2026-05-10): p008 was originally
+# classified c2+c3 met / c1 missing, with intent "failure
+# modes + regime without naming multi-method choice as
+# layered." Reviewer correctly flagged that the answer
+# enumerates all four methods (live signal, LLM-as-judge,
+# human eval, golden-set) AND structures them as layered by
+# decision regime ("For the 48-hour... For longer-term...
+# For preventing this next time..."). That satisfies c1.
+# Corrected to all-three-met before any gate run; YAML
+# inconsistency would have scored a correctly-lenient grader
+# as wrong and distorted agreement metrics.
 #
 # Two deliberate borderlines:
 #
@@ -341,7 +355,7 @@ pairs:
       flagged: false
 
   - id: p008
-    label: c2 + c3 met, c1 missing — failure modes + regime without naming multi-method choice as layered
+    label: All three met — failure modes + regime distinction + layered multi-method strategy (was c2+c3 partial-credit; corrected pre-gate per reviewer flag — answer enumerates all four methods and treats them as layered by decision regime)
     answer: |
       Two failure modes are pointing the same way. CSAT is
       structurally lagged because users who escalate don't
@@ -367,7 +381,7 @@ pairs:
     expected:
       criteria:
         - position: 1
-          met: false
+          met: true
         - position: 2
           met: true
         - position: 3
