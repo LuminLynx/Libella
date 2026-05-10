@@ -1,0 +1,769 @@
+# Regression set for the Latency unit (latency-bundle-0).
+#
+# Latency is the third authored unit and is treated as
+# **standard** (not flagship) under STRATEGY.md § T2 — minimum
+# 10 pairs; this set ships at 22 because the rubric has three
+# AND-structured criteria (each c1/c2 with both clauses
+# load-bearing) and partial-credit signal needs density to
+# distinguish AND-half-failures from single-criterion misses.
+# Authoring discipline mirrors context-window-bundle-0.yml
+# (the Unit 2 gate-passing reference), with three Unit-2
+# lessons applied:
+#
+#   1. Three deliberate borderlines (not five). Unit 2 shipped
+#      five borderlines and learned the upper bound is closer
+#      to two or three — beyond that, calibration noise
+#      crowds out signal.
+#   2. Sharper substantive ambiguity for the flagged-expected
+#      pair. Unit 2's p022 used pure hedge language and the
+#      grader confidently graded all criteria, never tripping
+#      the confidence floor. This set's p022 designs in
+#      multiple simultaneously-borderline criteria so the
+#      confidence floor has multiple chances to fire.
+#   3. AND-structure scrutiny on c1/c2. The grader treated
+#      Unit 2's c1 ("names AND treats as budget") and c2
+#      ("failure mode AND mechanism") as load-bearing AND
+#      structures, sometimes lenient on one half, sometimes
+#      strict. Unit 3's c1 and c2 are also AND structures —
+#      pairs author both clauses always met or deliberately
+#      separated, never half-and-half by accident.
+#
+# Position-to-criterion mapping (from
+# content/units/latency-bundle-0.md slot 8 rubric, in authored
+# order):
+#
+#   1. "Names latency as a multi-axis trade-off (model-size
+#      vs streaming vs total-completion) AND treats
+#      user-perceived speed as the load-bearing metric, not
+#      raw end-to-end seconds."
+#   2. "Identifies a concrete failure mode of treating latency
+#      as a single number AND explains the mechanism behind
+#      it — e.g., picking a fast model that costs accuracy on
+#      the load-bearing task; shipping streaming UX where the
+#      output is consumed atomically (so partial output is
+#      unusable); optimizing TTFT when total completion is
+#      what gates the user's next action."
+#   3. "Distinguishes a regime where streaming UX is the right
+#      default (output is read incrementally — chat,
+#      explanation, summary) from a regime where it isn't
+#      (output is consumed atomically — JSON for downstream
+#      code, function-calling, structured form-fill)."
+#
+# Authoring distribution (22 pairs, 6/5/3/5/2/1):
+#   * 6 pairs all-three-met (varied voices, incl. edge-case voices)
+#       p001, p002, p005, p016 (pt), p018 (emoji), p021 (concise)
+#   * 5 pairs partial credit (2 of 3, incl. 2 deliberate borderlines)
+#       p006 (c1+c2), p007 (c1+c3, c2 borderline),
+#       p008 (c2+c3), p014 (c2+c3, c1 borderline),
+#       p017 (c1+c3, c2 borderline, pseudocode)
+#   * 3 pairs single-criterion-met
+#       p009 (c1), p010 (c2), p011 (c3)
+#   * 5 pairs all-missed but on-topic
+#       p004, p012, p015, p019, p020
+#   * 2 pairs off-topic, all-missed, gradable (NOT flagged)
+#       p003, p013
+#   * 1 pair flagged-expected (multiple simultaneously-borderline
+#     criteria designed to trip the 0.6 confidence floor)
+#       p022
+#
+# T2-B locked interpretation (per docs/PHASE_2_GATE.md and
+# UNIT_2_GATE.md): flagged = grader *uncertainty*, NOT "answer
+# is bad." An off-topic answer the grader can confidently grade
+# as all Not-Met is gradable — flagged: false. A genuinely
+# ambiguous answer where multiple criterion judgements land
+# below 0.6 confidence should flag.
+#
+# Three deliberate borderlines:
+#
+#   * p007 (c2 borderline — gestures-at-quality-without-mechanism).
+#     Says "Haiku faster but lower quality" — gestures at the
+#     quality-cost mechanism but doesn't anchor to the
+#     load-bearing task. Tests c2's AND structure: is "lower
+#     quality" alone a mechanism, or does the answer need to
+#     name the load-bearing-task trade explicitly? c2 expected
+#     false; grader may reasonably read as met if it interprets
+#     the gesture loosely (mirrors Unit 2 p007 c2 behavior).
+#
+#   * p014 (c1 borderline — load-bearing-task-language-without-
+#     multi-axis). Uses "load-bearing task" framing correctly —
+#     which is c1's literal language — but doesn't name the
+#     multi-axis trade-off (model-size vs streaming vs total-
+#     completion) explicitly. Tests whether c1's vocabulary
+#     signal alone crosses the bar. c1 expected false; grader
+#     may reasonably read as met if it counts vocabulary
+#     overlap as crossing the AND structure.
+#
+#   * p017 (c2 borderline — pseudocode comments). Pseudocode
+#     comments name "streaming is load-bearing" and "optimize
+#     total completion" — gestures at failure modes /
+#     mechanisms but in code-comment form rather than PM-
+#     decision prose. c2 expected false; grader may reasonably
+#     read as met. Mirrors Unit 2 p017 carryforward — Unit 2's
+#     pseudocode pair was non-deterministic at the c1/c2 line.
+#
+# When the gate runs, watch for these calibration signals:
+#   - All-met pairs should NOT flag.
+#   - All-missed-on-topic pairs should ALSO not flag.
+#   - Off-topic-but-gradable should NOT flag (T2-B reading).
+#   - p022 should flag — designed for multiple simultaneously-
+#     borderline criteria, not pure hedge. If it doesn't flag,
+#     that's data for v3 — the confidence floor may be
+#     genuinely hard to trip.
+#   - p007 / p014 / p017 are *expected disagreement-zone
+#     signal*, not noise. PR-#72-equivalent triage applies if
+#     they disagree: decide whether YAML or grader is more
+#     spec-faithful, realign or preserve as documented
+#     disagreement, do not pre-commit either reading.
+
+unit_id: latency-bundle-0
+
+description: |
+  Phase 3 / Unit 3 standard gate set. Authored 2026-05-10
+  against the locked T2-B reading (flagged = grader
+  uncertainty, NOT off-topic-but-gradable). 22 pairs, three
+  deliberate borderlines (p007, p014, p017) tuned per Unit 2
+  lessons. One flagged-expected pair (p022) using multiple
+  simultaneously-borderline criteria rather than hedge
+  language. See header for triage and design notes.
+
+pairs:
+  - id: p001
+    label: All three met, balanced answer with third-option proposal
+    answer: |
+      The exec's "snappy" instinct isn't wrong, but it's
+      collapsing three different latency axes into one number.
+      I'd push back on the binary A-vs-B framing and propose
+      option C: Sonnet-class with streaming.
+
+      Latency has three axes, not one: model-size (Haiku 1-2s,
+      Sonnet 5-7s), streaming (TTFT 200-500ms regardless of
+      model size), and total-completion (when the user can
+      actually act on the output). The exec's "snappy" really
+      means TTFT, not total time.
+
+      For this surface (chat-shape output, read top-down)
+      streaming is the load-bearing UX choice. Sonnet +
+      streaming gives TTFT under a second AND preserves
+      action-item quality. Total time is ~6s but the user is
+      reading the TL;DR by 500ms.
+
+      The Haiku option (B) saves 3 seconds of total time at
+      the cost of 1-2 action items per transcript — that's
+      trading the load-bearing task for perceived speed we can
+      get for free via streaming. The Sonnet-blocking option
+      (A) keeps quality but feels slow because nothing happens
+      for 6 seconds. Neither is right.
+
+      Ship Sonnet + streaming. Eng cost on streaming is low —
+      a few hours on Anthropic's API. If we're forced to pick
+      A or B as proposed: A, because action-item quality
+      matters more than total time when total time is already
+      under 10 seconds.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p002
+    label: All three met, streaming-led framing
+    answer: |
+      Streaming is the lever neither prototype is pulling. A
+      uses Sonnet (good quality) but blocks for 6s — user
+      sees nothing until done. B uses Haiku to compensate for
+      the blocking-feel, paying with action-item quality. Both
+      miss the cheaper move: stream the Sonnet output.
+
+      With streaming, Sonnet TTFT is ~500ms-1s. The user
+      starts reading the TL;DR before B has even started. By
+      the time action items appear (~5-6s), the user has
+      absorbed TL;DR and decisions. Total time matches A,
+      perceived speed beats B.
+
+      The meeting summarizer is structurally suited to
+      streaming — output is top-down (TL;DR → decisions →
+      action items), read order matches generation order,
+      this is the chat-shape regime. For atomic-output
+      features (JSON for downstream code, function-calling,
+      structured form-fill) streaming wouldn't help — the
+      user can't act on partial output. But this isn't one of
+      those.
+
+      Ship Sonnet + streaming. The exec wants TTFT, not total
+      time, and we can give them that without losing the
+      load-bearing task.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p003
+    label: Off-topic — pivots to security/PII concerns, all miss, gradable
+    answer: |
+      The bigger issue is that 30-minute meeting transcripts
+      contain sensitive content — personnel discussions,
+      strategy, customer info. Before we ship to PMs
+      internally, we need to confirm the data flow: where
+      does the transcript get stored, what's the data
+      residency, do we have a DPA with the LLM provider, and
+      what are the retention defaults? "Internal demo next
+      week" might be fine for one transcript with sanitized
+      content, but the broader rollout question is downstream
+      of legal review. The architecture decision (Sonnet vs
+      Haiku) is secondary.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p004
+    label: All-missed on-topic — picks "always Haiku" extreme
+    answer: |
+      Always pick the fast model. The exec wants snappy and
+      Haiku at 1.5s to first paragraph is what snappy looks
+      like. Yes Sonnet has higher quality, but the difference
+      between 6s and 1.5s is the difference between "this is
+      a tool I'd use" and "this is too slow to bother." The
+      action-item quality issue is a near-term roadmap problem
+      — Haiku's underlying model improves over time. Ship
+      Haiku, ship streaming, accept the quality cost on action
+      items because the alternative is a feature nobody uses.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p005
+    label: All three met, terse engineering voice
+    answer: |
+      Three latency axes, not one. Model-size: Haiku 1-2s,
+      Sonnet 5-7s. Streaming: TTFT 200-500ms regardless of
+      model size on chat-shape outputs. Atomic vs incremental:
+      TL;DR and decisions read incrementally, action items
+      sometimes copied atomically (to Jira), but still
+      consumed after the section finishes — chat-shape regime.
+
+      Right answer: Sonnet + streaming. TTFT looks like Haiku.
+      Quality looks like Sonnet. Total ~6s but user is
+      reading by 1s. Eng cost on streaming is low.
+
+      Wrong moves: (1) A as proposed loses on TTFT — 6s of
+      blocking is the snappy-failure even though total time
+      is fine. (2) B trades action-item quality (the
+      load-bearing task) for ~3s of total time. Both pick the
+      wrong axis. The exec's "snappy" complaint is about
+      TTFT; address that without losing the task.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p006
+    label: c1 + c2 met, c3 missing (no regime distinction)
+    answer: |
+      Latency isn't a single number — model-size and streaming
+      are different axes, and the exec's "snappy" intuition is
+      about TTFT, not total time. Picking Haiku to save 4
+      seconds total when the user can't even see the first 6
+      seconds of A's response is solving the wrong problem.
+
+      The failure mode in option A is that 6 seconds of
+      blocking output feels like 6 seconds of nothing
+      happening — that's a TTFT problem, not a total-time
+      problem. The mechanism: blocking responses give the
+      user no signal that work is happening, even when the
+      response will be fast in absolute terms. Streaming the
+      Sonnet output fixes that without sacrificing
+      action-item quality. Option B trades the load-bearing
+      task (action-item extraction) for a perceived-speed
+      gain we can get for free via streaming.
+
+      Ship Sonnet + streaming.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p007
+    label: c1 + c3 met, c2 missing — gestures at quality without naming load-bearing-task mechanism (deliberate borderline)
+    answer: |
+      The right framing here is multi-axis. There's the
+      model-size lever (Haiku faster but lower quality), the
+      streaming lever (TTFT vs blocking), and the question of
+      what the user does with the output — and those are
+      different conversations. The exec's "snappy" maps to
+      TTFT specifically.
+
+      For a chat-shape feature with incremental consumption
+      (TL;DR, decisions read top-down) streaming is the
+      load-bearing UX choice. For an atomic-output feature
+      (JSON to downstream code, structured form, function-
+      calling) streaming buys nothing because partial output
+      is unusable. The meeting summarizer is mostly the
+      former; action items have an atomic edge but the
+      streaming UX still works because the user waits for the
+      section to finish before copying.
+
+      Stream the Sonnet output. Haiku might not be the right
+      move given it's faster but lower quality.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: false
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p008
+    label: c2 + c3 met, c1 missing — failure modes + regime distinction without naming multi-axis trade-off
+    answer: |
+      Two failure modes in the proposed options. Option A
+      blocks for 6 seconds — the user sees nothing until the
+      response completes. The mechanism is that blocking
+      responses give zero progress signal, so 6 seconds feels
+      indefinite. Streaming would change "user waits 6s" into
+      "user reads along starting at 200ms" with no change in
+      total time. Option B trades action-item quality for
+      ~3s of total-time savings. Action items are the
+      load-bearing output — what PMs paste into Jira — and
+      the cheaper Haiku model has lower capability on the
+      structured-recall task that action-item extraction is.
+
+      Regime: the meeting summarizer is mostly streaming-
+      friendly. Output is top-down, read incrementally. Action
+      items have an atomic edge (consumed as a list) but
+      that's still served well by streaming, which lets the
+      user wait for the action-item section to finish before
+      copying. This isn't an atomic-output regime where
+      streaming is irrelevant — it's a chat-shape regime.
+
+      Ship Sonnet + streaming.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p009
+    label: c1 only — names multi-axis frame, no mechanism, no regime
+    answer: |
+      Latency isn't a single number to optimize against —
+      it's a multi-axis trade-off between model-size,
+      streaming behavior, and total-completion time. The
+      exec's "snappy" instinct is really about
+      user-perceived speed, which is a different metric than
+      raw end-to-end seconds. A PM scoping a feature like
+      this needs to map all three axes against the use case
+      before choosing between A and B, not pick by gut feel.
+      The architecture question is downstream of getting the
+      framing right.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p010
+    label: c2 only — failure mode + mechanism, no trade-off frame, no regime
+    answer: |
+      The failure mode in option B is that we're saving 3
+      seconds of total time at the cost of accuracy on the
+      load-bearing task. Action-item extraction is what PMs
+      use this feature for — it's the part that gets pasted
+      into Jira and turned into work. Losing 1-2 action items
+      per transcript is a 5-10% miss rate on the thing the
+      feature exists for. The mechanism is that smaller models
+      have lower capability on structured-recall tasks (which
+      is what action-item extraction is), and that capability
+      gap doesn't close by making the model faster. We'd be
+      trading product value for demo-speed.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: true
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p011
+    label: c3 only — regime distinction, no trade-off frame, no mechanism
+    answer: |
+      The right call depends on the surface shape. For a
+      chat-shaped feature where the user reads output
+      incrementally (TL;DR → decisions → action items,
+      top-down), streaming is the load-bearing UX choice;
+      total time matters less than TTFT. For an atomic-output
+      feature where the user can't act until the full result
+      lands (JSON for code, function-call result, form fill),
+      streaming is irrelevant; total time is everything. The
+      meeting summarizer is mostly the former — read
+      top-down, with action items consumed as a list at the
+      end. So I'd lean toward whichever option streams best.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p012
+    label: All-missed on-topic — web-page-load analogy, conflates concepts
+    answer: |
+      Latency in LLM features is similar to web page load
+      times — there's a perceptible threshold around 1-2
+      seconds where users start to notice waiting, and beyond
+      that engagement drops. The exec is right that we want
+      it under that threshold, which means Haiku (B). The
+      action-item quality issue is real but it's a
+      model-quality problem, not a latency problem. Ship Haiku
+      for snappy and put "improve action-item recall" in the
+      next quarter's roadmap. Sonnet at 6s is just too slow
+      regardless of streaming; modern users don't wait that
+      long.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p013
+    label: Off-topic — vendor pitch (Gemini Flash), gradable, NOT flagged
+    answer: |
+      For latency-sensitive features I'd push toward Google's
+      Gemini Flash family — they have the fastest
+      tokens-per-second in the industry and the
+      price-per-token is excellent at the small-model tier.
+      The eng team should benchmark Flash against Haiku for
+      this use case, or we should consider a multi-vendor
+      strategy where Flash handles speed-critical surfaces
+      and Sonnet handles quality-critical ones. Pick Gemini
+      Flash and ship; the architecture question takes care of
+      itself once we're on the right model.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p014
+    label: c2 + c3 met, c1 missing — uses load-bearing-task language without naming multi-axis trade-off (deliberate borderline)
+    answer: |
+      The load-bearing task here is action-item extraction —
+      that's what PMs use this feature for, and it's where
+      Haiku loses 1-2 items per transcript. The mechanism is
+      capability difference: smaller models have lower
+      structured-recall accuracy, and action-item extraction
+      is exactly that kind of task. Trading load-bearing-task
+      accuracy for 3 seconds of total time is the wrong trade.
+
+      Regime-wise, the meeting summarizer is a streaming-
+      friendly surface — output is read top-down, the user
+      consumes TL;DR before action items. Atomic-output
+      features (JSON for downstream code, function-calling)
+      would force a different decision, but this isn't one.
+
+      What I'd ship: Sonnet, with streaming if eng can build
+      it in time. Sonnet blocking is acceptable as a fallback
+      — 6 seconds is fine for a once-per-meeting tool. The
+      "snappy" framing from the exec is about not feeling
+      stuck, which a progress indicator solves cheaply.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p015
+    label: All-missed on-topic — verbose punt, confidently graded all-not-met (per Unit 2 p015 lesson)
+    answer: |
+      This is a tough call and I'd want to talk to the team
+      before committing. Both options have real trade-offs —
+      A has the quality but maybe feels slow, B has the speed
+      but loses some accuracy. I'd want to do user testing to
+      see what actually matters more for our specific users,
+      and probably consult with eng about timeline pressure.
+      We could maybe do a hybrid where we use Haiku for the
+      TL;DR and Sonnet for the action items, or run them in
+      parallel and pick the better result. I'd want more data
+      before recommending a path.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p016
+    label: Edge case — Portuguese, all three met
+    answer: |
+      A intuição do exec — "queremos isto rápido" — está a
+      colapsar três eixos diferentes em um número. Latência
+      tem três alavancas: tamanho do modelo (Haiku 1-2s,
+      Sonnet 5-7s), streaming (TTFT 200-500ms
+      independentemente do tamanho do modelo) e tempo total
+      de conclusão (relevante quando o utilizador não pode
+      agir até a saída completa chegar).
+
+      Para o resumo de reuniões, o caso é misto: TL;DR e
+      decisões são lidas incrementalmente (cenário onde
+      streaming é a alavanca certa), enquanto os action
+      items são frequentemente consumidos atomicamente
+      (copiados para o Jira como lista). Mas mesmo os action
+      items beneficiam de streaming porque o utilizador vê a
+      secção a aparecer antes de copiar — não é um caso onde
+      só a saída completa importa. É chat-shape, não
+      atomic-output.
+
+      O que eu shipparia: Sonnet + streaming. TTFT abaixo de
+      um segundo (snappy ≈ TTFT, não tempo total), qualidade
+      preservada nos action items (a tarefa load-bearing). A
+      opção B (Haiku) economiza 3 segundos mas perde 1-2
+      action items por transcrição — esse é o erro clássico
+      de optimizar o eixo errado: trocar qualidade da tarefa
+      load-bearing por velocidade percebida que pode ser
+      obtida sem custo via streaming.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p017
+    label: Edge case — pseudocode answer, c1 + c3 met, c2 borderline (deliberate borderline, mirrors Unit 2 p017)
+    answer: |
+      def latency_choice(surface_shape, load_bearing_task, exec_pressure):
+          # Three-axis check: model-size, streaming, total-completion
+          if surface_shape == 'incremental_consumption':
+              # TL;DR, decisions read top-down → streaming is load-bearing
+              # User-perceived speed = TTFT, not total time
+              return choose_model_for(load_bearing_task) + streaming_enabled()
+          elif surface_shape == 'atomic_output':
+              # JSON for code, function-call result, form-fill
+              # Streaming buys nothing → optimize total completion only
+              return smallest_acceptable_model(load_bearing_task)
+          else:
+              # Mixed shape (action items copied atomically inside chat-shape feature)
+              return optimize_for_load_bearing_task(load_bearing_task) + streaming_enabled()
+
+      # For the meeting summarizer:
+      #   surface_shape = 'incremental_consumption' (TL;DR top-down)
+      #   load_bearing_task = action_item_extraction
+      #   → Sonnet + streaming. Haiku loses the load-bearing task.
+
+      # Note: "snappy" from exec usually means TTFT, not total time.
+      # Streaming changes user_perception_time without changing latency.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: false
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p018
+    label: Edge case — emoji + informal voice, all three met
+    answer: |
+      OK so the exec saying "snappy" is collapsing three
+      latency axes into one number 🤦. Three things at once:
+
+      1. **Model-size** — Haiku 1-2s, Sonnet 5-7s 🐎. Trades
+         speed for quality on the task you ship for.
+      2. **Streaming** — TTFT ~200-500ms regardless of model
+         size 🎯. The cheap UX win neither prototype is using.
+      3. **Total completion** — what matters when the user
+         can't act on partial output (JSON for code,
+         function-calls). Doesn't apply to chat-shape stuff
+         like this.
+
+      The exec wants "snappy" 🚀 = TTFT, not total time. Both
+      protos miss this:
+      - Option A (Sonnet blocking) — quality is right, user
+        sees nothing for 6s 😐
+      - Option B (Haiku streaming) — feels great, loses 1-2
+        action items per transcript 💀
+
+      Right move: Sonnet + streaming 🛠️. TTFT under a second
+      (looks like Haiku), action-item quality holds (looks
+      like Sonnet), eng cost on streaming is low. Don't trade
+      the load-bearing task for perceived speed when there's
+      a cheaper way to get the perceived speed.
+
+      Meeting summarizer is chat-shape, not atomic-output —
+      streaming is the right default here.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p019
+    label: All-missed on-topic — picks "always streaming" extreme, ignores atomic-output regime
+    answer: |
+      The right answer is always streaming. Once you've added
+      streaming to a product surface, latency stops being a
+      meaningful concern — the user sees output immediately
+      and feels in control. That's true for any feature,
+      regardless of what the output is. So pick whichever
+      model does the task best (Sonnet), wrap it in streaming,
+      and ship. Total time, model-size, all the other axes
+      don't matter once the streaming lever is pulled. This
+      generalizes across products.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p020
+    label: All-missed on-topic — refuses prompt premise
+    answer: |
+      The premise is wrong. We shouldn't be building a
+      meeting summarizer — that's a commodity feature, every
+      productivity tool ships one (Otter, Fireflies, Microsoft
+      Copilot, Notion). PMs aren't going to use ours over
+      what they already have. The exec demo is a vanity
+      exercise. I'd push back on the brief itself before
+      scoping the architecture: what user problem are we
+      actually solving, and is "summarize meetings" the
+      load-bearing thing? If yes, we should buy not build. If
+      the real problem is action-item routing or follow-up
+      automation, that's a different feature with different
+      latency characteristics.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p021
+    label: All three met, concise / punchy
+    answer: |
+      Latency has three axes — model-size, streaming,
+      total-completion — and "snappy" is about TTFT, not
+      total time. Both proposed options miss this: A blocks
+      (no streaming despite using Sonnet), B trades
+      action-item quality (the load-bearing task) for ~3s of
+      total time savings. Both pick the wrong axis.
+
+      For chat-shape surfaces like the meeting summarizer
+      (output read top-down, TL;DR first) streaming is the
+      right default. Atomic-output regimes (JSON,
+      function-calling, form-fill) would change the calculus,
+      but this isn't one. Ship Sonnet + streaming: TTFT under
+      a second, full action-item quality, total ~6s but the
+      user is reading by ~500ms.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p022
+    label: Flagged-expected — multiple simultaneously-borderline criteria designed to trip the 0.6 confidence floor (replaces Unit 2's pure-hedge p022 design)
+    answer: |
+      I'd push for option B but with caveats. The 1.5s TTFT
+      is what "snappy" actually means — total time matters
+      less than time-to-first-content for chat-shape
+      surfaces, and the exec demo lives or dies on
+      first-impression speed. The action-item quality loss is
+      real but quantifiable: 1-2 missed items per 30-min
+      transcript. We could mitigate that with a follow-up
+      Sonnet pass on just the action-item section if it's
+      load-bearing, or accept the trade in exchange for the
+      speed win.
+
+      What I wouldn't do is ship A as proposed — Sonnet
+      blocking is the worst of both worlds (slow AND no
+      streaming UX). If we can't get streaming integrated in
+      time for the demo, A is acceptable as a temporary
+      state, but it's not the architecture we ship.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: true
