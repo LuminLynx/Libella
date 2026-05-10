@@ -5,7 +5,7 @@ path_id: llm-systems-for-pms
 position: 2
 prereq_unit_ids:
   - tokenization-bundle-0
-status: draft
+status: published
 definition: A context window is the budget of tokens a model can consider in a single call — the prompt sent and the output generated, both counted against the same per-call ceiling.
 calibration_tags:
   - claim: "Headline context-window numbers are per-call ceilings that include prompt input, generated output, and (provider-specific) tool definitions and cached prefixes."
