@@ -6,7 +6,7 @@ position: 4
 prereq_unit_ids:
   - tokenization-bundle-0
   - context-window-bundle-0
-status: draft
+status: published
 definition: Evals are the discipline of knowing whether your LLM feature is working before users tell you it isn't — and the trap is treating "eval" as a single thing instead of a layered strategy across four different methods that catch different failure shapes.
 calibration_tags:
   - claim: "Production eval discipline almost always requires multiple methods; no single method catches all failure shapes."
