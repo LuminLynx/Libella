@@ -280,7 +280,7 @@ documented — calibration signal, not noise. Three new findings:
 | Pair | Outcome | Note |
 |---|---|---|
 | p001 | ERROR | Second transient T2-D-rejected payload (first was p007's run-1 ERROR) |
-| p007 | FAIL (2/3) | One criterion non-deterministically disagreed after realignment — promoted to preserved disagreement (third) |
+| p007 | FAIL (2/3) | One criterion non-deterministically disagreed after realignment — documented as borderline FAIL; YAML not reverted (see Findings) |
 | p022 | FAIL (1/3 + flagged disagree) | Hedge language did not trip grader's confidence floor; flagged=false instead of expected true |
 
 All other realignments held (p014, p015, p017, p019 all PASS).
