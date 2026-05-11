@@ -1,0 +1,777 @@
+# Regression set for the Model selection unit
+# (model-selection-bundle-0).
+#
+# Model selection is the fifth authored unit and is the
+# synthesis unit of Phase 1 — it pulls together Units 1
+# (Tokenization / per-token cost), 2 (Context Window /
+# budget arithmetic), 3 (Latency / multi-axis speed), and
+# 4 (Evals / layered measurement strategy). Treated as
+# **standard** under STRATEGY.md § T2 — minimum 10 pairs;
+# this set ships at 21 because the rubric has three
+# AND-structured criteria and partial-credit signal needs
+# density.
+#
+# Authoring discipline carries forward Unit 4 lessons:
+#
+#   1. Two deliberate borderlines (p007 c2, p014 c1).
+#      Each tests a distinct AND-structure shape.
+#   2. Skip flagged-expected pairs. Three consecutive
+#      failed designs across Units 2-4 — the grader's 0.6
+#      confidence floor is genuinely hard to trip with
+#      content-level ambiguity. Coverage gap accepted.
+#   3. c3 pairs explicitly map tiers to regimes by name.
+#      Unit 4 c3 was grader-strict on "method-name-to-
+#      regime mapping"; Unit 5 c3 mirrors with "tier-name-
+#      to-regime mapping" (Opus / Sonnet / Haiku per regime).
+#   4. p017 pseudocode comments name "capability / cost /
+#      latency" and "Opus / Sonnet / Haiku" explicitly.
+#   5. p018 emoji density capped at 4 (Unit 3 lesson).
+#   6. Pre-author check on all-met pairs: literally
+#      enumerate the three axes (Unit 4 p008/p011 lesson).
+#
+# Pricing in pair answers reflects 2026-05 Anthropic
+# pricing (Opus 4.7 $5/$25 per M, Sonnet 4.6 $3/$15 per M,
+# Haiku 4.5 $1/$5 per M). Per-PR cost arithmetic uses
+# 8k input + 1.5k output workload for the code-review bot.
+#
+# Position-to-criterion mapping (from
+# content/units/model-selection-bundle-0.md slot 8 rubric):
+#
+#   1. "Names model selection as a multi-axis trade-off
+#      (capability vs cost vs latency) AND treats it as a
+#      measurement decision anchored to performance on the
+#      load-bearing task at projected scale — not a
+#      spec-sheet pick."
+#   2. "Identifies a concrete failure mode of single-axis
+#      model selection AND explains the mechanism — e.g.,
+#      picking by cost alone misses capability-tier
+#      breakpoints; picking by capability alone hits
+#      cost-at-volume cliffs; picking by vendor benchmark
+#      misses regressions on the load-bearing task."
+#   3. "Distinguishes which model class is load-bearing in
+#      which regime — Opus-class for hard reasoning and
+#      high-stakes single-shot decisions; Sonnet-class as
+#      the quality-at-acceptable-cost default; Haiku-class
+#      for high-volume / latency-critical / first-pass-
+#      triage workloads; and recognizes the cross-tier
+#      hybrid pattern when no single tier fits the
+#      cost/quality envelope."
+#
+# Authoring distribution (21 pairs, 7/4/3/5/2/0):
+#   * 7 pairs all-three-met (varied voices)
+#       p001, p002, p005, p016 (pt), p017 (pseudocode),
+#       p018 (emoji moderate), p021 (concise)
+#   * 4 pairs partial credit (2 of 3, incl. 2 borderlines)
+#       p006 (c1+c2), p007 (c1+c3, c2 borderline),
+#       p008 (c2+c3), p014 (c2+c3, c1 borderline)
+#   * 3 pairs single-criterion-met
+#       p009 (c1), p010 (c2), p011 (c3)
+#   * 5 pairs all-missed but on-topic
+#       p004, p012, p015, p019, p020
+#   * 2 pairs off-topic, all-missed, gradable (NOT flagged)
+#       p003, p013
+#   * 0 pairs flagged-expected (design failed 3x; skip)
+
+unit_id: model-selection-bundle-0
+
+description: |
+  Phase 3 / Unit 5 standard gate set. Authored 2026-05-11
+  against the locked T2-B reading. 21 pairs against the
+  AND-structured rubric. Two deliberate borderlines (p007
+  c2, p014 c1). Zero flagged-expected pairs — coverage gap
+  accepted after three failed designs across Units 2-4.
+  Pricing in answers reflects 2026-05 Anthropic pricing
+  (Opus 4.7 $5/$25 per M tokens). See header for full
+  triage and design notes.
+
+pairs:
+  - id: p001
+    label: All three met, balanced hybrid recommendation
+    answer: |
+      The three-tier prototype is a good start, but treating
+      it as A vs B vs C misses the synthesis. Model selection
+      is a multi-axis decision — capability, cost, latency —
+      and the right answer almost always requires measurement
+      at projected scale, not a spec-sheet pick.
+
+      The capability differences are real but not uniform.
+      Opus catches 85% of bugs / 92% of security flags;
+      Sonnet 70% / 78%; Haiku 45% / 38%. Security flags are
+      where the value proposition lives (a missed security
+      regression is a load-bearing failure), so the
+      Opus-to-Sonnet gap matters more there than on style
+      suggestions. Haiku at 38% security catch isn't a tier
+      choice — it's a non-starter for that part of the
+      surface.
+
+      Cost-at-volume is where the arithmetic gets real.
+      $0.08/PR × 500/day × 250 workdays ≈ $10k/year for Opus;
+      Sonnet ~$6.25k; Haiku ~$1.875k. That's the right
+      number to bring to finance — not the per-call cost.
+
+      Latency: 12s for Opus is slow but for code review
+      (asynchronous, comments post when ready) it's
+      acceptable. For a chat-shape surface 12s would be a
+      blocker; here it isn't.
+
+      Synthesis: ship a hybrid. Sonnet-class as the default
+      (quality-at-acceptable-cost on most PRs) with an
+      escalate-to-Opus rule on security-relevant diffs
+      (auth, crypto, payment paths, IAM). That gives
+      Opus-level security catch on the load-bearing 20% of
+      PRs and Sonnet-level cost on the rest. Estimated
+      blended cost ~$0.06/PR ≈ $7.5k/year.
+
+      What I wouldn't do: ship Opus-class everywhere
+      (overkill cost on style suggestions); ship Haiku-class
+      everywhere (security floor collapses). What I'd verify
+      before locking: re-run the eval on the hybrid routing
+      logic to confirm the security-signals rule catches
+      the right cases.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p002
+    label: All three met, measurement-first framing
+    answer: |
+      The decision can't be made from the prototype numbers
+      alone — those are point estimates on a 100-PR eval set.
+      The first move is to scope a proper bake-off: scale
+      the eval to 500-1000 PRs (real distribution of PR
+      sizes and patch types), measure capability per tier on
+      the load-bearing tasks (bug catch, security flag)
+      separately, measure cost per tier at the real
+      input-token distribution (not the average), and
+      measure p95 latency per tier.
+
+      The three axes — capability, cost, latency — are all
+      measurable but only at the right scale. Capability
+      matters most on security flags (Opus 92% vs Sonnet 78%
+      is a 14-point gap on the highest-stakes output). Cost
+      matters most at production volume (5× ratio between
+      Opus and Haiku is $8k/year difference at 500/day).
+      Latency is least binding here because code review is
+      asynchronous.
+
+      The hybrid play is what the bake-off will probably
+      justify: route by query difficulty. Sonnet-class as
+      the default on the bulk of PRs; Opus-class escalation
+      when the diff includes high-risk patterns
+      (auth changes, crypto, dependency updates, IAM);
+      Haiku-class for first-pass triage on small style-only
+      diffs.
+
+      What ships depends on the bake-off result. What I
+      wouldn't ship before running it: a single-tier choice
+      based on prototype-level data.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p003
+    label: Off-topic — pivots to vendor lock-in, all miss, gradable
+    answer: |
+      The real risk here is vendor lock-in. Anthropic-only
+      architecture means we're betting the whole code-review
+      surface on one provider's API stability and pricing.
+      We should be looking at multi-vendor from the start:
+      Sonnet vs Gemini Pro vs GPT-4.1 head-to-head, plus a
+      fallback path so if Anthropic raises prices or has an
+      outage we can switch. The eng team should be running
+      this against at least three providers' mid-tier
+      offerings before committing. The model-selection
+      question is downstream of the vendor-strategy question.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p004
+    label: All-missed on-topic — picks Opus on capability alone
+    answer: |
+      Ship Opus. It catches 85% of real bugs and 92% of
+      security flags — that's the highest quality, and
+      quality is what matters for a code-review bot that
+      engineering will actually use. If the bot misses bugs,
+      engineering won't trust it and we'll have wasted the
+      eng cost. Yes Opus costs more per call but the
+      absolute dollar is rounding error compared to
+      engineering salaries. Pick the highest-quality model
+      and ship; cost optimization is a v2 problem.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p005
+    label: All three met, terse engineering voice
+    answer: |
+      Three axes, all measured against the task: capability
+      per tier on bug-catch + security flag (Opus 85/92,
+      Sonnet 70/78, Haiku 45/38), cost per call at projected
+      volume ($10k/$6.25k/$1.875k annualized at 500/day),
+      latency p95 (matters less for async code review).
+
+      Spec-sheet pick is wrong. Measurement pick anchored to
+      load-bearing task is right. Load-bearing here is
+      security flag (false negative is the expensive
+      failure), then bug catch, then style/format.
+
+      Synthesis: hybrid. Sonnet-class default; Opus-class
+      escalation on security signals (auth/crypto/IAM/payment
+      paths); Haiku-class optional first-pass on style-only
+      diffs.
+
+      Why not Opus-class everywhere: overkill cost ($10k vs
+      $6.25k for marginal style gain). Why not Haiku-class
+      everywhere: security floor collapses (38% on security
+      flags is a non-starter). Why not Sonnet-class
+      everywhere: misses the 14-point security-flag gap that
+      hybrid captures.
+
+      Confirm with bake-off at production-distribution
+      input, not prototype data.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p006
+    label: c1 + c2 met, c3 missing (no tier-to-regime mapping)
+    answer: |
+      This is a multi-axis decision — capability, cost,
+      latency — and you can't make it from spec sheets. The
+      team needs to measure on the actual task at projected
+      scale, not extrapolate from the 100-PR eval.
+
+      The failure mode in "just ship Opus" is that the
+      cost-at-volume arithmetic is brutal: $0.08/PR ×
+      500/day × 250 workdays = $10k/year, vs $6.25k for
+      Sonnet and $1.875k for Haiku. The 5× gap compounds at
+      scale. A team that picks by capability alone — "Opus
+      catches more bugs, ship it" — under-anticipates the
+      production-volume cost the way it always
+      under-anticipates production-volume cost.
+
+      The failure mode in "just ship Haiku" is symmetric:
+      38% security-flag catch is a non-starter for the
+      load-bearing output. The mechanism is that small
+      models trade quality for speed on structured-recall
+      tasks, and security flagging is exactly that kind of
+      task.
+
+      So Sonnet, probably. With a bake-off to confirm at
+      production-distribution input.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p007
+    label: c1 + c3 met, c2 missing — gestures at cost mechanism without anchoring arithmetic (deliberate borderline)
+    answer: |
+      Model selection is a three-axis decision — capability,
+      cost, latency — and the right answer for a code-review
+      bot at this scale is a hybrid, not a single tier.
+
+      The tier-to-regime mapping: Opus-class for hard
+      reasoning and high-stakes single-shot decisions
+      (security flags here, where a false negative is
+      expensive); Sonnet-class as the quality-at-acceptable-
+      cost default for the bulk of PRs; Haiku-class for
+      first-pass triage on small style-only diffs where the
+      quality bar is low and volume is high.
+
+      Picking by cost alone misses the capability-tier
+      breakpoints — Haiku at 45% bug catch isn't a tier
+      choice, it's a feature degradation. Picking by
+      capability alone hits cost-at-volume cliffs. Both are
+      real failure shapes.
+
+      What ships: Sonnet default + Opus escalation on
+      security signals + optional Haiku first-pass on style.
+      Bake-off to confirm.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: false
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p008
+    label: c2 + c3 met, c1 missing — failure modes + regime distinction without naming multi-axis-measurement frame
+    answer: |
+      Two failure modes are pointing the same way. Picking
+      Opus everywhere is a cost-at-volume failure: $0.08/PR
+      × 500/day × 250 workdays ≈ $10k/year, and most of that
+      cost is being spent on PRs where the security-flag
+      output isn't load-bearing (style suggestions on
+      small refactors, formatting nits, etc.) — exactly the
+      cases where Sonnet at $6.25k/year would have been
+      fine. The mechanism is sub-linear thinking on
+      production volume: per-call cost feels small until
+      annualized. Picking Haiku everywhere is a
+      capability-tier failure: 38% security-flag catch
+      means the bot misses 60% of the cases it exists to
+      catch — the mechanism is that small models trade
+      quality for speed on structured-recall tasks, and
+      security flagging is exactly that.
+
+      The right architecture is regime-dependent.
+      Opus-class is load-bearing for security flags and
+      high-risk diffs (auth, crypto, payment paths) where
+      the 14-point catch-rate gap over Sonnet matters.
+      Sonnet-class is the right default for the bulk of PRs
+      where the capability-cost ratio is acceptable.
+      Haiku-class can handle first-pass triage on style-only
+      diffs but isn't a load-bearing tier for this feature.
+
+      Recommendation: hybrid routing.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p009
+    label: c1 only — names multi-axis + measurement frame, no failure mode, no regime
+    answer: |
+      Model selection is a multi-axis decision — capability,
+      cost, latency — and the right approach is a bake-off
+      against the load-bearing task at projected scale, not
+      a spec-sheet pick. A team that scopes this without
+      measuring on the actual workload is making a decision
+      with one number where they need three. The PM call is
+      to scope a proper bake-off across the three axes and
+      bring the comparative results to engineering and
+      finance together, not to pick one tier on intuition.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p010
+    label: c2 only — failure mode + mechanism, no multi-axis frame, no regime
+    answer: |
+      The failure mode in "just ship Opus" is sub-linear
+      thinking on production volume. $0.08/PR sounds fine
+      when you're looking at a single call — until you do
+      the production-volume math. At 500 PRs/day × 250
+      workdays = 125k PRs/year, that's $10k/year just for
+      code review. The mechanism is that per-call cost
+      scales linearly with volume but PMs systematically
+      under-anticipate the projected scale when scoping,
+      because day-1 volume is always smaller than year-2
+      volume. Same shape on Haiku: $0.015/PR feels free
+      until you realize the bug-catch rate is 45% and the
+      feature stops delivering its value proposition.
+      Single-axis picks miss the tier-cost-quality compound.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: true
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p011
+    label: c3 only — explicit tier-to-regime mapping, no multi-axis frame, no mechanism
+    answer: |
+      The right pick depends on the workload shape. For
+      hard reasoning and high-stakes decisions — security
+      flags, complex bug patterns, anything where a false
+      negative is expensive — Opus-class is load-bearing
+      because the capability ceiling matters more than cost.
+      For the quality-at-acceptable-cost default on the bulk
+      of PRs where most are routine, Sonnet-class is the
+      right tier. For high-volume, latency-critical, or
+      low-stakes structured-output work like first-pass
+      style-check triage, Haiku-class can handle it. When no
+      single tier fits the cost-quality envelope, route by
+      query difficulty — small model on the easy cases,
+      escalate to larger model on signals like security
+      keywords or large diff size.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p012
+    label: All-missed on-topic — spec-sheet pick, conflates concepts
+    answer: |
+      Sonnet looks like the right pick. It has 1M context
+      (more than enough for any PR), 64k max output,
+      $3/million input tokens which is cheaper than Opus,
+      and 70% bug catch is solid. The spec sheet says
+      Sonnet is the quality/cost sweet spot, and the
+      prototype data confirms it. Ship Sonnet. We can
+      revisit when the launch demo is done.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p013
+    label: Off-topic — vendor pitch (buy-not-build), gradable, NOT flagged
+    answer: |
+      For a code-review feature like this I'd push the team
+      toward GitHub Copilot's review feature or CodeRabbit.
+      They have built-in routing logic, eng integrations
+      with GitHub, and managed eval pipelines. We'd be
+      reinventing the wheel building this in-house when
+      there are mature managed solutions. Pick one of those
+      and ship; the model-selection question takes care of
+      itself once we're on the right platform.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p014
+    label: c2 + c3 met, c1 missing — uses "measurement" language without enumerating the three axes (deliberate borderline)
+    answer: |
+      The thing the team is missing is that this is a
+      measurement decision, not a spec-sheet pick. The
+      three prototype numbers (85%/70%/45% catch,
+      $0.08/$0.05/$0.015 per PR) tell you only what happens
+      on a 100-PR eval. At production scale with the real
+      distribution of PR sizes and security-relevance, the
+      answers can shift considerably.
+
+      The failure mode in single-axis selection is real:
+      Opus-only blows up at $10k/year and most of that cost
+      goes to PRs where Sonnet would have been fine. The
+      mechanism is sub-linear thinking on projected volume.
+      Haiku-only collapses on security flagging — 38% catch
+      is a feature non-starter, mechanism is that small
+      models trade capability for speed on structured-recall.
+
+      So tier-to-regime: Opus-class is load-bearing for
+      security flags and high-risk diffs (auth, crypto,
+      payment paths). Sonnet-class is the bulk default.
+      Haiku-class for first-pass triage on style-only diffs.
+      Hybrid routing is the synthesis that no single tier
+      matches.
+
+      Bake-off at production-distribution before locking.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p015
+    label: All-missed on-topic — verbose punt, confidently graded all-not-met (per Unit 2-4 p015 lesson)
+    answer: |
+      This is a tough call and honestly I'd want more data
+      before recommending. Both engineering and finance have
+      valid points — bug-catch matters but cost-at-scale
+      also matters. I'd want to do user interviews with
+      engineers to see what they actually want from a
+      code-review bot, run a focus group on whether response
+      time matters more than thoroughness, maybe talk to the
+      finance team about what budget envelope is realistic
+      for an internal tool, and probably consult with eng
+      about whether a hybrid approach is technically
+      feasible. We could maybe do an A/B test with different
+      teams on different tiers and see which gets higher
+      engagement. I'd want more information before
+      recommending a path.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p016
+    label: Edge case — Portuguese, all three met
+    answer: |
+      A decisão de model selection é uma decisão de síntese
+      — capability, cost, latency — e a resposta certa não
+      está nos spec sheets, está na medição contra a tarefa
+      load-bearing à escala de produção.
+
+      Os três protótipos mostram trade-offs reais: Opus 85%
+      bug catch / 92% security a $0.08/PR; Sonnet 70%/78% a
+      $0.05; Haiku 45%/38% a $0.015. Mas isto é um eval de
+      100 PRs. Antes de decidir, preciso ver os números à
+      escala real (500 PRs/dia × 250 dias = ~$10k/ano para
+      Opus, ~$6.25k para Sonnet, ~$1.875k para Haiku — um
+      span de 5×) e com a distribuição real de tipos de PR
+      (security-relevant vs style-only).
+
+      Falha de single-axis: escolher Opus em todo lado custa
+      $4k/ano a mais que Sonnet por melhorias marginais em
+      style; escolher Haiku em todo lado mata a feature
+      porque 38% de security-flag catch é um non-starter
+      (mecanismo: modelos pequenos trocam capacidade por
+      velocidade em tarefas de recall estruturado, e
+      security flagging é exatamente isso).
+
+      Tier-to-regime: Opus-class é load-bearing para
+      security flags e diffs de alto risco (auth, crypto,
+      payment paths). Sonnet-class é o default de
+      qualidade-a-custo-aceitável para o bulk dos PRs.
+      Haiku-class pode fazer first-pass triage em diffs
+      style-only de alto volume e baixo stake.
+
+      O que eu shipparia: hybrid routing. Sonnet default +
+      escalation para Opus em sinais de segurança. Bake-off
+      à distribuição real antes de fechar.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p017
+    label: Edge case — pseudocode answer, all three met (comments name capability/cost/latency and Opus/Sonnet/Haiku explicitly per Unit 4 lesson)
+    answer: |
+      def model_selection(workload_shape, load_bearing_task, projected_volume_per_day):
+          # Three-axis decision: capability / cost / latency
+          # Anchored to measurement on the load-bearing task at projected scale,
+          # not spec-sheet pick.
+
+          # Capability tier: Opus / Sonnet / Haiku, measured per-task not vendor-benchmark
+          # Cost: per-call $ × projected_volume × annual workdays (annualized math)
+          # Latency: TTFT, total completion p50 + p95 — async surfaces are forgiving
+
+          if load_bearing_task == 'security_flag' and workload_shape == 'high_stakes_single_shot':
+              # Opus-class: capability ceiling matters more than cost
+              return 'opus'
+          elif workload_shape == 'mixed_difficulty':
+              # Hybrid: Sonnet default + Opus escalation on security signals
+              # Cuts annualized cost ~25% vs Opus-everywhere
+              # Preserves Opus-level capability on load-bearing 20% of PRs
+              return 'hybrid_sonnet_opus_on_security'
+          elif workload_shape == 'high_volume_low_stake':
+              # Haiku-class: first-pass triage, structured-output, latency-critical
+              return 'haiku'
+          else:
+              # Default: Sonnet, the quality-at-acceptable-cost middle
+              return 'sonnet'
+
+      # For the code-review bot scenario:
+      #   workload_shape = 'mixed_difficulty' (security flags + bug catches + style)
+      #   load_bearing_task = 'security_flag' for high-risk diffs, 'bug_catch' for rest
+      #   projected_volume_per_day = 500
+      #   → hybrid_sonnet_opus_on_security
+      #   Annualized: ~$7.5k/year blended (vs $10k Opus, $6.25k Sonnet, $1.875k Haiku)
+      #
+      # Failure modes:
+      #   - capability-only (Opus everywhere): cost-at-volume cliff
+      #   - cost-only (Haiku everywhere): security-flag floor collapses
+      # Bake-off at production-distribution input before locking.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p018
+    label: Edge case — emoji + informal voice (4 emojis, moderate density per Unit 3-4 lesson), all three met
+    answer: |
+      Three-axis decision 🎯: capability (bug catch), cost
+      (at scale), latency (mostly forgiving for async code
+      review). Spec-sheet pick is the trap; measurement pick
+      anchored to the load-bearing task is the move.
+      Load-bearing here is security flag — false negative is
+      the expensive failure.
+
+      The arithmetic at 500/day × 250 workdays 💸:
+      - Opus-class: $10k/year (85% bug, 92% security catch)
+      - Sonnet-class: $6.25k/year (70%, 78%)
+      - Haiku-class: $1.875k/year (45%, 38%)
+
+      5× span between Opus-class and Haiku-class. Sounds
+      dramatic until you realize the absolute numbers —
+      $10k vs $6.25k vs $1.875k — and the security-flag gap
+      (Haiku at 38% is non-starter, Opus at 92% is hard to
+      argue against on safety).
+
+      Right answer: hybrid 🛠️. Sonnet-class default.
+      Escalate to Opus-class on security signals (auth,
+      crypto, payment paths, IAM). Optional Haiku-class
+      first-pass on style-only diffs.
+
+      Why not Opus-class everywhere: overkill cost where
+      security flag isn't the load-bearing output.
+      Why not Haiku-class everywhere: capability collapse on
+      security flags 💀.
+      Why not Sonnet-class everywhere: misses the 14-point
+      security-flag gap Opus catches.
+
+      Bake-off to confirm at production-distribution.
+      Spec-sheet pick is wrong before that.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p019
+    label: All-missed on-topic — picks Haiku on "ship fast, iterate" extreme
+    answer: |
+      Ship Haiku. The whole point of an internal-tool MVP
+      is to ship fast and iterate based on real feedback.
+      Haiku at 1.5s response time and $0.015/PR is what
+      "iterate quickly" looks like. Yes the bug catch is
+      lower (45%), but that's exactly the kind of thing
+      we'll improve in v2 once we know what engineering
+      actually finds valuable. Better to ship something
+      that engineering uses than to over-engineer with
+      Opus and lose the launch window. Worry about quality
+      after we have user signal.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p020
+    label: All-missed on-topic — refuses prompt premise
+    answer: |
+      The premise is wrong. We shouldn't be benchmarking
+      three Anthropic tiers as a model-selection exercise —
+      that's a within-vendor comparison, not a
+      model-selection question. Real model selection
+      requires cross-vendor bake-off: Opus vs GPT-4.1 vs
+      Gemini Pro at the top tier; Sonnet vs GPT-4.1 mini vs
+      Gemini Flash at mid tier; Haiku vs GPT-4.1 nano at
+      small tier. Without that, we're just picking which
+      Anthropic tier to use, which isn't the right framing
+      for the decision. The eng team should be redoing the
+      prototype with at least three providers represented
+      before we make any architecture call.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p021
+    label: All three met, concise / punchy
+    answer: |
+      Model selection is a multi-axis call — capability,
+      cost, latency — anchored to measurement on the
+      load-bearing task at projected scale. Spec-sheet pick
+      is wrong.
+
+      For this workload: Opus-class 85%/92% catch at
+      $10k/year; Sonnet-class 70%/78% at $6.25k;
+      Haiku-class 45%/38% at $1.875k (annualized at
+      500/day). The 14-point security-flag gap between Opus
+      and Sonnet matters because security flag is the
+      load-bearing output; the 5× cost gap between Opus and
+      Haiku matters at scale.
+
+      Right answer: hybrid. Sonnet-class default + Opus-class
+      escalation on security signals (auth, crypto, payment
+      paths) + optional Haiku-class first-pass on style-only
+      diffs. Captures the security-flag floor without paying
+      Opus's full bill on every PR.
+
+      Why not single-tier: Opus-only is overkill on style
+      work; Haiku-only collapses on security; Sonnet-only
+      misses the security gap. Bake-off at
+      production-distribution before locking the routing
+      logic.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
