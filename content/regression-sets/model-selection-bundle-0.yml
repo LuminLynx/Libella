@@ -339,13 +339,13 @@ pairs:
     answer: |
       Two failure modes are pointing the same way. Picking
       Opus everywhere is a cost-at-volume failure: $0.08/PR
-      × 500/day × 250 workdays ≈ $10k/year, where the
-      marginal $4k/year over Sonnet only buys you better
-      style suggestions (Opus and Sonnet are roughly
-      equivalent on the load-bearing security flag, when
-      you weight by the actual security-flag-relevant PR
-      fraction). The mechanism is sub-linear thinking on
-      production volume — per-call cost feels small until
+      × 500/day × 250 workdays ≈ $10k/year, and most of that
+      cost is being spent on PRs where the security-flag
+      output isn't load-bearing (style suggestions on
+      small refactors, formatting nits, etc.) — exactly the
+      cases where Sonnet at $6.25k/year would have been
+      fine. The mechanism is sub-linear thinking on
+      production volume: per-call cost feels small until
       annualized. Picking Haiku everywhere is a
       capability-tier failure: 38% security-flag catch
       means the bot misses 60% of the cases it exists to
@@ -355,7 +355,8 @@ pairs:
 
       The right architecture is regime-dependent.
       Opus-class is load-bearing for security flags and
-      high-risk diffs (auth, crypto, payment paths).
+      high-risk diffs (auth, crypto, payment paths) where
+      the 14-point catch-rate gap over Sonnet matters.
       Sonnet-class is the right default for the bulk of PRs
       where the capability-cost ratio is acceptable.
       Haiku-class can handle first-pass triage on style-only
