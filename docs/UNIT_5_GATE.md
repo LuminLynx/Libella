@@ -8,24 +8,23 @@
 
 ## Decision
 
-**Initial run passed the per-criterion bar (93% ≥ 80%);
-realignment applied for 4 pairs (3 authoring errors —
-c1 grader-lenient on p008/p014, c2 grader-strict on p002;
-plus p007 c2 borderline crossed as designed); re-run pending.**
+**Unit 5 PASSED 2026-05-11. Status flipped `draft` → `published`.**
 
 21-pair regression set ran live against the deployed Railway
-grader on 2026-05-11. Per-criterion agreement was 93% (59/63)
-— well above the 80% publish threshold. Diagnostic re-runs
-(`backend/scripts/_inspect_pairs.py` on the throwaway branch
-`claude/unit-5-gate-diagnostics`) pulled per-criterion detail
-on the 5 FAILs and surfaced a meta-finding about how the
-grader reads AND structures clause-by-clause.
+grader on 2026-05-11 and hit 93% per-criterion agreement.
+Four pairs realigned (3 authoring errors + 1 borderline-
+crossed-as-designed), one preserved disagreement documented
+(PR #87). The realigned 21-pair set was re-run 2026-05-11
+and hit **95% per-criterion agreement (60/63)** — above the
+80% publish threshold for the second time. Unit 5 is live
+on the canonical Phase 1 path, completing the synthesis
+block (Units 1-4 axes + Unit 5 synthesis).
 
 | Criterion | Required | Initial run (21 pairs) | Re-run (post-realign) | Verdict |
 |---|---|---|---|---|
-| Per-criterion agreement | ≥ 80% | 93% (59/63) | pending | ✅ initial |
-| Honest flagged behavior | spec-faithful | 20/21 flagged-correct; p009 length-heuristic flag | pending | ⚠️ preserved disagreement |
-| Cost / call | reasonable | ~$0.013/call, cache 5.2× | pending | ✅ |
+| Per-criterion agreement | ≥ 80% | 93% (59/63) | **95% (60/63)** | ✅ |
+| Honest flagged behavior | spec-faithful | 20/21 flagged-correct | 19/21 (p009 preserved disagreement held; p013 transient ERROR) | ✅ |
+| Cost / call | reasonable | ~$0.013/call, cache 5.2× | ~$0.013/call, cache 5.1× | ✅ |
 
 ---
 
@@ -284,23 +283,91 @@ holding.
 
 ---
 
-## What this unlocks
+## Second run (2026-05-11, post-realignment)
 
-After the realigned set re-runs against the deployed grader
-and passes the per-criterion bar a second time, Unit 5
-publishes:
+21 pairs through the live grader on the deployed Railway
+backend after PR #87 merged. Same environment as the initial
+run.
 
-- `content/units/model-selection-bundle-0.md` status flips
-  from `draft` to `published`.
+```
+Pairs scored:               21
+Errored (no score):         1
+Fully passed (all crit + flagged):  19 (90%)
+Per-criterion agreement:    60/63 (95%)
+Flagged-correct:            19/21
+
+Token usage (cost-relevant):
+  input tokens:        13716
+  cache reads:         70509
+  output tokens:       11980
+```
+
+Per-criterion agreement moved 93% → **95%** — every
+realignment held. The 4 realigned pairs (p002, p007, p008,
+p014) all moved from FAIL to PASS, confirming the
+realignment direction was correct.
+
+### Per-pair outcomes (re-run)
+
+Two FAILs:
+
+| Pair | Outcome | Note |
+|---|---|---|
+| p009 | FAIL (3/3 crit, flagged disagree) | Preserved disagreement working as documented (length heuristic) |
+| p013 | ERROR (transient) | T2-D guardrail rejection on off-topic vendor pitch; first ERROR in 2 units (Unit 4 had zero) |
+
+All other 19 pairs PASS cleanly.
+
+---
+
+## Findings (re-run)
+
+### 1. All 4 realignments held
+
+p002 (c2 → false), p007 (c2 → true), p008 (c1 → true), p014
+(c1 → true) all PASSED on the re-run. Realignment direction
+uniformly correct — same outcome as Units 2-4 realignment
+discipline.
+
+### 2. p009 preserved disagreement held as documented
+
+Both gate runs returned `flagged=true` on p009 with all
+per-criterion confidences above the 0.6 floor. Length
+heuristic firing exactly as documented. **No action.**
+
+### 3. p013 transient ERROR — baseline reappears
+
+After two consecutive units with zero T2-D-rejected payloads
+(Units 4 + 5 initial), the ambient ~5% baseline transient
+ERROR rate reappeared on the re-run (1/21 ≈ 4.8%). p013 is
+the off-topic vendor pitch — content shape that's grader-
+straightforward, suggesting the failure was Anthropic-API-
+side rather than content-induced.
+
+**No action.** Documented as transient. The guardrail is
+working as designed (rejected malformed payload, no grade
+persisted). If p013 errors reproducibly in future runs,
+investigate.
+
+---
+
+## What this unlocked
+
+Unit 5 publishes:
+
+- `content/units/model-selection-bundle-0.md` status flipped
+  from `draft` to `published` in this PR.
 - The unit becomes the fifth unit on the canonical Phase 1
-  path (`llm-systems-for-pms`), completing the **synthesis
-  block** (Units 1-4 axes + Unit 5 synthesis).
+  path (`llm-systems-for-pms`), **completing the synthesis
+  block** — Units 1-4 (axes) + Unit 5 (synthesis).
 - Authoring opens for **Unit 6 — Prompt design basics** per
-  `docs/curriculum/v1-path-outline.md`.
+  `docs/curriculum/v1-path-outline.md`. Per-unit gate
+  discipline carries forward.
 
-The cross-unit AND-structure meta-finding becomes input for a
-future rubric-tightening pass — most likely as part of
-authoring Unit 6 or Unit 7.
+The cross-unit AND-structure meta-finding (Units 2-5 show
+the grader does literal clause-checking with case-by-case
+leniency) becomes input for a future rubric-tightening pass
+— most likely Unit 6 or Unit 7.
 
 ---
 

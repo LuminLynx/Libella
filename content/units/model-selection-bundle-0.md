@@ -8,7 +8,7 @@ prereq_unit_ids:
   - context-window-bundle-0
   - latency-bundle-0
   - evals-bundle-0
-status: draft
+status: published
 definition: Model selection is the synthesis decision — picking which model class to ship a feature on by weighing capability tier against cost and latency, anchored to performance on the load-bearing task as measured by your eval discipline, not by the vendor spec sheet.
 calibration_tags:
   - claim: "Frontier providers publish three or four capability tiers, and the per-tier ordering (top crushes reasoning, mid is quality-at-acceptable-cost default, small handles high-volume / structured) is roughly stable across providers."
