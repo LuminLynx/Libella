@@ -4,7 +4,7 @@ slug: tokenization
 path_id: llm-systems-for-pms
 position: 1
 prereq_unit_ids: []
-status: draft
+status: published
 definition: Tokenization is the step that splits raw text into the discrete units (tokens) a language model actually reads, generates, and bills on.
 calibration_tags:
   - claim: "Models bill and meter context windows in tokens, not characters or words."
