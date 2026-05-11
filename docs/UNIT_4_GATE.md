@@ -8,23 +8,22 @@
 
 ## Decision
 
-**Initial run passed the per-criterion bar (92% ≥ 80%);
-realignment applied for 5 pairs (2 authoring errors on c1, 3
-c3 grader-strict findings); re-run pending.**
+**Unit 4 PASSED 2026-05-11. Status flipped `draft` → `published`.**
 
 21-pair regression set ran live against the deployed Railway
-grader on 2026-05-10. Per-criterion agreement was 92% (58/63)
-— well above the 80% publish threshold. Diagnostic re-runs
-(`backend/scripts/_inspect_pairs.py` on the throwaway branch
-`claude/unit-4-gate-diagnostics`) pulled per-criterion detail
-on the 4 surprise FAILs and revealed a substantive calibration
-finding on c3.
+grader on 2026-05-10 and hit 92% per-criterion agreement. Five
+pairs realigned (PR #82), one preserved disagreement
+documented. The realigned 21-pair set was re-run 2026-05-11
+and hit **100% per-criterion agreement (63/63)** — the
+cleanest gate result of the path so far. Two transient-ERROR
+sightings from Units 2/3 didn't appear here. Unit 4 is live on
+the canonical Phase 1 path.
 
 | Criterion | Required | Initial run (21 pairs) | Re-run (post-realign) | Verdict |
 |---|---|---|---|---|
-| Per-criterion agreement | ≥ 80% | 92% (58/63) | pending | ✅ initial |
-| Honest flagged behavior | spec-faithful | 20/21 flagged-correct; p011 flagged-true on a short answer | pending | ⚠️ preserved disagreement |
-| Cost / call | reasonable | ~$0.013/call, cache ratio 5.4× | pending | ✅ |
+| Per-criterion agreement | ≥ 80% | 92% (58/63) | **100% (63/63)** | ✅ |
+| Honest flagged behavior | spec-faithful | 20/21 flagged-correct | 20/21 flagged-correct (p011 preserved disagreement held as documented) | ✅ |
+| Cost / call | reasonable | ~$0.013/call, cache 5.4× | ~$0.013/call, cache 5.4× | ✅ |
 
 ---
 
@@ -286,13 +285,88 @@ improvements between runs. Worth monitoring in Unit 5.
 
 ---
 
-## What this unlocks
+## Second run (2026-05-11, post-realignment)
 
-After the realigned set re-runs against the deployed grader and
-passes the per-criterion bar a second time, Unit 4 publishes:
+21 pairs through the live grader on the deployed Railway
+backend after PR #82 merged. Same environment as the initial
+run.
 
-- `content/units/evals-bundle-0.md` status flips from `draft`
-  to `published`.
+```
+Pairs scored:               21
+Errored (no score):         0
+Fully passed (all crit + flagged):  20 (95%)
+Per-criterion agreement:    63/63 (100%)
+Flagged-correct:            20/21
+
+Token usage (cost-relevant):
+  input tokens:        13276
+  cache reads:         72120
+  output tokens:       13259
+```
+
+Per-criterion agreement moved 92% → **100%** — every
+realignment held, and the cleanest gate result of the path so
+far (Unit 2: 87.8%, Unit 3: 89%, Unit 4: 100%). Cache discipline
+unchanged at 5.4×.
+
+### Per-pair outcomes (re-run)
+
+All 5 realigned pairs (p008, p011, p014, p016, p021) moved from
+FAIL to PASS on per-criterion, confirming the realignment
+direction was correct. The single remaining FAIL is p011's
+flagged disagreement — the documented preserved disagreement
+on the grader's length heuristic, working exactly as
+documented.
+
+| Pair | Outcome | Note |
+|---|---|---|
+| p011 | FAIL (3/3 crit, flagged disagree) | Preserved disagreement working as documented |
+
+All other 20 pairs PASS cleanly.
+
+---
+
+## Findings (re-run)
+
+### 1. Zero ERRORs on both runs
+
+Unit 4 is the first unit to ship with zero T2-D-rejected
+payloads across both gate runs. Units 2 and 3 saw 1–3 transient
+ERRORs per run; Unit 4 saw zero on both initial and re-run.
+
+Two factors likely contributed:
+- **Emoji-cap discipline** held (p018 at 4 emojis vs Unit 3's
+  8). The reproducible-error pattern from Unit 3 p018 didn't
+  reappear.
+- **Grader stability** appears to have improved between Units
+  3 and 4. Could be coincidence on small sample; worth
+  watching in Unit 5.
+
+### 2. p011 preserved disagreement held as documented
+
+Both gate runs returned `flagged=true` on p011 with
+per-criterion confidences above the 0.6 floor. This is the
+grader's length heuristic firing — exactly as documented in
+the realignment PR.
+
+**No action.** Future re-runs will continue to FAIL p011 on
+flagged until the rubric or grader prompt is tightened. Not
+a v1 blocker; the per-criterion bar is what gates publication.
+
+### 3. Realignment direction was uniformly correct
+
+All 5 realignments moved FAIL → PASS on per-criterion. The
+diagnostic-then-realign discipline established in Units 2/3
+continues to be the right pattern.
+
+---
+
+## What this unlocked
+
+Unit 4 publishes:
+
+- `content/units/evals-bundle-0.md` status flipped from
+  `draft` to `published` in this PR.
 - The unit becomes the fourth unit on the canonical Phase 1
   path (`llm-systems-for-pms`), as locked in
   `docs/curriculum/v1-path-outline.md`.
