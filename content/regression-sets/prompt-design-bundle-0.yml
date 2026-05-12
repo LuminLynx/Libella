@@ -53,20 +53,37 @@
 #      part + 3-5 boundary examples) rather than picking
 #      one extreme."
 #
-# Authoring distribution (21 pairs, 7/4/3/5/2/0):
+# Authoring distribution (21 pairs, 7/3/4/5/2/0; corrected
+# pre-gate per reviewer flag on p014 — see header note):
 #   * 7 pairs all-three-met (varied voices)
 #       p001, p002, p005, p016 (pt), p017 (pseudocode),
 #       p018 (emoji moderate), p021 (concise)
-#   * 4 pairs partial credit (2 of 3, incl. 2 borderlines)
+#   * 3 pairs partial credit (2 of 3, incl. 1 borderline)
 #       p006 (c1+c2), p007 (c1+c3, c2 borderline),
-#       p008 (c2+c3), p014 (c2+c3, c1 borderline)
-#   * 3 pairs single-criterion-met
-#       p009 (c1), p010 (c2), p011 (c3)
+#       p008 (c2+c3)
+#   * 4 pairs single-criterion-met
+#       p009 (c1), p010 (c2), p011 (c3),
+#       p014 (c2; c1 deliberate borderline; c3 false
+#       because regime paragraph covers only one axis)
 #   * 5 pairs all-missed but on-topic
 #       p004, p012, p015, p019, p020
 #   * 2 pairs off-topic, all-missed, gradable (NOT flagged)
 #       p003, p013
 #   * 0 pairs flagged-expected (skip per Units 2-4)
+#
+# Pre-gate correction (2026-05-11): p014 was originally
+# classified c2+c3 met / c1 missing, with intent "c1
+# borderline — uses contract language with only one axis
+# enumerated." Reviewer correctly flagged that c3 in this
+# unit's rubric requires regime mapping across both axes
+# (system-vs-user AND instructions-vs-examples), but
+# p014's regime paragraph covers only the instructions-vs-
+# examples axis — the same omission that makes c1
+# borderline. So c3 is also false, not true. Corrected to
+# c2-only single-criterion. The c1 borderline test stays
+# in place; c3 is now correctly absent. YAML inconsistency
+# would have scored a correctly-strict grader as wrong on
+# c3.
 
 unit_id: prompt-design-bundle-0
 
@@ -488,7 +505,7 @@ pairs:
       flagged: false
 
   - id: p014
-    label: c2 + c3 met, c1 missing — uses "behavior contract" language and one axis only (instructions vs examples), doesn't enumerate system-vs-user (deliberate borderline)
+    label: c2 only — failure modes with mechanism but only one axis enumerated (instructions-vs-examples) and only one axis of regime mapping (corrected pre-gate per reviewer flag — answer's regime paragraph covers only instructions-vs-examples, omits system-vs-user; both c1 and c3 require both axes, so c3 also fails alongside c1)
     answer: |
       The team is treating this as a writing-quality
       problem when it's really a behavior contract
@@ -522,7 +539,7 @@ pairs:
         - position: 2
           met: true
         - position: 3
-          met: true
+          met: false
       flagged: false
 
   - id: p015
