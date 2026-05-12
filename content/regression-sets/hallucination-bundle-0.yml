@@ -1,0 +1,837 @@
+# Regression set for the Hallucination + reliability unit
+# (hallucination-bundle-0).
+#
+# First "failure-mode" unit in the path's productization
+# block (after Unit 6's "specification" unit). Standard
+# under STRATEGY.md § T2 — minimum 10 pairs; this set
+# ships at 21.
+#
+# Authoring discipline carries forward Units 4-6 lessons:
+#
+#   1. Two deliberate borderlines (p007 c2, p014 c1).
+#      p014 c1 borderline tightened per Unit 6 lesson —
+#      tests two-axis-with-framing-missing-third-axis to
+#      see if that's stricter than single-axis-with-
+#      framing.
+#   2. Skip flagged-expected pairs (4 consecutive units
+#      of skipped flagged-expected after Units 2-4 design
+#      failures).
+#   3. Partial pairs avoid concrete arithmetic that
+#      implicitly enumerates axes (Unit 5/6 lesson).
+#   4. p017 pseudocode comments name "detection /
+#      mitigation / containment" explicitly.
+#   5. p018 emoji density capped at 4 (Unit 3 lesson);
+#      also avoids the structural-complexity shape that
+#      reproducibly errored on Unit 6 p018 (no embedded
+#      percentages with slashes, no markdown-heavy code-
+#      adjacent content).
+#   6. Pre-author check: all-met pairs literally name all
+#      three axes (detection, mitigation, containment) by
+#      name (Unit 4/5/6 authoring-error lesson).
+#   7. Numbers consistent across pairs that do arithmetic
+#      (4% audit rate, 500/day, 8000-employee target,
+#      ~50 errors/day at full launch).
+#
+# Position-to-criterion mapping (from
+# content/units/hallucination-bundle-0.md slot 8 rubric):
+#
+#   1. "Names hallucination as a structural base-rate
+#      problem (not a bug to be eliminated) AND treats
+#      reliability as a multi-axis design discipline
+#      (detection vs mitigation vs containment) anchored
+#      to the feature's actual cost-of-failure — not as
+#      a 'improve the model' exercise."
+#   2. "Identifies a concrete failure mode of single-
+#      axis hallucination management AND explains the
+#      mechanism — e.g., mitigation-only collapses at
+#      scale because a 'small' rate compounds with
+#      volume; detection-only without mitigation is just
+#      measuring the bleed; containment-only without
+#      detection means failures go uncounted."
+#   3. "Distinguishes which approach is load-bearing in
+#      which regime — detection load-bearing when
+#      scaling exposure; mitigation load-bearing when
+#      the rate itself is the problem; containment
+#      load-bearing when the cost of an individual
+#      hallucination is high; and recognizes that
+#      high-stakes features require all three layered."
+#
+# Authoring distribution (21 pairs, 7/4/3/5/2/0):
+#   * 7 pairs all-three-met (varied voices)
+#       p001, p002, p005, p016 (pt), p017 (pseudocode),
+#       p018 (emoji moderate), p021 (concise)
+#   * 4 pairs partial credit (2 of 3, incl. 2 borderlines)
+#       p006 (c1+c2), p007 (c1+c3, c2 borderline),
+#       p008 (c2+c3), p014 (c2+c3, c1 borderline)
+#   * 3 pairs single-criterion-met
+#       p009 (c1), p010 (c2), p011 (c3)
+#   * 5 pairs all-missed but on-topic
+#       p004, p012, p015, p019, p020
+#   * 2 pairs off-topic, all-missed, gradable (NOT flagged)
+#       p003, p013
+#   * 0 pairs flagged-expected (skip per Units 2-4)
+
+unit_id: hallucination-bundle-0
+
+description: |
+  Phase 3 / Unit 7 standard gate set. Authored 2026-05-12
+  against the locked T2-B reading. 21 pairs against the
+  AND-structured rubric. Two deliberate borderlines (p007
+  c2, p014 c1 tightened per Unit 6 lesson). Zero
+  flagged-expected pairs. Numbers consistent with scenario
+  (4% audit rate, 500/day current, 8000 employees target,
+  ~50 errors/day at full launch). See header for design
+  notes.
+
+pairs:
+  - id: p001
+    label: All three met, balanced detection-mitigation-containment recommendation
+    answer: |
+      Eng is right that 4% audit rate is industry-normal
+      for RAG Q&A. But "industry standard" isn't the
+      right bar — the right bar is the cost-of-one-
+      hallucination on this specific feature, and the
+      expense-policy case shows that bar is real money.
+      Hallucination isn't a bug we can fix to zero; it's
+      a structural base rate we have to design around
+      across three axes — detection, mitigation, and
+      containment — and we're under-investing in at
+      least two.
+
+      Detection: 2/50 audit cases caught means the audit
+      worked, but legal is the only one auditing. At
+      8,000 employees and 500-1000 queries/day each,
+      that's ~5k-10k queries/day total. Even at 0.5%
+      hallucination rate we'd see 25-50 false answers
+      per day, of which 50/50 audit gives us no
+      population-level signal. We need a real audit
+      cadence — 5-10% sampled review, LLM-as-judge on
+      top of that, and a feedback path users can flag.
+
+      Mitigation: RAG is in place but we don't know what
+      the retrieval recall looks like on the load-
+      bearing query shapes. Adding answer-quote
+      validation (the T2-D pattern — model must cite
+      from the source documents, and we validate the
+      quote actually appears) would catch the
+      hallucinated-policy case. Sonnet-class is fine
+      but we should test whether Opus on high-stakes
+      queries (anything touching expense, comp, legal)
+      cuts the rate further.
+
+      Containment: this is the load-bearing gap. The bot
+      currently answers expense-policy questions with the
+      same authority as remote-work questions. For high-
+      stakes categories (anything that translates to a
+      dollar action or a legal commitment) we need
+      refusal paths — "I can't confirm this from current
+      policy; please ask HR" — and we need a confidence-
+      gated UI that visually de-emphasizes low-confidence
+      answers.
+
+      Recommendation: don't ship to 8,000. Pilot to
+      ~1,000 with mitigation + containment changes,
+      measure rate-at-scale, then decide. The cost of
+      one wrongly-paid expense exception is bigger than
+      the cost of a delayed rollout.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p002
+    label: All three met, containment-led framing
+    answer: |
+      The expense-policy case is the load-bearing fact
+      here. CSAT being stable means employees aren't
+      noticing the wrong answers — which is worse than
+      them complaining, because confident-wrong is more
+      dangerous than visibly-wrong. Hallucination isn't
+      eliminable; it's a base rate, and the question is
+      how we contain the damage when it slips through.
+
+      Three axes need work. Detection: the legal audit
+      caught 4% on a small sample — at 8000-employee
+      scale we'll see this 40× more often. Real audit
+      cadence (5-10% sampled, LLM-judge on top of that,
+      a "report this answer" UI path) is needed before
+      we can even talk about acceptable rates.
+      Mitigation: RAG is necessary but not sufficient.
+      Answer-quote validation (require the model to cite
+      from sources, validate the quote actually exists)
+      catches the citation-hallucination shape. Specific
+      to this feature: domain-categorize incoming queries
+      and route high-stakes ones (expense, comp, legal)
+      through stricter retrieval and a larger model
+      tier.
+
+      Containment is where this feature is most exposed.
+      The bot's outputs are taken as policy by employees.
+      We need: refusal paths for queries that don't have
+      clean grounding ("I can't confirm this from current
+      policy"); confidence-gated UI that shows low-
+      confidence answers as needing human verification;
+      blast-radius limits — the bot doesn't directly
+      authorize spend, file expense reports, or take any
+      action; explicit "ask HR/Finance for this kind of
+      question" routing for high-stakes categories.
+
+      Don't ship at 8,000 yet. Hold at current pilot,
+      ship the containment changes, scale to ~1,000 with
+      tightened detection cadence, measure, then decide.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p003
+    label: Off-topic — pivots to data privacy / RBAC, all miss, gradable
+    answer: |
+      The bigger concern is access control. We're letting
+      8,000 employees query a knowledge base that
+      probably contains documents not everyone should
+      see — comp bands, performance review templates,
+      legal docs marked privileged. Before we scale,
+      legal and InfoSec need to confirm the corpus is
+      access-controlled per role, audit who accessed
+      what, and verify that the RAG retrieval respects
+      ACLs. A 4% hallucination rate is a secondary
+      concern compared to "the bot just leaked the
+      comp band table to the entire company because
+      retrieval doesn't filter by role." The
+      reliability question is downstream of confirming
+      the data-access layer.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p004
+    label: All-missed on-topic — "just improve the model"
+    answer: |
+      Ship to 8,000 but tell eng to keep improving the
+      model. 4% hallucination is too high — we should
+      get it under 1% before going broad. Eng should
+      look at fine-tuning Sonnet on our internal docs,
+      or maybe trying Opus, or improving the prompt. The
+      hallucination rate is a model-quality problem and
+      the answer is iteration on the model side. Once
+      eng gets it under 1% we're fine to scale. The
+      legal-audit cases are early-launch noise that will
+      stop happening once the underlying rate comes
+      down.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p005
+    label: All three met, terse engineering voice
+    answer: |
+      Hallucination isn't bug, it's base rate. Three
+      axes — detection, mitigation, containment — and
+      we're thin on at least two.
+
+      Detection: legal audit caught 4% on 50 samples.
+      At 8000 employees × 1 query/day average, 5% rate
+      is 250 false answers/day. We need real audit
+      cadence (5-10% sampled, LLM-judge on top, user-
+      flag path), not legal manually checking.
+
+      Mitigation: RAG present. Add answer-quote
+      validation (T2-D pattern: model cites, we verify
+      quote in source). Route high-stakes queries
+      (expense, comp, legal) through stricter retrieval
+      + Opus tier. Expected rate reduction: not zero,
+      but materially lower on the cases that cost money.
+
+      Containment: weakest layer. Refusal paths for
+      ungrounded queries ("I can't confirm from current
+      policy"). Confidence-gated UI. Blast-radius
+      limits — bot doesn't authorize spend. Explicit
+      "ask HR/Finance" routing for high-stakes
+      categories.
+
+      Cost-of-one analysis: a wrongly-paid expense
+      exception is real money + legal exposure. Cost
+      math favors containment-first design.
+
+      Recommendation: don't scale to 8000. Pilot 1000
+      with mitigation + containment shipped, measure
+      rate at scale, then decide.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p006
+    label: c1 + c2 met, c3 missing (no regime mapping)
+    answer: |
+      The team is treating hallucination as a model-
+      quality problem when it's a structural base-rate
+      property of LLMs. We can't eliminate it — every
+      shipped LLM feature has a non-zero rate. The
+      reliability question is multi-axis: detection,
+      mitigation, containment.
+
+      The failure mode in "just improve the model" is
+      that mitigation-only thinking misses the volume
+      compound: a 4% rate at 50 queries/day audit
+      sample is 2 errors caught. At 8,000 employees ×
+      500 queries/day average = 5,000 queries/day. Same
+      4% rate = 200 false answers/day, or ~50,000/year.
+      The mechanism is that rates don't shrink as you
+      scale; they multiply. A "small" rate is only small
+      until you do the production-volume arithmetic.
+
+      The expense-exception case shows the cost-of-one
+      can be high — a wrongly-paid expense based on a
+      hallucinated policy exception is real money. So
+      reducing the rate matters, but so does what
+      happens to the residual rate.
+
+      We need more than just better mitigation. The
+      detection cadence is wrong, containment doesn't
+      exist as a layer. Some answer beyond "improve the
+      model" is needed before scaling.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p007
+    label: c1 + c3 met, c2 missing — gestures at failure modes without naming the volume-compound mechanism (deliberate borderline)
+    answer: |
+      Hallucination is a base-rate problem; we don't
+      eliminate it, we design around it. Three axes —
+      detection, mitigation, containment — and the
+      right call here depends on the cost-of-one-
+      hallucination.
+
+      Detection is load-bearing when we're scaling
+      exposure — going from 200 to 8000 employees is a
+      40× increase in failure surface that we need to
+      count before it bites. So audit cadence and user-
+      flag paths matter.
+
+      Mitigation matters but isn't sufficient on its
+      own. Mitigation-only ignores what happens when
+      failures slip through, and the rate isn't going to
+      zero.
+
+      Containment is the load-bearing axis for high-
+      stakes features. The expense-policy case is
+      high-stakes — a wrongly-paid exception is real
+      money. So refusal paths for ungrounded queries,
+      confidence-gated UI, blast-radius limits.
+
+      The right architecture has all three layered.
+      Don't ship at 8000 with the current setup. Pilot
+      to 1000 with containment in place, measure, then
+      decide.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: false
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p008
+    label: c2 + c3 met, c1 missing — failure modes + regime mapping without naming three-axis frame or base-rate reframe
+    answer: |
+      Two failure modes are pointing the same way. The
+      mitigation-only path ("just improve the model")
+      collapses at scale because the rate compounds with
+      volume — 4% at 5000 queries/day is 200 false
+      answers daily, ~50,000 a year, and the rate isn't
+      going to zero through model iteration alone. The
+      mechanism is that rates are properties of model +
+      task + prompt, not just model, and grounding does
+      more than tier choice on factual hallucination.
+      The containment-blind path is even worse: a
+      "small" rate of wrongly-paid expense exceptions
+      stacks up to real cost, and the bot answering
+      expense-policy questions with the same authority
+      as remote-work questions is treating high-stakes
+      and low-stakes failures equivalently.
+
+      Regime: for high-stakes queries (expense, comp,
+      legal), containment is load-bearing — refusal
+      paths, confidence-gated UI, explicit routing to
+      HR/Finance, blast-radius limits. For scaling
+      exposure (200 to 8000), detection is load-bearing
+      — real audit cadence, user-flag paths, LLM-judge
+      on sampled traffic. For the rate itself,
+      mitigation is the lever — answer-quote validation,
+      stricter retrieval on high-stakes categories,
+      tier choice.
+
+      Don't ship at 8000 with current setup.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p009
+    label: c1 only — names base-rate reframe + three-axis frame, no failure mode, no regime
+    answer: |
+      Hallucination isn't a bug to fix — it's a
+      structural base-rate property of probabilistic
+      language models, and any feature that ships
+      against the real world has a non-zero rate. The
+      reliability question isn't "how do we eliminate
+      it" but "how do we design around it," which is
+      a multi-axis decision across detection,
+      mitigation, and containment. The PM needs to
+      frame this as a base-rate-management problem
+      anchored to the feature's actual cost-of-failure,
+      not as a model-improvement exercise. That framing
+      is the starting point.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p010
+    label: c2 only — volume-compound failure mode + mechanism, no axis frame, no regime
+    answer: |
+      The "4% is industry standard" framing misses the
+      volume-compound failure mode. A rate that sounds
+      acceptable on a 50-sample audit becomes
+      catastrophic at scale. At 8,000 employees × 500
+      queries/day average = 5,000 daily queries, and 4%
+      of that is 200 false answers per day, ~50,000
+      per year. The mechanism is sub-linear thinking on
+      rates — PMs systematically under-anticipate that
+      a "small" rate doesn't stay small once production
+      volume multiplies it. Same shape as cost-at-volume
+      thinking — annualize the failure count at projected
+      scale, not at current pilot scale, before deciding
+      whether the rate is acceptable.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: true
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p011
+    label: c3 only — regime mapping (detection / mitigation / containment per cost-of-one), no base-rate frame, no mechanism
+    answer: |
+      The right call depends on the cost-of-one-
+      hallucination. For features where individual
+      failures are low-cost (a slightly wrong factual
+      answer in a clearly assistive tool), mitigation
+      is the load-bearing investment — reduce the rate
+      and live with what slips through. For features
+      where individual failures are high-cost (legal
+      liability, financial loss, safety), containment
+      is load-bearing — refusal paths, confidence
+      signaling, blast-radius limits, human-in-the-loop
+      on the boundary. For features where exposure is
+      scaling (more users, more traffic, more domains),
+      detection is load-bearing — you need to count the
+      rate before it bites. High-stakes features need
+      all three layered, not just one.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p012
+    label: All-missed on-topic — RAG-as-silver-bullet
+    answer: |
+      The fix is just to make the RAG better. 4%
+      hallucination means retrieval is missing the
+      right document 4% of the time — improve the
+      retrieval (better embeddings, larger chunks,
+      hybrid sparse-dense, re-ranking) and the
+      hallucination rate drops to near zero. Eng should
+      iterate on the retrieval pipeline for a couple of
+      sprints and we'll be at <1% before launch. Ship
+      to 8,000 once retrieval recall is above 99%. RAG
+      is the standard solution to hallucination and we
+      just need to do it right.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p013
+    label: Off-topic — vendor pitch (Glean / managed Q&A), gradable, NOT flagged
+    answer: |
+      For internal-knowledge-base Q&A I'd push the team
+      toward Glean or one of the managed enterprise-
+      search vendors. They have battle-tested retrieval
+      pipelines, hallucination-mitigation tooling built
+      in, audit and compliance integrations, and they
+      handle access-control across the corpus
+      automatically. We'd be reinventing the wheel
+      rolling this in-house when there are mature
+      managed solutions. Pick one of those and ship; the
+      hallucination question takes care of itself once
+      we're on the right platform.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p014
+    label: c2 + c3 met, c1 missing — uses "base rate" language and names two of three axes (detection + mitigation) but omits containment (deliberate borderline tightened per Unit 6 lesson)
+    answer: |
+      Hallucination is a base-rate problem; we can't
+      drive it to zero. The reliability question is how
+      we measure the rate and how we reduce it.
+
+      The failure mode in "just improve the model" is
+      that the rate compounds with volume — 4% at 5,000
+      queries/day is 200 false answers daily, ~50,000
+      a year. The mechanism is sub-linear thinking on
+      rates: a number that looks acceptable at pilot
+      scale becomes unacceptable at full-launch volume.
+      The failure mode in "we have RAG, we're fine" is
+      that grounding only catches the retrievable cases;
+      the citation-hallucination shape (model invents
+      a source quote) requires answer-quote validation
+      on top of RAG, and most teams skip that.
+
+      Regime: detection is load-bearing when scaling
+      exposure — going from 200 to 8000 employees is
+      a 40× increase in failure surface and we need
+      audit cadence to count it. Mitigation is load-
+      bearing when the rate itself is the unit-
+      economics problem — answer-quote validation, tier
+      choice, stricter retrieval on high-stakes
+      categories.
+
+      Pilot at 1000 with these layers in place, measure,
+      decide.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p015
+    label: All-missed on-topic — verbose punt, confidently graded all-not-met
+    answer: |
+      This is a tough call and I'd want a lot more
+      information before recommending. The 4% audit
+      rate could be high or low depending on what the
+      industry baseline really is, and I'd want to talk
+      to other PMs at similar-stage companies to see
+      what they're seeing. We should probably do user
+      interviews with the 200-employee pilot to see how
+      they're actually using the bot, run a survey on
+      perceived trust, maybe consult with legal and
+      InfoSec about what their bar is for accuracy at
+      scale, and probably do an offsite to align eng
+      and PM on the reliability strategy. We could also
+      maybe A/B test different mitigation strategies
+      to see which ones move the needle most. I'd want
+      more data before making a recommendation.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p016
+    label: Edge case — Portuguese, all three met
+    answer: |
+      A equipa está a tratar hallucination como um bug
+      a corrigir quando é uma propriedade estrutural
+      base-rate dos LLMs. Não eliminamos — gerimos. A
+      pergunta de reliability tem três eixos: detection,
+      mitigation, containment.
+
+      Detection: o audit do legal apanhou 4% em 50
+      casos, mas a 8000 empregados × 500 queries/dia =
+      5000 queries/dia, 4% = 200 respostas falsas
+      diárias. Precisamos de audit cadence a sério —
+      5-10% sampled, LLM-judge por cima, caminho de
+      user-flag — não o legal manualmente.
+
+      Mitigation: RAG está lá mas não chega. Adicionar
+      answer-quote validation (padrão T2-D: modelo
+      cita, validamos que a citação existe na fonte)
+      apanha o caso de hallucinated-policy. Rotear
+      queries de alto risco (expense, comp, legal) por
+      retrieval mais estrito + Opus tier.
+
+      Containment é o eixo onde estamos mais expostos.
+      O caso da expense-policy é alto-risco — um
+      pagamento errado é dinheiro real e exposição
+      legal. Precisamos de: refusal paths para queries
+      sem grounding limpo ("não posso confirmar isto
+      pela política atual"); UI com confidence-gating
+      visual; blast-radius limits — o bot não autoriza
+      gastos diretamente; routing explícito para
+      HR/Finance em categorias de alto risco.
+
+      O custo de uma exceção mal paga é maior do que o
+      custo de um rollout adiado. Não shippamos a 8000.
+      Piloto a 1000 com containment shipped, medimos a
+      taxa em escala, depois decidimos.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p017
+    label: Edge case — pseudocode answer, all three met (comments name detection/mitigation/containment explicitly per Units 4-6 lesson)
+    answer: |
+      def reliability_strategy(cost_of_one_hallucination, scaling_exposure, rate_acceptable):
+          # Three-axis design: detection / mitigation / containment
+          # Hallucination is a base-rate property, not a bug.
+          # Every shipped LLM feature has a non-zero rate.
+
+          axes_needed = []
+
+          # detection: load-bearing when scaling exposure
+          # Tools: ground-truth eval, source-quote validation,
+          # sampled audit (5-10%), LLM-as-judge, user-flag UI
+          if scaling_exposure == 'high':
+              axes_needed.append('detection_strict')
+
+          # mitigation: load-bearing when rate itself is the problem
+          # Tools: RAG grounding, answer-quote validation (T2-D),
+          # instruction tightening, model-tier choice (Unit 5),
+          # output schema constraints
+          if rate_acceptable == 'rate_too_high':
+              axes_needed.append('mitigation_layered')
+
+          # containment: load-bearing when cost-of-one is high
+          # Tools: refusal paths ("I don't know"),
+          # confidence-gated UI, blast-radius limits,
+          # human escalation thresholds
+          if cost_of_one_hallucination == 'high':
+              axes_needed.append('containment_required')
+
+          # High-stakes features need ALL THREE layered
+          if cost_of_one_hallucination == 'high':
+              return ['detection_strict', 'mitigation_layered', 'containment_required']
+
+          return axes_needed
+
+      # For the internal-KB-Q&A scenario:
+      #   cost_of_one_hallucination = 'high' (expense-policy exception = real money)
+      #   scaling_exposure = 'high' (200 → 8000 employees, 40× failure surface)
+      #   rate_acceptable = 'unknown' (4% on 50 samples isn't a population rate)
+      #   → all three axes layered.
+      #
+      # Volume-compound failure mode:
+      #   4% × 5000 queries/day = 200 false answers/day = ~50,000/year
+      #   Sub-linear thinking on rates is the standard PM trap.
+      #
+      # Recommendation: pilot at 1000 with mitigation + containment
+      # changes shipped first, real audit cadence, measure rate at
+      # scale, then decide on 8000 rollout.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p018
+    label: Edge case — emoji + informal voice (4 emojis, moderate density), all three met
+    answer: |
+      Hallucination is a base rate, not a bug 🎯. Three
+      axes — detection, mitigation, containment — and
+      the team is thin on at least two.
+
+      Detection: legal audit caught 2 of 50 cases. At
+      8000 employees that audit-sample stops being
+      representative — need real cadence with sampled
+      review, LLM-judge, and a user-flag UI path 📊.
+
+      Mitigation: RAG is necessary but not sufficient.
+      Answer-quote validation (require model to cite,
+      validate quote exists) catches the citation-
+      hallucination shape. Route high-stakes queries
+      (expense, comp, legal) through stricter retrieval
+      and Opus tier.
+
+      Containment is the weakest layer ⚠️. The expense-
+      policy case shows cost-of-one is real money. Need
+      refusal paths ("can't confirm from current
+      policy"), confidence-gated UI, blast-radius
+      limits (bot doesn't authorize spend), routing to
+      HR/Finance for high-stakes categories.
+
+      Volume math: 4 percent times 5000 queries/day equals 200 false
+      answers/day at full launch. A small rate gets big at scale.
+
+      Pilot at 1000 with containment shipped, measure,
+      decide. Don't ship at 8000 yet 🛠️.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p019
+    label: All-missed on-topic — picks "always refuse if unsure" extreme
+    answer: |
+      The fix is to make the bot refuse anything it's
+      uncertain about. If the model isn't 100%
+      confident, return "I don't know, ask HR." That
+      eliminates hallucination entirely — the bot only
+      answers when it's certain, and otherwise routes
+      to humans. Yes the answer rate drops a lot, but
+      that's the right trade-off: better to be useful
+      50% of the time and never wrong than useful 100%
+      of the time and wrong 4%. Pick the conservative
+      threshold, ship to 8000, let employees ask HR
+      directly when the bot bails.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p020
+    label: All-missed on-topic — refuses prompt premise
+    answer: |
+      The premise is wrong. We shouldn't be building
+      an internal-knowledge-base Q&A bot in the first
+      place — that's a commodity feature, Glean and
+      similar vendors do this better than we will,
+      with access control and audit built in. Building
+      our own RAG stack and then trying to bolt on
+      hallucination mitigation is reinventing the
+      wheel. Push back on the brief: buy, don't build,
+      and the hallucination question takes care of
+      itself once we're on a managed vendor that
+      handles it. The PR/marketing instinct of "AI
+      bot built in-house" isn't worth the eng cost
+      and reliability risk.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p021
+    label: All three met, concise / punchy
+    answer: |
+      Hallucination is a base rate, not a bug. Three
+      axes — detection, mitigation, containment — all
+      needed for high-stakes features. Cost-of-one
+      anchors the call: expense-policy mistake is real
+      money, so containment is load-bearing here.
+
+      Detection: 2/50 audit isn't a population rate.
+      Need real cadence (5-10% sampled, LLM-judge,
+      user-flag UI). Mitigation: RAG present but
+      missing answer-quote validation; add it, plus
+      route high-stakes queries through tighter
+      retrieval. Containment: weakest layer. Refusal
+      paths, confidence-gated UI, blast-radius limits,
+      HR/Finance routing for high-stakes categories.
+
+      Volume math: 4 percent times 5000 queries/day equals 200/day at
+      full launch, ~50k/year. A small rate doesn't
+      stay small.
+
+      Don't ship at 8000. Pilot 1000 with mitigation +
+      containment in place, measure, decide.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
