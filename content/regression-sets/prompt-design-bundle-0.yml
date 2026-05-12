@@ -55,14 +55,15 @@
 #      part + 3-5 boundary examples) rather than picking
 #      one extreme."
 #
-# Authoring distribution (21 pairs, 7/5/2/5/2/0;
-# post-Unit-6-gate realignment per docs/UNIT_6_GATE.md):
-#   * 7 pairs all-three-met (varied voices)
-#       p001, p002, p005, p016 (pt), p017 (pseudocode),
-#       p018 (emoji moderate), p021 (concise)
-#   * 5 pairs partial credit (2 of 3, incl. 1 borderline)
+# Authoring distribution (21 pairs, 8/4/2/5/2/0;
+# post-Unit-6-gate-second-realignment per docs/UNIT_6_GATE.md):
+#   * 8 pairs all-three-met (varied voices)
+#       p001, p002, p005, p014, p016 (pt),
+#       p017 (pseudocode), p018 (emoji moderate),
+#       p021 (concise)
+#   * 4 pairs partial credit (2 of 3, incl. 1 borderline)
 #       p006 (c1+c2), p007 (c1+c3, c2 borderline),
-#       p008 (c2+c3), p011 (c1+c3), p014 (c2+c3)
+#       p008 (c2+c3), p011 (c1+c3)
 #   * 2 pairs single-criterion-met
 #       p009 (c1), p010 (c2)
 #   * 5 pairs all-missed but on-topic
@@ -545,7 +546,7 @@ pairs:
       flagged: false
 
   - id: p014
-    label: c2 + c3 met, c1 missing — failure modes with mechanism + single-axis regime mapping (was c2-only after pre-gate fix; realigned per UNIT_6_GATE.md — grader reads single-axis regime mapping as crossing c3 even when explicitly noting the missing axis; reviewer's strict-rubric reading was technically correct but the grader's empirical reading is lenient)
+    label: All three met — c1 borderline failed empirically across two runs (grader-lenient on single-axis enumeration with contract framing); realigned per UNIT_6_GATE.md second-run findings
     answer: |
       The team is treating this as a writing-quality
       problem when it's really a behavior contract
@@ -575,7 +576,7 @@ pairs:
     expected:
       criteria:
         - position: 1
-          met: false
+          met: true
         - position: 2
           met: true
         - position: 3

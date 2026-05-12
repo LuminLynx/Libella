@@ -5,7 +5,7 @@ path_id: llm-systems-for-pms
 position: 6
 prereq_unit_ids:
   - model-selection-bundle-0
-status: draft
+status: published
 definition: Prompt design is the discipline of specifying behavior to a model — what's locked in the system prompt versus what varies per call, and whether the specification is carried by instructions, examples, or a mix — anchored to the feature's actual specification needs, not to "writing tips."
 calibration_tags:
   - claim: "System prompt is loaded once per session (and benefits from prompt caching); user prompt varies per call. Where each piece of the contract lives is a deliberate design decision."
