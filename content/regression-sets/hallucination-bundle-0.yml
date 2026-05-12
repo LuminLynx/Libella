@@ -99,14 +99,17 @@ pairs:
       least two.
 
       Detection: 2/50 audit cases caught means the audit
-      worked, but legal is the only one auditing. At
-      8,000 employees and 500-1000 queries/day each,
-      that's ~5k-10k queries/day total. Even at 0.5%
-      hallucination rate we'd see 25-50 false answers
-      per day, of which 50/50 audit gives us no
-      population-level signal. We need a real audit
-      cadence — 5-10% sampled review, LLM-as-judge on
-      top of that, and a feedback path users can flag.
+      worked, but legal is the only one auditing.
+      Projecting current usage forward to 8,000 employees
+      (the pilot's ~500 queries/day across 200 employees
+      scales linearly to ~20k/day, or somewhere in the
+      5k-20k range depending on broader-rollout engagement
+      assumptions). Even at 0.5% hallucination rate that's
+      25-100 false answers per day, of which a 50-case
+      legal-team audit gives us no population-level signal.
+      We need a real audit cadence — 5-10% sampled review,
+      LLM-as-judge on top of that, and a feedback path
+      users can flag.
 
       Mitigation: RAG is in place but we don't know what
       the retrieval recall looks like on the load-
@@ -253,8 +256,9 @@ pairs:
       we're thin on at least two.
 
       Detection: legal audit caught 4% on 50 samples.
-      At 8000 employees × 1 query/day average, 5% rate
-      is 250 false answers/day. We need real audit
+      Projecting ~5000 queries/day at full launch (pilot
+      scales roughly linearly with employee count), a 5%
+      rate is 250 false answers/day. We need real audit
       cadence (5-10% sampled, LLM-judge on top, user-
       flag path), not legal manually checking.
 
@@ -302,12 +306,14 @@ pairs:
       The failure mode in "just improve the model" is
       that mitigation-only thinking misses the volume
       compound: a 4% rate at 50 queries/day audit
-      sample is 2 errors caught. At 8,000 employees ×
-      500 queries/day average = 5,000 queries/day. Same
-      4% rate = 200 false answers/day, or ~50,000/year.
-      The mechanism is that rates don't shrink as you
-      scale; they multiply. A "small" rate is only small
-      until you do the production-volume arithmetic.
+      sample is 2 errors caught. Projecting to 8,000
+      employees, ~5,000 queries/day at full launch
+      (scaling the pilot rate by employee count, with
+      some engagement headroom). Same 4% rate = 200
+      false answers/day, or ~50,000/year. The mechanism
+      is that rates don't shrink as you scale; they
+      multiply. A "small" rate is only small until you
+      do the production-volume arithmetic.
 
       The expense-exception case shows the cost-of-one
       can be high — a wrongly-paid expense based on a
@@ -441,10 +447,12 @@ pairs:
       The "4% is industry standard" framing misses the
       volume-compound failure mode. A rate that sounds
       acceptable on a 50-sample audit becomes
-      catastrophic at scale. At 8,000 employees × 500
-      queries/day average = 5,000 daily queries, and 4%
-      of that is 200 false answers per day, ~50,000
-      per year. The mechanism is sub-linear thinking on
+      catastrophic at scale. Projecting to 8,000
+      employees, ~5,000 queries/day at full launch
+      (scaling the pilot's 500-queries-across-200-
+      employees rate by employee count), and 4% of that
+      is 200 false answers per day, ~50,000 per year.
+      The mechanism is sub-linear thinking on
       rates — PMs systematically under-anticipate that
       a "small" rate doesn't stay small once production
       volume multiplies it. Same shape as cost-at-volume
@@ -615,11 +623,13 @@ pairs:
       mitigation, containment.
 
       Detection: o audit do legal apanhou 4% em 50
-      casos, mas a 8000 empregados × 500 queries/dia =
-      5000 queries/dia, 4% = 200 respostas falsas
-      diárias. Precisamos de audit cadence a sério —
-      5-10% sampled, LLM-judge por cima, caminho de
-      user-flag — não o legal manualmente.
+      casos, mas projetando para 8000 empregados temos
+      ~5000 queries/dia em pleno lançamento (a escalar
+      a taxa do piloto pelo número de empregados), e 4%
+      disso são 200 respostas falsas diárias. Precisamos
+      de audit cadence a sério — 5-10% sampled, LLM-
+      judge por cima, caminho de user-flag — não o
+      legal manualmente.
 
       Mitigation: RAG está lá mas não chega. Adicionar
       answer-quote validation (padrão T2-D: modelo
