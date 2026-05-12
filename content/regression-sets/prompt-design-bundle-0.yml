@@ -1,0 +1,774 @@
+# Regression set for the Prompt design basics unit
+# (prompt-design-bundle-0).
+#
+# Prompt design basics is the sixth authored unit, first
+# unit in the "productization" block (post-synthesis). Per
+# v1-path-outline.md, prompt design lives after model
+# selection because prompts are model-specific (XML for
+# Claude, JSON for GPT-4.1, etc.); teaching prompt design
+# before a tier choice is teaching it in the wrong order.
+# Standard under STRATEGY.md § T2 — minimum 10 pairs;
+# this set ships at 21.
+#
+# Authoring discipline carries forward Units 4-5 lessons:
+#
+#   1. Two deliberate borderlines (p007 c2, p014 c1).
+#   2. Skip flagged-expected pairs (3 consecutive failed
+#      designs across Units 2-4; coverage gap accepted).
+#   3. Partial pairs avoid concrete per-axis arithmetic
+#      (Unit 5 lesson — per-axis numbers cross c1 grader-
+#      lenient even without explicit axis enumeration).
+#   4. p017 pseudocode comments name "system prompt / user
+#      prompt / instructions / examples / hybrid"
+#      explicitly (Unit 4/5 pseudocode-vocab lesson).
+#   5. p018 emoji density capped at 4 (Unit 3 lesson).
+#   6. Pre-author check: all-met pairs literally name both
+#      axes by name (Unit 4 p008/p011 + Unit 5 p008/p014
+#      authoring-error lesson).
+#   7. Numbers consistent across pairs that do arithmetic
+#      (78%/88%/85% catch + 8%/3%/4% hallucination from
+#      scenario).
+#
+# Position-to-criterion mapping (from
+# content/units/prompt-design-bundle-0.md slot 8 rubric):
+#
+#   1. "Names prompt design as a multi-axis trade-off
+#      (system-vs-user prompt, instructions-vs-examples)
+#      AND treats it as a behavior-shaping contract
+#      decision anchored to the feature's specification
+#      needs — not as a writing-quality exercise."
+#   2. "Identifies a concrete failure mode of single-axis
+#      prompt design AND explains the mechanism — e.g.,
+#      instruction-only misses edge cases that examples
+#      catch; few-shot-only stales when data distribution
+#      shifts; putting per-query content in the system
+#      prompt couples content updates to deploys."
+#   3. "Distinguishes which approach is load-bearing in
+#      which regime — system prompt for stable behavior
+#      contracts; user prompt for per-call variability;
+#      zero-shot instructions for cleanly-specifiable
+#      rules; few-shot examples for ambiguous-criteria or
+#      edge-heavy tasks; and recognizes that the PM-default
+#      is usually a hybrid (instructions for rule-shaped
+#      part + 3-5 boundary examples) rather than picking
+#      one extreme."
+#
+# Authoring distribution (21 pairs, 7/4/3/5/2/0):
+#   * 7 pairs all-three-met (varied voices)
+#       p001, p002, p005, p016 (pt), p017 (pseudocode),
+#       p018 (emoji moderate), p021 (concise)
+#   * 4 pairs partial credit (2 of 3, incl. 2 borderlines)
+#       p006 (c1+c2), p007 (c1+c3, c2 borderline),
+#       p008 (c2+c3), p014 (c2+c3, c1 borderline)
+#   * 3 pairs single-criterion-met
+#       p009 (c1), p010 (c2), p011 (c3)
+#   * 5 pairs all-missed but on-topic
+#       p004, p012, p015, p019, p020
+#   * 2 pairs off-topic, all-missed, gradable (NOT flagged)
+#       p003, p013
+#   * 0 pairs flagged-expected (skip per Units 2-4)
+
+unit_id: prompt-design-bundle-0
+
+description: |
+  Phase 3 / Unit 6 standard gate set. Authored 2026-05-11
+  against the locked T2-B reading. 21 pairs against the
+  AND-structured rubric. Two deliberate borderlines (p007
+  c2, p014 c1). Zero flagged-expected pairs. Numbers
+  consistent with scenario (78%/88%/85% catch, 8%/3%/4%
+  hallucination). See header for design notes.
+
+pairs:
+  - id: p001
+    label: All three met, balanced hybrid recommendation
+    answer: |
+      The team is treating this as a "pick the best
+      prompt" exercise when it's actually a contract-shape
+      decision. Prompt design has two PM-decision axes here:
+      where the contract lives (system vs user prompt) and
+      how it's expressed (instructions vs examples). The
+      three prototypes are picking different points on the
+      second axis; none of them changes the first.
+
+      System prompt is where the behavior contract belongs:
+      output schema (the JSON shape), role ("extract action
+      items"), rules. That's stable across calls and
+      benefits from prompt caching. User prompt is where
+      the transcript goes — per-call variability. All three
+      prototypes have that right.
+
+      The instructions-vs-examples trade is the real
+      choice. Instructions (A) miss edge cases because the
+      failure mode is ambiguous-criteria tasks: "what
+      counts as an explicit assignee?" has gray-area cases
+      the rules can't fully specify, so the 8% owner-
+      hallucination rate is the rules' coverage gap.
+      Few-shot (B) catches more (88%) because examples
+      anchor the boundary, but 12 annotated transcripts is
+      a maintenance burden — when meeting style shifts
+      (new team naming, new project vocab), the examples
+      need re-curation.
+
+      The hybrid (C) is the PM-default here: 85% catch and
+      4% hallucination at a fraction of B's token cost,
+      and the 4 boundary examples are easier to maintain
+      than 12. Catches what instructions miss without
+      taking on the full drift surface of pure few-shot.
+
+      What I'd ship: C. What I'd verify before locking:
+      that the 4 examples cover the boundary cases the
+      eval set surfaces (run Unit 4's layered eval on the
+      hybrid before the 1-week prompt-lock deadline).
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p002
+    label: All three met, system-prompt-led framing
+    answer: |
+      The contract-shape question matters more than the
+      catch-rate spread between the three prototypes. Two
+      axes here: where the contract lives (system vs user
+      prompt) and how the contract is expressed
+      (instructions vs examples).
+
+      All three prototypes have the system-vs-user split
+      right — transcript in user, contract in system. The
+      load-bearing question is whether the contract on the
+      system side is instruction-shaped (declarative rules)
+      or example-shaped (demonstrative few-shot) or both.
+
+      Pure instructions (A) work when the specification is
+      clean. "Output JSON with these fields" is clean.
+      "Identify the explicit assignee" is ambiguous-
+      criteria — explicit by what standard? — and that
+      ambiguity is what produces the 8% owner-
+      hallucination rate. Pure few-shot (B) covers the
+      ambiguity (88% catch, 3% hallucination) but pays
+      with 12 transcripts of system-prompt overhead and a
+      maintenance cadence that breaks when meeting style
+      shifts. The hybrid (C) is the right default here:
+      keep the clean rules as instructions (output schema,
+      required fields), add 3-5 examples for the
+      ambiguous-criteria part (what counts as an explicit
+      assignee).
+
+      Ship C. Verify the 4 examples cover the boundary
+      cases the eval surfaces before the prompt-lock
+      deadline. The 1-week timeline is tight but doable
+      because C's example count is small enough to
+      hand-curate.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p003
+    label: Off-topic — pivots to data privacy, all miss, gradable
+    answer: |
+      The bigger question is whether we're allowed to feed
+      meeting transcripts to Anthropic's API at all.
+      Internal meetings contain personnel discussions,
+      strategy, customer info, salary, performance reviews
+      — sending those to a third-party LLM has data-
+      residency and confidentiality implications we
+      haven't cleared. Before eng touches the prompt, legal
+      should confirm the data flow, the retention defaults,
+      and whether we need a DPA upgrade or a regional
+      deployment. The architecture-of-the-prompt question
+      is downstream of the can-we-do-this-at-all question.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p004
+    label: All-missed on-topic — picks pure instructions, "just write more rules"
+    answer: |
+      Ship A and write better instructions. The 78% catch
+      and 8% hallucination rate just mean the rules aren't
+      detailed enough yet. We should iterate on the
+      instructions — add more specific definitions of what
+      counts as an action item, list every edge case the
+      eval surfaced, and the catch rate will climb toward
+      B's 88% without the token cost or maintenance burden
+      of carrying 12 example transcripts. Prompt design is
+      mostly clear thinking expressed in clear language;
+      the few-shot approach is a crutch when the rules
+      aren't tight enough. Ship A, tighten the rules, move
+      on to integration.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p005
+    label: All three met, terse engineering voice
+    answer: |
+      Two axes. Where the contract lives: system prompt
+      (stable rules + schema + role) vs user prompt
+      (per-call transcript). All three prototypes have
+      this right. How the contract is expressed:
+      instructions (declarative, low token, miss
+      ambiguous-criteria edge cases) vs examples (few-shot,
+      token-heavy, capture nuance, stale when data drifts)
+      vs hybrid (instructions for clean rules + 3-5
+      examples for boundaries).
+
+      A's 8% owner-hallucination = rules can't fully
+      specify "explicit assignee" — ambiguous-criteria
+      task. B's 88% catch = examples cover the boundary,
+      but 12 transcripts of overhead is a drift surface.
+      C's 85%/4% = hybrid, catches most of B's gain at a
+      third of B's token cost.
+
+      Ship C. Verify boundary coverage with Unit 4 eval
+      before lock. 1-week deadline doable; 4 examples is a
+      hand-curatable count.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p006
+    label: c1 + c2 met, c3 missing (no regime mapping)
+    answer: |
+      Prompt design is a contract decision across two
+      axes — where the contract lives (system vs user
+      prompt) and how it's expressed (instructions vs
+      examples) — and the three prototypes are all
+      operating on the second axis.
+
+      The failure mode in pure instructions (A) is that
+      the specification has ambiguous-criteria parts the
+      rules can't fully cover — "explicit assignee" is
+      judgment-shaped, not rule-shaped. The mechanism is
+      that declarative rules work on clean-boundary
+      categories but degrade on tasks that require
+      example-shaped pattern matching. The failure mode in
+      pure few-shot (B) is drift: 12 annotated transcripts
+      lock in a specific meeting style, and when team
+      naming or project vocabulary shifts, the examples
+      degrade as a specification. The mechanism is
+      distribution shift on a fixed training set.
+
+      So neither extreme is right. Some kind of hybrid is
+      probably the answer, but I'd want to look at the
+      eval data more carefully before committing to which
+      hybrid.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p007
+    label: c1 + c3 met, c2 missing — gestures at "instructions miss edge cases" without naming the ambiguous-criteria mechanism (deliberate borderline)
+    answer: |
+      Prompt design is a two-axis decision: where the
+      contract lives (system vs user prompt) and how it's
+      expressed (instructions vs examples). The three
+      prototypes are choosing on the second axis.
+
+      Pure instructions miss edge cases. Pure few-shot
+      costs more and has maintenance overhead. Neither
+      extreme is the right default.
+
+      Regime mapping: system prompt for stable behavior
+      contracts (output schema, role definition, rules
+      that don't change per call); user prompt for per-call
+      variability (the transcript itself); zero-shot
+      instructions for cleanly-specifiable parts of the
+      contract (output format, required fields); few-shot
+      examples for ambiguous-criteria parts (what counts
+      as an explicit assignee in context); and the
+      PM-default is usually a hybrid that covers both
+      ends.
+
+      Ship C (hybrid). The 4 boundary examples cover what
+      pure instructions miss without B's maintenance
+      burden.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: false
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p008
+    label: c2 + c3 met, c1 missing — failure modes + regime mapping without naming multi-axis-contract frame
+    answer: |
+      The failure mode in pure instructions is that rules
+      can't fully specify ambiguous-criteria tasks. "What
+      counts as an explicit assignee" requires judgment
+      the rules don't make, so the 8% hallucination is the
+      coverage gap on judgment-shaped cases. The mechanism
+      is that declarative specification works on clean-
+      boundary categories and degrades on pattern-matching
+      categories. The failure mode in pure few-shot is
+      distribution drift — 12 annotated transcripts lock
+      in a specific meeting style, and the examples stale
+      as the corpus changes (new team naming, new project
+      vocabulary, new meeting formats).
+
+      Regime: system prompt for stable rules and schema;
+      user prompt for the per-call transcript; zero-shot
+      instructions for the clean-rule parts (output JSON
+      with these fields); few-shot examples for the
+      judgment parts (3-5 examples of what counts as an
+      action item with an explicit assignee). The hybrid
+      pattern is the right default.
+
+      Ship C.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p009
+    label: c1 only — names two axes + contract frame, no failure mode, no regime
+    answer: |
+      Prompt design is a multi-axis contract decision, not
+      a writing-quality exercise. There are two axes that
+      compound: where the contract lives (system prompt vs
+      user prompt) and how the contract is expressed
+      (instructions vs examples). A PM who scopes a prompt
+      without thinking through both axes is treating the
+      decision as a sentence-polishing problem rather than
+      a behavior-shaping contract. The eng team's three
+      prototypes are all choices on the second axis, but
+      the bigger framing question is whether we've thought
+      about both axes deliberately. That's the right
+      starting point.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p010
+    label: c2 only — failure mode + mechanism, no axis frame, no regime
+    answer: |
+      The 8% owner-hallucination rate in option A is the
+      coverage gap, and the mechanism is specific: pure
+      instruction-based specification works on clean-rule
+      tasks but degrades on ambiguous-criteria tasks. The
+      rules say "extract action items with explicit
+      assignees," but "explicit" is judgment-shaped — it
+      depends on context, idiom, meeting flow — and rules
+      can't fully cover that space. So the model fills the
+      gap with plausible guesses, which surfaces as the
+      hallucination rate. That's not fixable by writing
+      better rules; the failure shape is structural to
+      pure-instruction specification on this kind of task.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: true
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p011
+    label: c3 only — regime mapping, no axis frame, no mechanism
+    answer: |
+      The right pick depends on what's being specified.
+      For stable behavior contracts — output schema, role
+      definition, hard rules — system prompt with
+      instructions is the load-bearing approach. For
+      per-call variability — the transcript itself, any
+      runtime parameters — user prompt is where it
+      belongs. For cleanly-specifiable rules, zero-shot
+      instructions are the right default. For ambiguous-
+      criteria or edge-heavy tasks, few-shot examples are
+      load-bearing because instructions can't fully cover
+      the boundary. The PM-default when no single approach
+      fits the full contract is a hybrid — instructions
+      for the rule-shaped part, examples for the judgment-
+      shaped part. Different approaches for different
+      contract shapes.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p012
+    label: All-missed on-topic — "longer prompt = better, just include everything"
+    answer: |
+      The right answer is to combine A and B — write all
+      600 tokens of instructions AND include all 12
+      examples. The eng team is treating this as either-or
+      when it should be both. Longer prompts give the
+      model more context and more guidance, and the catch
+      rate should approach 95%+ if we just include
+      everything. The token cost is fine — Sonnet's
+      context window can handle 5000+ tokens of system
+      prompt easily. Ship the combined prompt; if catch
+      rate doesn't hit 90%+ we add more examples. Prompt
+      design is just an information-density problem.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p013
+    label: Off-topic — vendor pitch (LangChain/LlamaIndex), gradable, NOT flagged
+    answer: |
+      For a prompt-design problem like this I'd push the
+      team toward LangChain or LlamaIndex with their
+      managed prompt templates. They have battle-tested
+      few-shot routing, version-controlled prompt
+      registries, and integrations with eval pipelines.
+      We'd be reinventing the wheel writing prompts by
+      hand when there are mature frameworks. Pick one of
+      those and ship; the prompt-design question takes
+      care of itself once we're on the right tooling.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p014
+    label: c2 + c3 met, c1 missing — uses "behavior contract" language and one axis only (instructions vs examples), doesn't enumerate system-vs-user (deliberate borderline)
+    answer: |
+      The team is treating this as a writing-quality
+      problem when it's really a behavior contract
+      decision. The choice between instructions and
+      examples isn't about which sounds better — it's
+      about what kind of specification the task needs.
+
+      The failure mode in pure instructions (A) is that
+      ambiguous-criteria tasks need example-shaped
+      specification, not rule-shaped. "Explicit assignee"
+      is judgment territory; the 8% hallucination rate is
+      the rules' coverage gap on that judgment. The
+      mechanism is declarative rules degrading on pattern-
+      matching tasks. The failure mode in pure few-shot
+      (B) is drift — the 12 transcripts lock in a
+      specific meeting style, and the examples stale when
+      team vocabulary or meeting structure shifts.
+
+      Regime: zero-shot instructions for cleanly-
+      specifiable contract elements (output schema,
+      required fields); few-shot examples for ambiguous-
+      criteria parts (boundary cases of what counts as
+      explicit). The hybrid is the right default when both
+      regimes are present in the same specification.
+
+      Ship C.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p015
+    label: All-missed on-topic — verbose punt, confidently graded all-not-met (per Unit 2-5 p015 lesson)
+    answer: |
+      This is a tough call and I'd want more information
+      before committing. Both A and B have real trade-offs
+      — A is simpler but lower catch, B is more accurate
+      but more maintenance, C is in between. I'd want to
+      look at the actual hallucination cases in the eval
+      data to see what's being missed, talk to engineering
+      about whether maintenance cost is actually a problem
+      at our scale, do user interviews with the PMs who'd
+      use this to see if 85% vs 88% catch matters at all,
+      and probably consult with the data team about how
+      often meeting style actually shifts. We could maybe
+      A/B test two prompts in parallel and see which gets
+      better user signal. I'd want more data before
+      recommending a path.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p016
+    label: Edge case — Portuguese, all three met
+    answer: |
+      A equipa está a tratar isto como um exercício de
+      escolha-o-melhor-prompt quando é uma decisão de
+      contrato. Prompt design tem dois eixos de decisão:
+      onde o contrato vive (system vs user prompt) e como
+      é expresso (instructions vs examples). Os três
+      protótipos diferem só no segundo eixo.
+
+      O system prompt é onde o contrato de comportamento
+      vive — output schema (JSON), role, regras — porque é
+      estável entre calls e beneficia do prompt caching. O
+      user prompt é onde a transcrição vai — variabilidade
+      por call. Os três protótipos têm isso certo.
+
+      No eixo instructions-vs-examples: a opção A (pure
+      instructions) falha em tarefas de critério ambíguo
+      — "o que conta como assignee explícito" é território
+      de julgamento, e a taxa de 8% de hallucination é
+      precisamente essa lacuna de cobertura das regras. O
+      mecanismo: regras declarativas degradam em tarefas
+      de pattern-matching. A opção B (pure few-shot) cobre
+      melhor (88% catch) mas com 12 exemplos a manutenção
+      torna-se um problema quando o estilo das reuniões
+      muda (novos termos de equipa, novo vocabulário).
+
+      Tier-to-regime: instructions para partes do
+      contrato com regras limpas (output format,
+      required fields); few-shot para partes ambíguas
+      (3-5 exemplos do que conta como ação com assignee
+      explícito); hybrid quando ambos os regimes estão
+      presentes no mesmo contrato.
+
+      O que eu shipparia: C (hybrid). Verifico cobertura
+      dos exemplos com Unit 4 eval antes do lock. 1 semana
+      é apertado mas exequível com 4 exemplos curados à
+      mão.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p017
+    label: Edge case — pseudocode answer, all three met (comments name system/user prompt and instructions/examples explicitly per Units 4-5 lesson)
+    answer: |
+      def prompt_strategy(contract_part, ambiguity_level, maintenance_cadence):
+          # Two-axis decision: where contract lives + how it's expressed
+          # Axis 1: system_prompt (stable, cached, per-deploy) vs user_prompt (variable, per-call)
+          # Axis 2: instructions (declarative, low-token) vs examples (few-shot, token-heavy)
+
+          # Per-call variability always goes in user prompt
+          if contract_part == 'per_call_content':
+              # The transcript, the user query, the runtime parameters
+              return 'user_prompt'
+
+          # Stable contracts go in system prompt; the how-expressed is the choice
+          # Axis 2 maps to ambiguity_level:
+          if ambiguity_level == 'clean_rule_specifiable':
+              # Output schema, required fields, role definition, refusal conditions
+              # Instructions are the right default — low token, easy to update
+              return 'system_prompt_instructions'
+
+          if ambiguity_level == 'judgment_shaped':
+              # Pattern-matching tasks (what counts as explicit assignee, what tone is too aggressive)
+              # Few-shot examples capture nuance instructions can't fully specify
+              # Caveat: maintenance cost when data distribution shifts
+              if maintenance_cadence == 'weekly':
+                  # High-drift surface — keep example count small (3-5 boundary cases)
+                  return 'system_prompt_hybrid'  # instructions + few examples
+              else:
+                  return 'system_prompt_few_shot'
+
+          # Default for mixed specifications: hybrid is the PM-default
+          return 'system_prompt_hybrid'
+
+      # For the meeting-action-item-extractor scenario:
+      #   contract_part: transcript_content (user prompt) + rules_and_schema (system prompt)
+      #   ambiguity_level: clean_rule_specifiable (output JSON) + judgment_shaped (explicit assignee)
+      #   maintenance_cadence: monthly (team naming, project vocab shift)
+      #   → ship C (hybrid): instructions for schema/role + 4 boundary examples for assignee judgment
+      #
+      # Failure modes:
+      #   - pure instructions: ambiguous-criteria tasks need example-shaped specification (A's 8% hallucination)
+      #   - pure few-shot: data drift stales the example set (B's maintenance overhead)
+      # Verify hybrid coverage with Unit 4 layered eval before prompt-lock deadline.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p018
+    label: Edge case — emoji + informal voice (4 emojis, moderate density per Units 3-5 lesson), all three met
+    answer: |
+      Two-axis contract decision 🎯, not a writing exercise.
+
+      Axis 1 — where the contract lives: system prompt for
+      stable behavior (rules + schema + role) vs user
+      prompt for per-call variability (the transcript). All
+      three prototypes have this right.
+
+      Axis 2 — how the contract is expressed: instructions
+      (declarative, low token, miss ambiguous-criteria
+      edges) vs examples (few-shot, token-heavy, capture
+      nuance, stale when data drifts 📉).
+
+      The three prototypes are points on axis 2:
+      - A pure instructions: 78%/8% — rules can't specify
+        "explicit assignee," judgment-shaped failure
+      - B pure few-shot: 88%/3% — but 12 transcripts of
+        overhead and drift risk
+      - C hybrid: 85%/4% — instructions for clean rules +
+        4 examples for boundaries 🛠️
+
+      Ship C. PM-default for mixed specifications. Catches
+      what instructions miss without B's full maintenance
+      bill 💸.
+
+      Verify the 4 examples cover the boundary cases with
+      Unit 4 eval before lock. 1 week is doable.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p019
+    label: All-missed on-topic — picks pure few-shot extreme, "just add more examples"
+    answer: |
+      Ship B. The 88% catch is meaningfully better than A
+      and C, and the hallucination rate of 3% is the
+      lowest. Yes the system prompt is bigger, but Sonnet
+      handles 3500 tokens easily — token cost is rounding
+      error in the era of prompt caching. The drift
+      concern is overblown: meeting style doesn't actually
+      shift that fast, and even if it does we can re-curate
+      the examples quarterly. Trying to optimize for a
+      maintenance burden that may never materialize is
+      false economy. More examples = better catch =
+      shipped feature. Pick B and move on.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p020
+    label: All-missed on-topic — refuses prompt premise
+    answer: |
+      The premise is wrong. We shouldn't be choosing
+      between three prompt variants without a wider
+      bake-off — at minimum we should have prototypes
+      against Sonnet, GPT-4.1 mid-tier, and Gemini Pro to
+      see if prompt design is even the right lever or
+      whether the bottleneck is model selection. Building
+      a "Sonnet plus prompt-tuning" stack locks us into
+      Anthropic's behavior without checking whether the
+      same prompt strategy on a different vendor gives us
+      better catch rates for less cost. The prompt-design
+      question is downstream of confirming this is the
+      right model for the task. Push back on the brief.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p021
+    label: All three met, concise / punchy
+    answer: |
+      Two-axis contract decision: system-vs-user prompt
+      and instructions-vs-examples. The three prototypes
+      vary only on the second axis. Pure instructions (A)
+      miss ambiguous-criteria edges — mechanism is rules
+      can't fully specify judgment-shaped tasks. Pure
+      few-shot (B) catches more but stales as data drifts
+      and carries 3500 tokens of overhead. Hybrid (C) is
+      the right default: instructions for clean rules,
+      3-5 examples for boundaries.
+
+      Ship C. Regime mapping is clear — system prompt for
+      stable behavior contracts, user prompt for per-call
+      transcripts, zero-shot instructions for cleanly-
+      specifiable rules, few-shot for ambiguous-criteria
+      parts, hybrid when both regimes appear in the same
+      specification (which is most production prompts).
+
+      Verify boundary coverage with Unit 4 eval before
+      lock. 1 week is doable with 4 hand-curated examples.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
