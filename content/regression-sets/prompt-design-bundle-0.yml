@@ -41,8 +41,10 @@
 #      prompt design AND explains the mechanism — e.g.,
 #      instruction-only misses edge cases that examples
 #      catch; few-shot-only stales when data distribution
-#      shifts; putting per-query content in the system
-#      prompt couples content updates to deploys."
+#      shifts; putting per-query variability in the system
+#      prompt breaks prompt caching (each unique system
+#      prompt is a separate cache entry; prefix-reuse
+#      optimization, not session-immutability)."
 #   3. "Distinguishes which approach is load-bearing in
 #      which regime — system prompt for stable behavior
 #      contracts; user prompt for per-call variability;
@@ -622,7 +624,7 @@ pairs:
     answer: |
       def prompt_strategy(contract_part, ambiguity_level, maintenance_cadence):
           # Two-axis decision: where contract lives + how it's expressed
-          # Axis 1: system_prompt (stable, cached, per-deploy) vs user_prompt (variable, per-call)
+          # Axis 1: system_prompt (stable prefix, cache-reuse-optimized) vs user_prompt (variable, per-call)
           # Axis 2: instructions (declarative, low-token) vs examples (few-shot, token-heavy)
 
           # Per-call variability always goes in user prompt

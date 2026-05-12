@@ -37,7 +37,7 @@ sources:
     primary_source: true
 rubric:
   - text: "Names prompt design as a multi-axis trade-off (system-vs-user prompt, instructions-vs-examples) AND treats it as a behavior-shaping contract decision anchored to the feature's specification needs — not as a writing-quality exercise."
-  - text: "Identifies a concrete failure mode of single-axis prompt design AND explains the mechanism — e.g., instruction-only misses edge cases that examples catch (mechanism: rules can't fully specify ambiguous-criteria tasks); few-shot-only stales when data distribution shifts (mechanism: the example set locks in a specific data distribution and degrades as the corpus drifts); putting per-query content in the system prompt couples content updates to deploys (mechanism: system prompt is loaded once at session/cache boundary, so changes require a code release)."
+  - text: "Identifies a concrete failure mode of single-axis prompt design AND explains the mechanism — e.g., instruction-only misses edge cases that examples catch (mechanism: rules can't fully specify ambiguous-criteria tasks); few-shot-only stales when data distribution shifts (mechanism: the example set locks in a specific data distribution and degrades as the corpus drifts); putting per-query variability in the system prompt breaks prompt caching and inflates cost-per-call (mechanism: prompt caching is a prefix-reuse optimization — each unique system-prompt prefix is a separate cache entry, so per-call variability in the system prompt loses cache hits proportionally to the variability)."
   - text: "Distinguishes which approach is load-bearing in which regime — system prompt for stable behavior contracts (locked rules, output schema, role definition); user prompt for per-call variability (the actual content being processed); zero-shot instructions for cleanly-specifiable rules with low edge-case density; few-shot examples for ambiguous-criteria or edge-heavy tasks where instructions can't fully cover the space; and recognizes that the PM-default is usually a hybrid (instructions for the rule-shaped part + 3–5 examples for the boundaries) rather than picking one extreme."
 ---
 
@@ -58,9 +58,10 @@ rubric:
 - **When this breaks:** when the team treats prompt design
   as a writing exercise instead of a contract decision.
   Three failure shapes recur: (1) putting per-query
-  variability in the system prompt creates deploy-coupling
-  between content updates and code releases and loses
-  prompt-caching benefits; (2) specifying ambiguous-criteria
+  variability in the system prompt breaks prompt caching —
+  each unique system prompt is a separate cache entry, so
+  per-call variability cancels the cost savings caching
+  was meant to deliver; (2) specifying ambiguous-criteria
   tasks with instructions only misses edge cases that
   examples catch (the model fills the gap with plausible
   guesses, which surfaces as the hallucination rate); (3)
@@ -88,16 +89,20 @@ as a *writing exercise* when it's actually a
 Two axes, not one:
 
 1. **Where the contract lives — system vs user prompt.**
-   System prompt is locked at deploy time, applies to every
-   call, shapes baseline behavior (rules, role, output
-   schema). User prompt varies per call, carries the
-   specific request (the transcript, the question, the
-   document). *Wrong move:* putting per-query variability
-   in the system prompt — your content updates now require
-   code releases. *Symmetric wrong move:* putting stable
-   behavior contracts in the user prompt — every API call
-   re-litigates the rules and you lose prompt-caching
-   benefits (Unit 2).
+   System prompt carries the stable parts of the contract
+   that apply to every call (rules, role, output schema).
+   User prompt varies per call and carries the specific
+   request (the transcript, the question, the document).
+   The system-vs-user split is what makes prompt caching
+   (Unit 2) work: a stable system-prompt prefix is reused
+   across calls at ~10% of the input rate. *Wrong move:*
+   putting per-query variability in the system prompt —
+   each unique system prompt is a separate cache entry,
+   so caching breaks and per-call cost climbs proportionally
+   to the variability. *Symmetric wrong move:* putting
+   stable behavior contracts in the user prompt — the
+   rules are re-billed at full rate on every call instead
+   of being cached.
 
 2. **How the contract is expressed — instructions vs
    examples.** Instructions are declarative ("classify
@@ -216,10 +221,11 @@ not the user prompt (which carries variable content).
 Putting examples in the user prompt blows away prompt
 caching and re-bills the example tokens on every call.
 Conversely, putting per-query content in the system prompt
-creates the deploy-coupling failure mode and loses caching
-benefits on the variable part. *The axes aren't
-independent; the system-vs-user choice constrains the
-instructions-vs-examples choice.*
+breaks the cache-prefix reuse — each unique system prompt
+is a separate cache entry, so per-call variability cancels
+the caching cost savings. *The axes aren't independent;
+the system-vs-user choice is what makes prompt caching
+work, and breaking the split breaks the caching.*
 
 ## Decision prompt
 
