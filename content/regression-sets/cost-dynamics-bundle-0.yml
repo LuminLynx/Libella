@@ -1,0 +1,842 @@
+# Regression set for the Cost dynamics at scale unit
+# (cost-dynamics-bundle-0).
+#
+# Eighth authored unit, third in the path's productization
+# block (after Units 6 Prompt design and 7 Hallucination).
+# Standard under STRATEGY.md § T2 — minimum 10 pairs; ships
+# at 21.
+#
+# Authoring discipline carries forward Units 4-7 lessons:
+#
+#   1. Two deliberate borderlines (p007 c2, p014 c1).
+#      p014 c1 borderline tightened further per Unit 6/7
+#      pattern — uses production-cost vocabulary without
+#      explicit axis enumeration (caching/batching/capacity
+#      names absent). Tests whether vocabulary alone (no
+#      axis-name enumeration) crosses c1 — predicted false
+#      because prior c1-lenient crossings required explicit
+#      axis examples.
+#   2. Skip flagged-expected pairs (5 consecutive units).
+#   3. Partial pairs avoid all explicit axis enumeration
+#      where c1 should be missing (5-unit-strong pattern).
+#   4. p017 pseudocode comments name "caching / batching /
+#      capacity" explicitly.
+#   5. p018 emoji density capped at 4 AND avoids embedded
+#      percentage-slash notation (Unit 6/7 p018 reproducible-
+#      error shape). Plain prose only.
+#   6. Pre-author check: all-met pairs literally name all
+#      three axes (Unit 4-7 authoring-error lesson).
+#   7. Numbers consistent across pairs that do arithmetic
+#      ($0.0225/ticket, $1,125/day, $410k/year, projected
+#      $655k/year, 50k→80k tickets/day).
+#
+# Position-to-criterion mapping:
+#
+#   1. "Names cost-at-scale as a multi-axis production-
+#      optimization problem (caching vs batching vs
+#      capacity) distinct from headline per-call cost
+#      (Unit 5) AND anchors the decision to annualized
+#      cost at projected volume, not at current-pilot
+#      volume."
+#   2. "Identifies a concrete failure mode of single-axis
+#      cost optimization AND explains the mechanism — e.g.,
+#      enabling caching alone misses the batch-API
+#      discount on non-interactive workloads; batch-only
+#      without caching pays full input rate on every
+#      batched call; committed-use without volume
+#      forecasting commits to a higher floor than current
+#      usage warrants."
+#   3. "Distinguishes which lever is load-bearing in which
+#      regime — caching for workloads with large stable
+#      prefixes; batching for latency-forgiving /
+#      asynchronous workloads; committed-use for sustained
+#      high-QPS production where on-demand exceeds
+#      committed floor; AND recognizes that production-
+#      scale cost discipline almost always layers all
+#      three (caching + batching + committed-use sized to
+#      steady-state floor), not picking one."
+#
+# Authoring distribution (21 pairs, 7/4/3/5/2/0):
+#   * 7 pairs all-three-met
+#       p001, p002, p005, p016 (pt), p017 (pseudocode),
+#       p018 (emoji moderate), p021 (concise)
+#   * 4 pairs partial credit (2 of 3, incl. 2 borderlines)
+#       p006 (c1+c2), p007 (c1+c3, c2 borderline),
+#       p008 (c2+c3), p014 (c2+c3, c1 borderline)
+#   * 3 pairs single-criterion-met
+#       p009 (c1), p010 (c2), p011 (c3)
+#   * 5 pairs all-missed but on-topic
+#       p004, p012, p015, p019, p020
+#   * 2 pairs off-topic, all-missed, gradable (NOT flagged)
+#       p003, p013
+
+unit_id: cost-dynamics-bundle-0
+
+description: |
+  Phase 3 / Unit 8 standard gate set. Authored 2026-05-13
+  against the locked T2-B reading. 21 pairs against the
+  AND-structured rubric. Two deliberate borderlines (p007
+  c2, p014 c1 tightened — tests whether axis-aware
+  vocabulary without explicit axis-name enumeration
+  crosses c1). Zero flagged-expected pairs. Numbers
+  consistent with scenario ($0.0225/ticket current,
+  $1,125/day, $410k/year annualized, projected $655k/year
+  at 80k tickets/day). See header for design notes.
+
+pairs:
+  - id: p001
+    label: All three met, balanced layered-optimization recommendation
+    answer: |
+      Finance is asking the right question and eng is
+      framing the wrong answer. Cost at scale isn't a
+      pick-the-best-lever decision — it's a stacking
+      decision across three production-optimization axes:
+      caching, batching, and capacity (committed-use).
+      The three options eng prototyped are all real, and
+      we should stack them, not pick.
+
+      Anchor: $410k/year annualized at current 50k
+      tickets/day, projected $655k/year at 80k by Q-end.
+      That's the number to optimize against, not the
+      $1,125/day pilot bill.
+
+      Caching first: 4,000 of 5,000 input tokens are
+      stable (system prompt + routing rules + in-context
+      examples). 80% stable-prefix ratio is exactly where
+      caching is load-bearing. Eng's ~$540/day estimate
+      holds because caching is the first lever — no
+      upstream discounts have reduced the base. Lowest
+      eng risk; no UX impact.
+
+      Batching second: 70% of tickets are non-urgent
+      (account questions, low-priority billing, post-
+      resolution feedback). Route those through the
+      Batch API for 50% off both input AND output tokens.
+      Eng's ~$390/day Option-B estimate is in isolation;
+      on top of caching the actual stacked increment is
+      smaller — caching already cut the per-call cost
+      that batching halves, so the on-top-of-A increment
+      is ~$205/day, not $390. The discounts multiply: a
+      batched cache-hit call pays ~5% of the original
+      input rate, not 10%. UX impact is real but
+      bounded: non-urgent tickets get classified within
+      hours instead of within minutes.
+
+      Committed-use third: eng-estimated ~$110-180/day
+      in isolation, but applied to the post-caching-and-
+      batching base the actual on-top increment is
+      smaller. Worth doing because the steady-state QPS
+      is high enough to justify the 12-month floor, but
+      size the commitment to the steady-state, not to
+      peak.
+
+      Combined: ~$0.0225 → ~$0.007/ticket, roughly 3×
+      reduction. The eng-prototyped per-option numbers
+      don't simply add when stacked — they apply to
+      progressively smaller bases. $410k/year drops
+      toward ~$125k at current volume, $655k/year drops
+      toward ~$200k at Q-end. Recommendation: ship A
+      immediately (caching, low risk), B within two
+      weeks (batching for non-urgent), C after we have
+      one quarter of steady-state data to size the
+      commitment correctly. Don't pick one; stack all
+      three.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p002
+    label: All three met, caching-led framing
+    answer: |
+      Caching first. The 80% stable-prefix ratio (4k of 5k
+      input tokens are system prompt + routing rules +
+      examples) is the textbook case for prompt caching —
+      this is where caching is load-bearing. ~$540/day
+      savings, no UX impact, low eng risk. Ship it this
+      week.
+
+      But caching alone isn't the right end-state for a
+      50k-tickets/day workload. Cost at scale is a three-
+      axis problem: caching, batching, and capacity
+      (committed-use). The three axes multiply rather
+      than substitute — a batched call that's also a
+      cache-hit pays the product of both discounts, not
+      the sum. Stacking matters.
+
+      Batching is load-bearing for the 70% latency-
+      forgiving slice — non-urgent tickets that can wait
+      hours don't need sync-API rates. 50% additional
+      discount on top of caching for that share. Ship
+      after caching, when we've measured the cache-hit
+      rate in production.
+
+      Committed-use is load-bearing for the steady-state
+      QPS. 10% additional discount on baseline volume in
+      exchange for a 12-month commitment. Size to the
+      steady-state floor, not the peak, or you pay for
+      capacity you don't use.
+
+      Annualized: $410k current → projected $655k at
+      Q-end. Combined optimization brings that toward
+      ~$220k. Order: A first (caching), B within two
+      weeks, C after one quarter of data.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p003
+    label: Off-topic — pivots to vendor lock-in, all miss, gradable
+    answer: |
+      The bigger question is vendor lock-in. We're
+      Anthropic-only on a $410k/year API line item and
+      we have no fallback plan. Before we negotiate
+      committed-use that locks us in for 12 months at
+      projected scale, we should run a vendor bake-off
+      with GPT-4.1 mid-tier and Gemini Pro on the same
+      ticket-classification task. If one of them is
+      meaningfully cheaper at our prompt shape, the
+      "committed-use discount" is rounding error compared
+      to vendor switching. Eng should set that up before
+      Finance signs anything multi-month. The
+      optimization-paths question is downstream of
+      confirming we're on the right vendor.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p004
+    label: All-missed on-topic — picks one lever, "just enable caching"
+    answer: |
+      Just enable caching. 80% of every call is the
+      system prompt and routing rules — that's exactly
+      what caching is for. Eng can flip it on this week,
+      we save ~$540/day, problem solved. The batching
+      and committed-use options are nice-to-have for
+      later but caching alone gets us most of the savings
+      and we don't need to renegotiate anything or change
+      UX. Ship A this week, revisit B and C next quarter
+      if cost is still an issue. Cost optimization is a
+      80/20 problem and caching is the 80.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p005
+    label: All three met, terse engineering voice
+    answer: |
+      Three production-cost levers, not one. Caching,
+      batching, capacity (committed-use). Stack them;
+      don't pick.
+
+      Anchor: $410k/year at 50k tickets/day, projected
+      $655k at 80k. Numbers to beat.
+
+      Caching: 80% stable-prefix ratio. ~10% input rate
+      on cache hits. ~$540/day savings. Ship first, no
+      UX impact, low eng cost.
+
+      Batching: 70% non-urgent slice. 50% discount on
+      both input + output. Eng's $390/day is in
+      isolation; on top of caching the increment is
+      ~$205/day because caching already reduced the base
+      that batching halves. Caching applies before
+      batching multiplies — batched cache-hit = ~5% of
+      original input rate, not 10%. UX impact bounded:
+      hours vs minutes for non-urgent.
+
+      Committed-use: 10% additional on baseline. Eng-
+      estimated ~$110-180/day in isolation; on top of
+      A+B the on-top increment is smaller. Size to
+      steady-state QPS, not peak. Sign after one quarter
+      of post-A-and-B data.
+
+      Combined: $0.0225 → ~$0.007/ticket. ~3× reduction.
+      Eng-prototyped per-option numbers don't add when
+      stacked; each applies to a smaller base than the
+      isolation estimate assumed. Order: caching this
+      week, batching in two, committed next quarter.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p006
+    label: c1 + c2 met, c3 missing (no per-regime lever mapping)
+    answer: |
+      Cost at scale isn't a pick-one decision — it's a
+      multi-axis problem across caching, batching, and
+      capacity, and the headline per-call cost from
+      Unit 5 is only the starting point. The bill is
+      $410k/year now and projected to $655k by Q-end;
+      that's the number we're optimizing against.
+
+      The failure mode in "just enable caching" thinking
+      is that single-lever optimization leaves the other
+      two discounts unclaimed. Caching alone gets ~48%
+      off the bill but the batching discount on the
+      latency-forgiving slice adds another ~$205/day on
+      top (the eng-prototyped Option-B estimate of
+      ~$390/day is in isolation; stacked on top of
+      caching the increment is smaller because the base
+      is already reduced). Committed-use is another
+      smaller-than-isolation increment on top of that.
+      The mechanism is multiplicative: batching applies
+      after per-call cost is computed, so a batched
+      cache-hit pays the product of both discounts, not
+      the sum. Picking one lever leaves real money on
+      the table.
+
+      Eng's three options aren't alternatives. They're
+      meant to layer. Don't pick A; do A then B then C
+      with the right sequencing.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p007
+    label: c1 + c3 met, c2 missing — gestures at single-axis failure without naming multiplication mechanism (deliberate borderline)
+    answer: |
+      Cost at scale is a three-axis problem — caching,
+      batching, capacity — and picking one lever misses
+      the others.
+
+      Tier-to-regime mapping: caching is load-bearing
+      for workloads with large stable prefixes (system
+      prompts, RAG context, few-shot examples); batching
+      is load-bearing for latency-forgiving workloads
+      (overnight classification, bulk processing,
+      reporting); committed-use is load-bearing for
+      sustained high-QPS production where the steady-
+      state floor justifies the 12-month commitment.
+      Production cost discipline almost always stacks
+      all three.
+
+      Single-axis optimization leaves money on the table.
+      Caching alone misses the batch discount; batching
+      alone misses the caching discount; committed-use
+      alone optimizes the wrong layer. Stacking matters.
+
+      Order: caching this week, batching for non-urgent
+      tickets in two weeks, committed-use after one
+      quarter of steady-state data.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: false
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p008
+    label: c2 + c3 met, c1 missing — failure modes + regime mapping without naming three-axis frame or annualization reframe
+    answer: |
+      The failure mode in single-lever cost optimization
+      is that the discounts multiply, not substitute. If
+      eng enables caching only, the batch-API discount
+      on the 70% non-urgent slice is unclaimed — and the
+      mechanism is that batching applies after per-call
+      cost is computed, so a batched cache-hit call pays
+      the product of both discounts (~5% of the original
+      input rate), not the sum. Practical implication:
+      the eng-prototyped per-option estimates don't add
+      when stacked. Option B's $390/day in-isolation
+      becomes ~$205/day on top of caching, because
+      caching already reduced the base that batching
+      halves. Same shape applies to committed-use: it
+      stacks on top with a smaller-than-isolation
+      increment, not as an additive alternative.
+
+      Regime: caching is load-bearing when the stable-
+      prefix ratio is high (>60%); batching is load-
+      bearing when the workload is asynchronous-by-nature
+      (overnight classification, periodic re-tagging,
+      bulk evaluation); committed-use is load-bearing for
+      sustained high-QPS production where the steady-
+      state floor justifies the 12-month obligation.
+      Production cost discipline stacks all three rather
+      than picking.
+
+      Don't ship A alone. Do A then B then C.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p009
+    label: c1 only — names three-axis frame + annualization, no failure mode, no regime
+    answer: |
+      Cost at scale isn't the Unit 5 per-call math
+      repeated; it's a different optimization problem
+      across three production axes — caching, batching,
+      and capacity — and the right frame is annualized
+      cost at projected volume, not the current-pilot
+      daily bill. $1,125/day reads acceptable; $410k/year
+      annualized and projected to $655k at Q-end is the
+      number finance is going to push on. The PM needs
+      to frame this as a multi-axis production-
+      optimization problem anchored to the right scale,
+      not as a pick-one-lever decision. That's the
+      starting point.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p010
+    label: c2 only — multiplication failure mode + mechanism, no axis frame, no regime
+    answer: |
+      The failure mode in single-lever cost optimization
+      is that the discounts compound rather than
+      substitute. Most PMs treat optimization paths as
+      alternatives — "pick the biggest savings, ship it"
+      — but the levers in this category multiply. A
+      batched call that's also a cache-hit pays the
+      product of both discounts (~5% of the original
+      input rate, not 10%); the mechanism is that batch
+      discount applies after per-call cost is computed,
+      so caching reduces the per-call number that
+      batching then multiplies. Same shape as Unit 5's
+      cost-at-volume sub-linear thinking — picking one
+      lever and treating cost as solved misses the
+      multiplicative structure of how discounts stack.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: true
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p011
+    label: c3 only — per-lever regime mapping + layered-stacking recognition, no axis frame, no mechanism
+    answer: |
+      The right answer depends on which lever is load-
+      bearing for which workload slice. Caching is load-
+      bearing when the stable-prefix ratio is high
+      (typical: system prompt + RAG context + few-shot
+      examples >60% of every call). Batching is load-
+      bearing for the latency-forgiving share of the
+      workload (overnight classification, bulk
+      processing, periodic re-tagging — anything that
+      can wait hours). Committed-use is load-bearing for
+      the sustained-baseline QPS where the steady-state
+      floor justifies a 12-month commitment. Production
+      cost discipline almost always layers all three —
+      caching for everything, batching for the eligible
+      slice, committed-use sized to the steady-state
+      baseline — rather than picking one as the answer.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p012
+    label: All-missed on-topic — "just negotiate"
+    answer: |
+      The fix is to renegotiate with Anthropic. At
+      $410k/year and projected $655k by Q-end, we're a
+      meaningful account and we should be getting at
+      least 20-30% off list, not the 10% committed-use
+      headline rate. PM should bring legal and finance
+      to the table with the projected annual volume,
+      threaten to bake off against OpenAI and Google,
+      and walk out with a real enterprise discount. The
+      eng-side optimizations (caching, batching) are
+      complementary but the biggest savings come from
+      negotiating list-price down. Renegotiate first,
+      then revisit eng work.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p013
+    label: Off-topic — vendor pitch (managed cost optimization), gradable, NOT flagged
+    answer: |
+      For LLM cost optimization at this scale I'd push
+      the team toward a managed FinOps platform like
+      Vantage or CloudZero. They have built-in API-cost
+      dashboards, multi-vendor comparison, anomaly
+      detection on usage spikes, and they handle the
+      caching/batching/committed-use recommendations
+      automatically based on usage patterns. We'd be
+      reinventing the wheel doing FinOps in-house. Pick
+      one of those, integrate the billing-export, and
+      the cost-optimization question takes care of
+      itself once we're on the right tooling.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p014
+    label: c2 + c3 met, c1 missing — uses production-cost vocabulary without explicit axis-name enumeration (deliberate borderline tightened further)
+    answer: |
+      The team is treating this as a single-optimization
+      decision when it's a multi-lever production-cost
+      problem at projected scale. The current-bill math
+      ($1,125/day) reads acceptable; annualize it at the
+      projected Q-end volume and it's pushing $655k/year
+      — that's the number to optimize against.
+
+      The failure mode in single-lever optimization is
+      that the discounts multiply, not substitute. The
+      first eng-proposed lever cuts the input-token cost
+      by roughly an order of magnitude on the stable
+      portion; the second cuts both input and output by
+      half on the latency-forgiving slice; the third
+      shaves a smaller additional percentage off
+      baseline. The mechanism: each lever applies to a
+      different layer of the per-call cost structure,
+      and they compound multiplicatively because the
+      math chains.
+
+      Regime-wise: the first lever is load-bearing when
+      most of every call is stable, the second when the
+      workload can tolerate hours of latency, the third
+      when the steady-state QPS justifies a 12-month
+      floor. Production cost discipline almost always
+      stacks all three sized to the actual workload mix,
+      not picking one.
+
+      Order: ship the first this week, second within two
+      weeks, third after a quarter of data.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p015
+    label: All-missed on-topic — verbose punt
+    answer: |
+      This is a tough call and I'd want a lot more
+      information before recommending. The three options
+      all have real trade-offs and I'd want to
+      understand engineering capacity, finance's actual
+      bar for the bill, what the legal team thinks about
+      committed-use commitments, and whether customer
+      support ops has any input on the latency impact of
+      batching on non-urgent tickets. I'd probably want
+      to do user interviews with the support team about
+      how they perceive ticket-routing speed, run an A/B
+      test on different latency thresholds, consult with
+      finance about projected growth assumptions, and
+      maybe do an offsite with eng to align on
+      sequencing. I'd want more data before making a
+      recommendation.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p016
+    label: Edge case — Portuguese, all three met
+    answer: |
+      A equipa está a tratar isto como uma decisão de
+      pick-one quando é um problema multi-axis de
+      optimização de produção. Três alavancas: caching,
+      batching, e capacity (committed-use). Stack as
+      três; não escolher uma.
+
+      Anchor: $410k/ano anualizado a 50k tickets/dia,
+      projetado para $655k a 80k. Esse é o número, não
+      o $1,125/dia do pilot.
+
+      Caching primeiro: 80% prefix-stable (4k de 5k
+      tokens de input são system prompt + routing rules
+      + exemplos). É exatamente onde caching é load-
+      bearing. ~$540/dia poupados, sem impacto UX,
+      risco eng baixo.
+
+      Batching segundo: 70% dos tickets são não-urgentes
+      (account questions, billing low-priority,
+      feedback pós-resolução). Routear esses pelo Batch
+      API para 50% de desconto em input + output. A
+      estimativa eng de ~$390/dia é em isolamento; em
+      cima do caching, o incremento real é ~$205/dia
+      porque o caching já reduziu a base que o batching
+      vai cortar a metade. O desconto de caching aplica
+      antes de batching multiplicar — um batched
+      cache-hit paga ~5% do input rate original, não
+      10%. Impacto UX bounded: horas em vez de minutos
+      para não-urgentes.
+
+      Committed-use terceiro: eng estimou ~$110-180/dia
+      em isolamento; em cima de A+B o incremento real
+      é menor. Tamanho ao steady-state, não a peak.
+      Assinar após um trimestre de dados.
+
+      Combinado: $0.0225 → ~$0.007/ticket. Redução de
+      ~3×. As estimativas eng por opção não somam quando
+      stacked — cada lever aplica a uma base
+      progressivamente menor. Ordem: A esta semana, B
+      em duas, C no próximo trimestre.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p017
+    label: Edge case — pseudocode answer, all three met (comments name caching/batching/capacity explicitly per Units 4-7 lesson)
+    answer: |
+      def production_cost_strategy(stable_prefix_ratio, latency_forgiving_share, steady_state_qps):
+          # Three production-cost axes: caching / batching / capacity
+          # Stack them; don't pick. Discounts multiply, not substitute.
+          # Anchor: annualized cost at projected volume, not pilot daily.
+
+          levers = []
+
+          # caching: load-bearing when stable_prefix_ratio is high (>60%)
+          # System prompt + RAG context + few-shot examples are typically stable
+          # ~10% input rate on cache hits
+          if stable_prefix_ratio > 0.6:
+              levers.append('caching_enabled')
+
+          # batching: load-bearing for latency-forgiving share
+          # 50% discount on both input + output, async (~24h SLA, often faster)
+          # Applies AFTER per-call cost is computed → multiplies with caching
+          if latency_forgiving_share > 0.5:
+              levers.append('batching_for_async_workload')
+
+          # capacity (committed-use): load-bearing at sustained high QPS
+          # Trade fixed monthly floor for guaranteed throughput + discount
+          # Size to steady-state, not peak
+          if steady_state_qps > threshold_for_commitment():
+              levers.append('committed_use_baseline')
+
+          # Production-default: stack ALL THREE sized to workload mix
+          return levers
+
+      # For the ticket-classifier scenario:
+      #   stable_prefix_ratio = 0.8 (4k of 5k tokens stable)
+      #   latency_forgiving_share = 0.7 (non-urgent tickets)
+      #   steady_state_qps = high (50k/day → 80k/day projected)
+      #   → all three levers stacked.
+      #
+      # Combined: $0.0225 → ~$0.007/ticket (~3× reduction)
+      # $410k/year → ~$220k/year at projected Q-end volume.
+      #
+      # Order: caching this week (low risk), batching in two
+      # (UX impact bounded), committed-use after one quarter of
+      # post-A-and-B data.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p018
+    label: Edge case — emoji + informal voice (4 emojis, plain prose only, no embedded percentage-slash markdown per Unit 6/7 p018 lesson), all three met
+    answer: |
+      Cost at scale is a stacking decision, not a
+      pick-one 🛠️. Three axes — caching, batching, and
+      capacity (committed-use). The discounts multiply
+      rather than substitute, which is the part PMs
+      usually miss.
+
+      Anchor on annualized math. The pilot bill of about
+      a thousand dollars a day reads acceptable, but
+      annualized that's four hundred ten thousand
+      dollars, projected to six hundred fifty-five
+      thousand at quarter end. That's the number 💸.
+
+      Caching is load-bearing because eighty percent of
+      every call is stable system prompt and routing
+      rules. Ship it first; about a five hundred forty
+      dollar daily savings, no UX impact.
+
+      Batching is load-bearing for the seventy percent
+      non-urgent slice of tickets. Half off both input
+      and output for those calls, on top of caching ⚡.
+      The multiplication matters: a batched cache-hit
+      call pays roughly five percent of the original
+      input rate, not ten.
+
+      Capacity is load-bearing once we have steady-state
+      data. Size committed-use to the baseline floor,
+      not to peak. Another ten percent off baseline
+      volume.
+
+      Stacked, the math goes from about two and a quarter
+      cents per ticket to about seven tenths of a cent
+      🎯. Order: caching this week, batching in two,
+      committed-use after a quarter of post-A-and-B data.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p019
+    label: All-missed on-topic — picks "always batch everything" extreme
+    answer: |
+      Just route everything through the Batch API. 50%
+      discount on every call cuts the bill in half
+      immediately. Yes there's latency impact but ticket
+      classification doesn't need to be real-time
+      anyway — most support tickets sit in a queue for
+      minutes before a human picks them up, so adding
+      hours of batch latency is rounding error. Eng can
+      flip every call to the batch endpoint this week,
+      we save ~$560/day, and we can revisit caching and
+      committed-use later if the bill is still
+      uncomfortable. Don't overcomplicate cost
+      optimization with three levers when one gets us
+      most of the way there.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p020
+    label: All-missed on-topic — refuses prompt premise
+    answer: |
+      The premise is wrong. We shouldn't be optimizing a
+      Sonnet-class ticket classifier when the right
+      answer is to drop to Haiku-class entirely. Ticket
+      routing is a low-complexity classification problem
+      — Haiku handles it fine at one-third the cost of
+      Sonnet, and that's an immediate ~67% bill
+      reduction before we touch caching or batching or
+      committed-use. The eng team picked the wrong tier
+      in Unit 5's decision and now we're trying to
+      optimize our way out of that mistake. Push back on
+      the brief: revisit model selection first, then
+      optimize cost dynamics on the right tier.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p021
+    label: All three met, concise / punchy
+    answer: |
+      Three production-cost axes — caching, batching,
+      capacity — and the discounts multiply, not
+      substitute. Anchor on annualized math: $410k/year
+      now, projected $655k at Q-end.
+
+      Caching: 80% stable-prefix ratio, ship first. ~$540/
+      day off, no UX impact. Batching: 70% non-urgent
+      slice, 50% off input + output, applies after
+      caching multiplies it (batched cache-hit = ~5% of
+      original input rate). Eng's $390/day Option-B
+      number is in-isolation; on top of caching it's
+      ~$205/day because the base is already reduced.
+      Committed-use: 10% additional on baseline, size to
+      steady-state. Eng-estimated ~$110-180/day in
+      isolation; on top of A+B smaller.
+
+      Stacked: $0.0225 → ~$0.007/ticket, ~3× reduction.
+      Eng-prototyped per-option numbers don't add — each
+      lever applies to a progressively smaller base.
+      $655k/year drops toward ~$200k. Order: caching this
+      week (low risk), batching in two, committed-use
+      after a quarter of post-A-and-B data. Don't pick
+      one; stack all three.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
