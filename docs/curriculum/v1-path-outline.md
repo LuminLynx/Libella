@@ -1,9 +1,10 @@
 # v1 Path Outline — "LLM Systems for PMs"
 
 > **Scope.** Phase 3 sequencing for the canonical Phase 1 path
-> (`llm-systems-for-pms`). Locks units 1–6 with title, trade-off,
-> prereqs, and position rationale; sketches units 7–15 thematically
-> without committing; leaves 16–20 explicitly placeholder.
+> (`llm-systems-for-pms`). Tracks units 1–8 as shipped, locks
+> unit 9 with title, trade-off, prereqs, and position rationale,
+> sketches unit 10 thematically without committing, and leaves
+> 11–20 in their original locked/sketched/placeholder states.
 >
 > **Relationship to other docs.** STRATEGY.md says "20 units, well-built."
 > This file says *which* 20, in *which order*. EXECUTION.md says
@@ -46,7 +47,7 @@ sequence, that's a signal the outline needs updating first.
 
 ---
 
-## Foundations (Units 1–6) — locked
+## Foundations (Units 1–6) — shipped
 
 These six form the front-half arc: a PM finishing Unit 6 can scope
 an LLM-backed feature responsibly. Each answers "*can we ship this?*"
@@ -55,11 +56,11 @@ from a different angle, building toward the synthesis decision.
 | # | Unit | Status | Trade-off it teaches | Prereqs |
 |---|---|---|---|---|
 | 1 | **Tokenization** | ✅ | Right unit of cost vs. wrong one ($/word) | (none) |
-| 2 | **Context Window** | 🔒 | Fits more vs. costs more vs. degrades over long context | 1 |
-| 3 | **Latency** | 🔒 | Fast small model vs. slow big model vs. streaming for perceived speed | 1 |
-| 4 | **Evals** | 🔒 | Human eval vs. LLM-as-judge vs. golden-set vs. live A/B | 1, 2 |
-| 5 | **Model selection** | 🔒 | Capability vs. cost vs. latency triangle (Sonnet vs. Haiku vs. Opus, etc.) | 1, 2, 3, 4 |
-| 6 | **Prompt design basics** | 🔒 | System vs. user, instruction-following, few-shot vs. zero-shot | 5 |
+| 2 | **Context Window** | ✅ | Fits more vs. costs more vs. degrades over long context | 1 |
+| 3 | **Latency** | ✅ | Fast small model vs. slow big model vs. streaming for perceived speed | 1 |
+| 4 | **Evals** | ✅ | Human eval vs. LLM-as-judge vs. golden-set vs. live A/B | 1, 2 |
+| 5 | **Model selection** | ✅ | Capability vs. cost vs. latency triangle (Sonnet vs. Haiku vs. Opus, etc.) | 1, 2, 3, 4 |
+| 6 | **Prompt design basics** | ✅ | System vs. user, instruction-following, few-shot vs. zero-shot | 5 |
 
 ### Position rationale
 
@@ -99,23 +100,53 @@ from a different angle, building toward the synthesis decision.
 
 ---
 
-## Productization (Units 7–10) — sketched
+## Productization (Units 7–10) — partially shipped
 
 After Foundations, the path branches into "*can we make this reliable
-enough to ship to users?*" Locks at the start of each unit's
-authoring, not now.
+enough to ship to users?*" Units 7 and 8 are shipped; Unit 9 is
+locked; Unit 10 remains sketched.
 
-| # | Unit (working title) | Why it's in this phase |
-|---|---|---|
-| 7 | Hallucination + reliability | The single biggest PM-AI surprise; costs trust if mishandled |
-| 8 | Cost dynamics at scale | Caching, rate limits, batch APIs — the "second cost conversation" once volume kicks in |
-| 9 | Fine-tuning vs. prompting vs. RAG | The customization trilemma; appears in every "should we improve quality?" PM meeting |
-| 10 | RAG / vector search fundamentals | Most-asked-about pattern after the foundations are in place |
+| # | Unit | Status | Trade-off it teaches | Prereqs |
+|---|---|---|---|---|
+| 7 | **Hallucination + reliability** | ✅ | Detection vs. mitigation vs. containment for the structural base-rate problem | 4 |
+| 8 | **Cost dynamics at scale** | ✅ | Caching vs. batching vs. capacity — the "second cost conversation" multi-lever optimization | 1, 5 |
+| 9 | **Fine-tuning vs. prompting vs. RAG** | 🔒 | The customization trilemma: which approach matches which kind of quality problem (knowledge gap → RAG; behavior shift → fine-tuning; spec clarity → prompting) | 4, 5, 6 |
+| 10 | Vector search / RAG fundamentals | 🟡 | Most-asked-about pattern after the foundations are in place |
 
-Open questions for this phase (lock when authoring begins):
+### Position rationale (Units 7–9)
 
-- Should hallucination be Unit 7 or be folded into Evals (Unit 4) as
-  the failure mode being measured? Authoring Unit 4 will resolve.
+- **Hallucination as Unit 7** opens the productization block because
+  it's the single biggest PM-AI surprise — every team that ships an
+  LLM feature hits hallucination, and the right frame ("base rate to
+  manage, not bug to fix") needs to land before later units assume
+  it. The c1 reframe is the unit's load-bearing pedagogy. Resolved
+  the earlier open question by authoring it as a standalone unit
+  rather than folding it into Unit 4 (Evals) — the design-around
+  framing is too rich for a sub-section.
+
+- **Cost dynamics at Unit 8** is the "second cost conversation"
+  the path-outline note from Unit 5 promised. The synthesis block
+  (Units 1–5) ends with annualized math at projected volume; Unit 8
+  adds the production levers (caching, batching, committed-use) that
+  PMs reach for when finance starts asking about the line item. It
+  comes after Unit 7 because reliability is the first production
+  concern; cost is the second.
+
+- **Fine-tuning vs. prompting vs. RAG as Unit 9** introduces the
+  customization trilemma after the learner already knows what
+  prompting is (Unit 6) and how to evaluate whether a customization
+  worked (Unit 4). The unit's core pedagogy is that the three
+  approaches are not interchangeable — each fixes a different
+  *kind* of quality problem — and a PM who picks by "what eng knows
+  best" instead of by failure-mode-diagnostic misses the trilemma.
+  This unit sits before Unit 10 (RAG fundamentals) because the
+  trilemma framing has to be established before RAG depth makes
+  sense; otherwise Unit 10 reads as "RAG is the answer to quality
+  problems" instead of "RAG is the answer to *knowledge-gap*
+  problems."
+
+### Open questions remaining for Unit 10
+
 - Is RAG one unit (10) or two (vector-search-as-tool + RAG-as-pattern)?
   Authoring will resolve.
 
@@ -177,14 +208,48 @@ Revisit after closed beta.
 
 ## What this file commits us to
 
-1. **Author Unit 2 (Context Window) next.** No detour into Unit 5
-   or Unit 12 because something else is "more interesting."
-2. **Lock Units 7–8 before starting Unit 6**, so Unit 6's depth
-   section doesn't accidentally cannibalize them.
-3. **Re-read this file at every phase boundary.** What looked obvious
+1. **Author Unit 10 (RAG fundamentals) next.** No detour into
+   Unit 12 or Unit 15 because something else is "more interesting."
+   Lock Unit 10 in this file before slot (a) begins.
+2. **Re-read this file at every phase boundary.** What looked obvious
    at outline time may not survive authoring. Document the change.
+3. **Lock the next unit before authoring slot (a).** The discipline
+   below (Process retrospective) explains why this matters; the
+   short version is that locking forces position rationale to be
+   written *before* authoring, not derived after the fact.
 
 The point of this file is not to be right about all 20 units. It's
 to be honest about what's locked vs what's open, so authoring
 proceeds with confidence in the locked part and humility about the
 rest.
+
+---
+
+## Process retrospective (2026-05-13)
+
+**Discipline violation.** The file's own discipline says *"Don't
+author Unit N until Unit N is locked in this file."* In practice,
+Units 7 (Hallucination) and 8 (Cost dynamics) were authored without
+being moved from 🟡 Sketched to 🔒 Locked in this file first. Unit
+9 (Fine-tuning vs. prompting vs. RAG) was caught at slot (a) draft
+and paused until this retroactive lock could happen.
+
+**What we lost by skipping the lock step.** The position rationale
+for Units 7 and 8 was derived *after* authoring rather than written
+*before* — there's a meaningful difference: the rationale-before
+forces honest reasoning about why a unit comes where it does and
+whether the prereq chain is right; the rationale-after risks
+post-hoc justification of whatever shape the authoring took.
+
+**Retroactive lock.** Units 7 and 8 are marked ✅ Shipped above
+with the trade-off framings they actually authored against, and
+the position-rationale section retroactively records why each
+unit landed where it did. Honest disclosure: the rationale for
+Units 7 and 8 was written *after* the unit content, not before,
+and may smell like justification more than reasoning. For Unit 9
+the rationale was written before slot (a) resumed, restoring the
+discipline going forward.
+
+**Going forward.** Unit 10 will be locked in this file (with
+position rationale written first) before any slot-(a) work
+begins. Same for Units 11+.
