@@ -227,7 +227,8 @@ rate): input drops from $0.015 to ~$0.0042, total
 ~$0.012/ticket. Adding batching for the 70% latency-
 forgiving slice (50% discount on those calls): blended
 cost drops to ~$0.008/ticket. Adding 10% committed-use
-on the remaining volume: another ~$0.0007 off.
+as an additional discount on the post-caching+batching
+effective rate: another ~$0.0007 off per ticket.
 **Combined: $0.0225 → ~$0.007/ticket, about a 3×
 reduction**, all without changing the model or the
 feature. *(Numbers rough as of 2026-05; verify against
@@ -235,11 +236,17 @@ current pricing before quoting to finance.)*
 
 **Cross-axis caveat.** The three levers interact in
 predictable ways. Caching applies before batching
-multiplies. Committed-use applies to baseline volume,
-not to cached/batched portions (which are already
-discounted). Don't double-count savings in finance
-projections; the math compounds multiplicatively, not
-additively, and the order matters.
+multiplies — a batched cache-hit pays the product of
+both discounts. Committed-use applies on top of whatever
+effective rate the call landed at after caching and
+batching, as an additional percentage discount on the
+resulting spend. The math compounds multiplicatively,
+not additively: don't double-count savings in finance
+projections by treating the eng-prototyped per-option
+numbers as independent and adding them. Each lever
+applies to a progressively smaller base, so the
+in-isolation estimates overstate the on-top increment
+when stacked.
 
 ## Decision prompt
 
