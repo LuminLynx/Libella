@@ -7,24 +7,25 @@
 
 ## Decision
 
-**Initial run passed the per-criterion bar (92% ≥ 80%);
-realignment applied for 2 pairs (p007 c1 → false, p014 c1 →
-true); three non-deterministic gate FAILs documented;
-re-run pending.**
+**Unit 8 PASSED 2026-05-13. Status flipped `draft` → `published`.**
 
-21-pair regression set ran live against the deployed
-Railway grader on 2026-05-13. Per-criterion 92% (58/63),
-zero ERRORs (third unit in a row clean). Diagnostic
-surfaced two realignments anchored on a new c1
-calibration finding: **Unit 8's c1 has two AND clauses
-with different grader behaviors** — multi-axis naming is
-lenient, annualization anchor is strict.
+Initial run hit 92% per-criterion (58/63), zero ERRORs.
+Two pairs realigned (p007 c1 → false on missing
+annualization, p014 c1 → true on full AND satisfaction);
+three non-deterministic gate FAILs documented. The
+realigned set was re-run 2026-05-13 and hit **100%
+per-criterion (63/63), zero ERRORs, 21/21 fully passed**
+— the cleanest gate run of the entire path. Both
+realignments held; all three non-deterministic FAILs
+PASSed cleanly, confirming the diagnosis. Unit 8 is live
+on the canonical Phase 1 path, continuing the
+productization block.
 
 | Criterion | Required | Initial run | Re-run | Verdict |
 |---|---|---|---|---|
-| Per-criterion agreement | ≥ 80% | 92% (58/63) | pending | ✅ initial |
-| Honest flagged behavior | spec-faithful | 21/21 | pending | ✅ |
-| Cost / call | reasonable | ~$0.014/call, cache 5.7× | pending | ✅ |
+| Per-criterion agreement | ≥ 80% | 92% (58/63) | **100% (63/63)** | ✅ |
+| Honest flagged behavior | spec-faithful | 21/21 | **21/21** | ✅ |
+| Cost / call | reasonable | ~$0.014/call, cache 5.7× | ~$0.014/call, cache 5.7× | ✅ |
 
 ---
 
@@ -237,14 +238,97 @@ claim is settled with confidence.
 
 ---
 
-## What this unlocks
+## Second run (2026-05-13, post-realignment)
 
-After the realigned set re-runs against the deployed
-grader and passes the per-criterion bar a second time,
+21 pairs through the live grader on the deployed Railway
+backend after PR #97 merged.
+
+```
+Pairs scored:               21
+Errored (no score):         0
+Fully passed (all crit + flagged):  21 (100%)
+Per-criterion agreement:    63/63 (100%)
+Flagged-correct:            21/21
+
+Token usage:
+  input tokens:        14541
+  cache reads:         82520
+  output tokens:       13133
+```
+
+**100% per-criterion. 100% flagged-correct. Zero ERRORs.
+21 of 21 pairs PASSed.** Cleanest gate run of the entire
+path.
+
+### Per-pair outcomes (re-run)
+
+Both realignments held cleanly:
+- p007 c1 → false: PASSED ✓
+- p014 c1 → true: PASSED ✓
+
+All three non-deterministic gate FAILs (p002, p017,
+p018) PASSed cleanly on re-run, confirming the
+diagnostic-vs-gate non-determinism diagnosis. The
+single-criterion FAILs were ambient grader variance,
+not content issues.
+
+Every successfully-graded pair matched expected. The
+unit's content + the AND-clause-aware realignments are
+calibrated.
+
+---
+
+## Findings (re-run)
+
+### 1. Both realignments held
+
+p007 (c1 → false) and p014 (c1 → true) both PASSED on
+the re-run, confirming the c1 AND-clause-aware
+realignment direction was correct. The new calibration
+finding (multi-axis lenient + annualization strict) reads
+cleanly when YAML matches grader behavior.
+
+### 2. Non-deterministic gate FAILs all cleared
+
+p002, p017, p018 all PASSed cleanly. This is the
+strongest confirmation yet that the gate-vs-diagnostic
+non-determinism pattern is real and the right
+disposition is to triage with diagnostic and not realign
+based on single-gate-run results.
+
+### 3. Plain-prose discipline on p018 holding
+
+Unit 6/7 p018 reproducibly errored with the percentage-
+slash + markdown content shape. Unit 8 p018 uses plain
+prose with the same emoji count (4) and PASSed cleanly
+on both runs. **The authoring discipline works** — emoji
+density isn't the problem; structural-markdown + numeric
+notation combinations are.
+
+### 4. Cleanest gate run of the path
+
+| Unit | Re-run per-criterion | Errors |
+|---|---|---|
+| 2 — Context Window | 87.8% | 1 + 1 transient |
+| 3 — Latency | 89% | 3 + 2 |
+| 4 — Evals | 100% | 0 + 0 |
+| 5 — Model selection | 95% | 0 + 1 |
+| 6 — Prompt design | 84% (98% adj.) | 1 + 3 |
+| 7 — Hallucination | 85% (100% adj.) | 1 + 3 |
+| **8 — Cost dynamics** | **100%** | **0 + 0** |
+
+Unit 8 ties Unit 4 at 100% per-criterion AND adds
+zero-ERRORs across both runs. Productization-block
+authoring discipline is mature.
+
+---
+
+## What this unlocked
+
 Unit 8 publishes:
 
-- `content/units/cost-dynamics-bundle-0.md` status flips
-  from `draft` to `published`.
+- `content/units/cost-dynamics-bundle-0.md` status
+  flipped from `draft` to `published` in this PR.
 - The unit becomes the eighth unit on the canonical
   Phase 1 path (`llm-systems-for-pms`), continuing the
   productization block.
