@@ -103,34 +103,44 @@ pairs:
       Caching first: 4,000 of 5,000 input tokens are
       stable (system prompt + routing rules + in-context
       examples). 80% stable-prefix ratio is exactly where
-      caching is load-bearing. ~$540/day savings drops
-      the bill ~48%. Lowest eng risk; no UX impact.
+      caching is load-bearing. Eng's ~$540/day estimate
+      holds because caching is the first lever — no
+      upstream discounts have reduced the base. Lowest
+      eng risk; no UX impact.
 
       Batching second: 70% of tickets are non-urgent
       (account questions, low-priority billing, post-
       resolution feedback). Route those through the
       Batch API for 50% off both input AND output tokens.
-      ~$390/day savings on top of caching, because the
-      caching discount applies before batching multiplies
-      it — a batched cache-hit call pays ~5% of the
-      original input rate, not 10%. UX impact is real but
+      Eng's ~$390/day Option-B estimate is in isolation;
+      on top of caching the actual stacked increment is
+      smaller — caching already cut the per-call cost
+      that batching halves, so the on-top-of-A increment
+      is ~$205/day, not $390. The discounts multiply: a
+      batched cache-hit call pays ~5% of the original
+      input rate, not 10%. UX impact is real but
       bounded: non-urgent tickets get classified within
       hours instead of within minutes.
 
-      Committed-use third: 10% additional discount on
-      sustained baseline, ~$110/day at current scale,
-      growing to ~$180/day at Q-end. Worth doing because
-      the steady-state QPS is high enough to justify the
-      12-month floor, but size the commitment to the
-      steady-state, not to peak.
+      Committed-use third: eng-estimated ~$110-180/day
+      in isolation, but applied to the post-caching-and-
+      batching base the actual on-top increment is
+      smaller. Worth doing because the steady-state QPS
+      is high enough to justify the 12-month floor, but
+      size the commitment to the steady-state, not to
+      peak.
 
       Combined: ~$0.0225 → ~$0.007/ticket, roughly 3×
-      reduction. $655k/year drops toward ~$220k.
-      Recommendation: ship A immediately (caching, low
-      risk), B within two weeks (batching for non-urgent),
-      C after we have one quarter of steady-state data
-      to size the commitment correctly. Don't pick one;
-      stack all three.
+      reduction. The eng-prototyped per-option numbers
+      don't simply add when stacked — they apply to
+      progressively smaller bases. $410k/year drops
+      toward ~$125k at current volume, $655k/year drops
+      toward ~$200k at Q-end. Recommendation: ship A
+      immediately (caching, low risk), B within two
+      weeks (batching for non-urgent), C after we have
+      one quarter of steady-state data to size the
+      commitment correctly. Don't pick one; stack all
+      three.
     expected:
       criteria:
         - position: 1
@@ -250,19 +260,25 @@ pairs:
       UX impact, low eng cost.
 
       Batching: 70% non-urgent slice. 50% discount on
-      both input + output. ~$390/day on top of caching.
-      Caching applies before batching multiplies —
-      batched cache-hit = ~5% of original input rate, not
-      10%. UX impact bounded: hours vs minutes for
-      non-urgent.
+      both input + output. Eng's $390/day is in
+      isolation; on top of caching the increment is
+      ~$205/day because caching already reduced the base
+      that batching halves. Caching applies before
+      batching multiplies — batched cache-hit = ~5% of
+      original input rate, not 10%. UX impact bounded:
+      hours vs minutes for non-urgent.
 
-      Committed-use: 10% additional on baseline. ~$110-
-      $180/day. Size to steady-state QPS, not peak. Sign
-      after one quarter of post-A-and-B data.
+      Committed-use: 10% additional on baseline. Eng-
+      estimated ~$110-180/day in isolation; on top of
+      A+B the on-top increment is smaller. Size to
+      steady-state QPS, not peak. Sign after one quarter
+      of post-A-and-B data.
 
       Combined: $0.0225 → ~$0.007/ticket. ~3× reduction.
-      Order: caching this week, batching in two, committed
-      next quarter.
+      Eng-prototyped per-option numbers don't add when
+      stacked; each applies to a smaller base than the
+      isolation estimate assumed. Order: caching this
+      week, batching in two, committed next quarter.
     expected:
       criteria:
         - position: 1
@@ -287,8 +303,12 @@ pairs:
       is that single-lever optimization leaves the other
       two discounts unclaimed. Caching alone gets ~48%
       off the bill but the batching discount on the
-      latency-forgiving slice is another ~$390/day, and
-      committed-use is another ~$110-180/day on top.
+      latency-forgiving slice adds another ~$205/day on
+      top (the eng-prototyped Option-B estimate of
+      ~$390/day is in isolation; stacked on top of
+      caching the increment is smaller because the base
+      is already reduced). Committed-use is another
+      smaller-than-isolation increment on top of that.
       The mechanism is multiplicative: batching applies
       after per-call cost is computed, so a batched
       cache-hit pays the product of both discounts, not
@@ -354,9 +374,14 @@ pairs:
       mechanism is that batching applies after per-call
       cost is computed, so a batched cache-hit call pays
       the product of both discounts (~5% of the original
-      input rate), not the sum. The same shape applies
-      to committed-use: it's a separate lever that stacks
-      on top, not an alternative.
+      input rate), not the sum. Practical implication:
+      the eng-prototyped per-option estimates don't add
+      when stacked. Option B's $390/day in-isolation
+      becomes ~$205/day on top of caching, because
+      caching already reduced the base that batching
+      halves. Same shape applies to committed-use: it
+      stacks on top with a smaller-than-isolation
+      increment, not as an additive alternative.
 
       Regime: caching is load-bearing when the stable-
       prefix ratio is high (>60%); batching is load-
@@ -600,20 +625,26 @@ pairs:
       Batching segundo: 70% dos tickets são não-urgentes
       (account questions, billing low-priority,
       feedback pós-resolução). Routear esses pelo Batch
-      API para 50% de desconto em input + output. ~$390/
-      dia em cima do caching, porque o desconto de
-      caching aplica antes de batching multiplicar — um
-      batched cache-hit paga ~5% do input rate
-      original, não 10%. Impacto UX bounded: horas em
-      vez de minutos para não-urgentes.
+      API para 50% de desconto em input + output. A
+      estimativa eng de ~$390/dia é em isolamento; em
+      cima do caching, o incremento real é ~$205/dia
+      porque o caching já reduziu a base que o batching
+      vai cortar a metade. O desconto de caching aplica
+      antes de batching multiplicar — um batched
+      cache-hit paga ~5% do input rate original, não
+      10%. Impacto UX bounded: horas em vez de minutos
+      para não-urgentes.
 
-      Committed-use terceiro: 10% adicional na baseline.
-      ~$110-180/dia. Tamanho ao steady-state, não a
-      peak. Assinar após um trimestre de dados.
+      Committed-use terceiro: eng estimou ~$110-180/dia
+      em isolamento; em cima de A+B o incremento real
+      é menor. Tamanho ao steady-state, não a peak.
+      Assinar após um trimestre de dados.
 
       Combinado: $0.0225 → ~$0.007/ticket. Redução de
-      ~3×. Ordem: A esta semana, B em duas, C no
-      próximo trimestre.
+      ~3×. As estimativas eng por opção não somam quando
+      stacked — cada lever aplica a uma base
+      progressivamente menor. Ordem: A esta semana, B
+      em duas, C no próximo trimestre.
     expected:
       criteria:
         - position: 1
@@ -786,12 +817,17 @@ pairs:
       day off, no UX impact. Batching: 70% non-urgent
       slice, 50% off input + output, applies after
       caching multiplies it (batched cache-hit = ~5% of
-      original input rate). ~$390/day on top. Committed-
-      use: 10% additional on baseline, size to steady-
-      state. ~$110-180/day.
+      original input rate). Eng's $390/day Option-B
+      number is in-isolation; on top of caching it's
+      ~$205/day because the base is already reduced.
+      Committed-use: 10% additional on baseline, size to
+      steady-state. Eng-estimated ~$110-180/day in
+      isolation; on top of A+B smaller.
 
       Stacked: $0.0225 → ~$0.007/ticket, ~3× reduction.
-      $655k/year drops toward ~$220k. Order: caching this
+      Eng-prototyped per-option numbers don't add — each
+      lever applies to a progressively smaller base.
+      $655k/year drops toward ~$200k. Order: caching this
       week (low risk), batching in two, committed-use
       after a quarter of post-A-and-B data. Don't pick
       one; stack all three.
