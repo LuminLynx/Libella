@@ -6,7 +6,7 @@ position: 7
 prereq_unit_ids:
   - evals-bundle-0
 status: published
-definition: Hallucination is the LLM's structural tendency to generate plausible-sounding output that isn't grounded in the input or in reality — and reliability is the discipline of designing features to make hallucination visible, attributable, and bounded, not absent. The PM trap is treating hallucination as a bug to fix instead of a base rate to manage.
+definition: Hallucination is the LLM's structural tendency to generate plausible-sounding output that isn't grounded in the input or in reality — and reliability is the discipline of designing features to make hallucination visible, attributable, and bounded, not absent.
 calibration_tags:
   - claim: "Every shipped LLM feature has a non-zero hallucination rate; rates can be reduced but not driven to zero across all task shapes."
     tier: settled
