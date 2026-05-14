@@ -342,3 +342,54 @@ rule is in this file (not in `STRATEGY.md` / `EXECUTION.md`
 because it's a session-operations concern, not strategy or
 phase sequencing) so the next authoring session reads it during
 the standard onboarding sweep of curriculum docs.
+
+---
+
+## Process discipline — regression-set density (2026-05-14)
+
+**Observation.** Every published unit (1–9) shipped with ≥ 20
+regression pairs:
+
+| Unit | Designation | Pairs shipped |
+|---|---|---|
+| 1 — Tokenization | flagship | 20 |
+| 2 — Context window | flagship | 22 |
+| 3 — Latency | standard | 22 |
+| 4 — Evals | standard | 21 |
+| 5 — Model selection | standard | 21 |
+| 6 — Prompt design | standard | 21 |
+| 7 — Hallucination | standard | 21 |
+| 8 — Cost dynamics | standard | 21 |
+| 9 — Customization trilemma | flagship | 21 |
+
+`STRATEGY.md` § T2-C / § T1 Q5 sets the tier thresholds at
+**≥ 20 flagship / ≥ 10 standard / never zero.** In practice the
+standard-designated units all converged on flagship density — the
+natural shape of the distribution buckets (all-three-met /
+partial / single-criterion / all-missed-on-topic / off-topic-
+gradable / flagged-expected) produces ~20 pairs organically once
+the authoring discipline is applied.
+
+**The discipline going forward.** Author every unit to ≥ 20
+pairs by default, regardless of flagship/standard designation in
+`STRATEGY.md`. Reasons:
+
+1. Distribution buckets need that many pairs to be honestly
+   represented (you can't usefully have 1.5 pairs in a bucket).
+2. Deliberate borderlines (the Unit 2 p008/p020 pattern; Unit 9
+   had four of them) need budget that 10 pairs can't afford.
+3. Cost is bounded — ~$0.20 per gate run regardless of pair count
+   (prompt caching dominates), so author-density doesn't move the
+   cost curve.
+
+**Not a STRATEGY revision.** The tier system in `STRATEGY.md` is
+intact; the ≥ 10 standard floor still allows a smaller follow-on
+unit to ship at 10–14 pairs if there's a specific reason (e.g., a
+small appendix unit or a unit whose distribution buckets
+genuinely don't have 20 honest pair shapes). This retrospective
+documents the de-facto practice without overriding the spec
+floor.
+
+**For future authoring sessions.** Default = ≥ 20 pairs.
+Deviations (10–19 pairs) need an explicit rationale at slot (d)
+authoring time, recorded in the regression-set YAML header.
