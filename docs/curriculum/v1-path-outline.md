@@ -298,3 +298,47 @@ handling — the way Tokenization does), require an explicit
 founder approval at slot (d) authoring with the justification
 recorded. Default = English-only; non-English = exception with
 named rationale.
+
+---
+
+## Session operations discipline — PR auto-subscribe (2026-05-14)
+
+**The rule.** Every PR a Claude Code session opens against this
+repo gets an immediate `subscribe_pr_activity` call on it.
+Subscription covers PR activity end-to-end: CI status changes,
+review comments, reviews, merges, and any other webhook event
+GitHub sends for the PR.
+
+**Why.** PR-activity subscriptions are per-PR, not session-wide.
+Without an explicit default, every PR opened in a session
+requires asking the operator *"want me to subscribe?"* — overhead
+that adds up when authoring runs through multiple PRs (a unit
+authoring PR, a gate audit PR, a publish PR per cycle). Adopting
+auto-subscribe as the default removes the ask and makes CI
+failures and review comments reach the authoring session by
+default, where they can be triaged in context.
+
+**Handling discipline (carried from prior sessions).** Once
+subscribed:
+
+- **Confident + small fix:** apply directly, commit, push.
+- **Ambiguous, architecturally significant, or a content/spec
+  call:** ask the operator before acting.
+- **Duplicate webhook (e.g., echo of a reply just posted, or a
+  webhook for an event the session caused itself):** skip
+  silently.
+- **Deliberate-borderline disagreement (the regression-set
+  pattern documented in `docs/UNIT_2_GATE.md` and successors):**
+  reply to the comment explaining the rationale and pointing at
+  the YAML header / gate-doc reference; no YAML change.
+
+**Auto-unsubscribe behavior.** When a subscribed PR merges or
+closes, GitHub's webhook flow automatically unsubscribes the
+session. No manual cleanup needed.
+
+**For new sessions.** A Claude Code session resuming this repo
+should adopt this discipline before opening its first PR. The
+rule is in this file (not in `STRATEGY.md` / `EXECUTION.md`
+because it's a session-operations concern, not strategy or
+phase sequencing) so the next authoring session reads it during
+the standard onboarding sweep of curriculum docs.
