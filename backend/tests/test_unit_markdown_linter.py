@@ -59,6 +59,13 @@ def test_unknown_prereq_is_flagged() -> None:
     ), rendered
 
 
+def test_multi_sentence_definition_is_flagged() -> None:
+    rendered = _violations_for("broken/multi-sentence-definition.md")
+    assert any(
+        "'definition' must be a single sentence" in line for line in rendered
+    ), rendered
+
+
 def test_prereq_referencing_sibling_in_same_pass_is_accepted() -> None:
     # The clean fixture has id 'sample-clean'; if a second file declared it as
     # a prereq within the same lint pass, it should resolve cleanly.

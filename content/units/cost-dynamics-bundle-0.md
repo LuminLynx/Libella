@@ -7,7 +7,7 @@ prereq_unit_ids:
   - tokenization-bundle-0
   - model-selection-bundle-0
 status: published
-definition: Cost dynamics at scale is the second cost conversation — the one that happens after the model is chosen and the feature is shipping, when finance starts asking "is this sustainable at production volume?" The trap is treating cost as a one-time decision tied to model selection instead of an ongoing multi-lever optimization that compounds with scale.
+definition: Cost dynamics at scale is the second cost conversation — the one that happens after the model is chosen and the feature is shipping at volume, when finance starts asking whether the projected annualized bill is sustainable.
 calibration_tags:
   - claim: "Prompt caching reduces input-token cost on cache hits to roughly 10% of the on-demand rate across major providers."
     tier: settled

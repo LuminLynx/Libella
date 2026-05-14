@@ -192,6 +192,33 @@ def _validate_front_matter(parsed: ParsedUnit) -> None:
             parsed.violations.append(
                 Violation(path, 1, "front matter 'definition' must be a non-empty string (slot 2)")
             )
+        else:
+            # Strip trailing whitespace and trailing closing quotes so that
+            # legitimate definitions ending in `..."writing tips."` are
+            # treated as ending in a period.
+            stripped = definition.strip().rstrip("\"'")
+            if not stripped.endswith("."):
+                parsed.violations.append(
+                    Violation(
+                        path,
+                        1,
+                        "front matter 'definition' must end with a period (slot 2 — one sentence)",
+                    )
+                )
+            # Strip the trailing period before scanning for internal sentence
+            # breaks, so the legitimate end-of-string terminator doesn't match.
+            # Heuristic: a sentence break is terminator (.?!) + optional
+            # closing quote + whitespace + capital letter. Catches both
+            # "...absent. The trap..." and '..."volume?" The trap...' shapes.
+            body = stripped[:-1] if stripped.endswith(".") else stripped
+            if re.search(r"[.?!]['\"]?\s+[A-Z]", body):
+                parsed.violations.append(
+                    Violation(
+                        path,
+                        1,
+                        "front matter 'definition' must be a single sentence (slot 2)",
+                    )
+                )
 
     prereqs = fm.get("prereq_unit_ids")
     if "prereq_unit_ids" in fm:
