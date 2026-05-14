@@ -253,3 +253,48 @@ discipline going forward.
 **Going forward.** Unit 10 will be locked in this file (with
 position rationale written first) before any slot-(a) work
 begins. Same for Units 11+.
+
+---
+
+## Process retrospective — English-only authoring discipline (2026-05-14)
+
+**The drift.** Units 1–8 each carry a non-English regression-set
+pair — Tokenization (p017, Spanish), Units 2–8 (p016, Portuguese).
+The pattern propagated: Tokenization's Spanish pair had legitimate
+unit-content justification (the unit teaches that non-English text
+costs more tokens), but the Context Window PR (Unit 2) imported a
+Portuguese pair without that justification, and Units 3–8 carried
+the precedent forward across the Phase 3 authoring sessions.
+
+**The discipline (locked 2026-05-14).** **English-only is the
+default for all authoring — units, regression sets, prompts,
+examples, every slot.** A non-English addition requires explicit
+founder approval per case, with a stated justification, not
+inherited from precedent.
+
+Why English-only is the right baseline:
+
+- The product surface (Android app, curriculum, decision prompts)
+  ships in English.
+- Regression-set pairs never reach end users — they're internal
+  grader-calibration test data — so non-English coverage has no
+  user-facing audience reason.
+- Grader multilingual capability is a property of the underlying
+  model (Sonnet 4.6), not something regression-set coverage
+  trains in.
+- Non-English authoring is real effort (curated answer text,
+  reviewer cognitive load, repo footprint) with no offsetting win.
+
+**Forward-only correction.** Units 1–8 keep their non-English
+pairs as shipped. The gates already passed; the pairs are
+internal test data with no exposure path; cleaning up 8 published
+units is overhead with no user-facing benefit. The discipline
+applies from Unit 9 onward (Unit 9 ships English-only across all
+21 regression pairs).
+
+**For future units.** If a non-English pair seems valuable for a
+specific unit (e.g., the unit's content concerns multilingual
+handling — the way Tokenization does), require an explicit
+founder approval at slot (d) authoring with the justification
+recorded. Default = English-only; non-English = exception with
+named rationale.
