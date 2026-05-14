@@ -2,9 +2,9 @@
 
 > **Scope.** Phase 3 sequencing for the canonical Phase 1 path
 > (`llm-systems-for-pms`). Tracks units 1–8 as shipped, locks
-> units 9 and 10 with title, trade-off, prereqs, and position
-> rationale, and leaves 11–20 in their original
-> locked/sketched/placeholder states.
+> units 9, 10, and 11 with title, trade-off, prereqs, and
+> position rationale, and leaves 12–20 in their original
+> sketched/placeholder states.
 >
 > **Relationship to other docs.** STRATEGY.md says "20 units, well-built."
 > This file says *which* 20, in *which order*. EXECUTION.md says
@@ -175,17 +175,40 @@ are locked.
 
 ---
 
-## Production (Units 11–15) — sketched
+## Production (Units 11–15) — partially locked
 
-"*Can we operate this in front of real users?*"
+"*Can we operate this in front of real users?*" Unit 11 is locked;
+Units 12–15 remain sketched.
 
-| # | Unit (working title) | Why it's in this phase |
-|---|---|---|
-| 11 | Streaming UX | The TT2 UX flag in STRATEGY.md; deep-dive at this point makes more sense than as a one-liner in Latency |
-| 12 | Tool use / function calling | The shift from "answer-shaped output" to "the LLM can call your API" |
-| 13 | Multimodal (vision basics) | Image-input use cases at PM level |
-| 14 | Agents / multi-step reasoning | When chain-of-thought helps vs. when it's expensive theater |
-| 15 | Safety + content moderation | What stops a feature from getting your team in trouble |
+| # | Unit | Status | Trade-off it teaches | Prereqs |
+|---|---|---|---|---|
+| 11 | **Streaming UX** | 🔒 | What to stream (raw tokens / semantic chunks / status only) vs. how to render the streaming state (continuous flow / progressive sections / typed-out) vs. how to handle mid-stream failure (silent retry / partial accept / full restart) — three coupled decisions whose pairings produce three different user feels; mismatched pairings produce a UI the user reads as broken | 1, 3 |
+| 12 | Tool use / function calling | 🟡 | The shift from "answer-shaped output" to "the LLM can call your API" | — |
+| 13 | Multimodal (vision basics) | 🟡 | Image-input use cases at PM level | — |
+| 14 | Agents / multi-step reasoning | 🟡 | When chain-of-thought helps vs. when it's expensive theater | — |
+| 15 | Safety + content moderation | 🟡 | What stops a feature from getting your team in trouble | — |
+
+### Position rationale (Unit 11)
+
+- **Streaming UX as Unit 11** picks up the streaming axis from
+  Unit 3 (Latency) — where it was named as one of three latency
+  levers — and goes deep on what shipping it actually entails.
+  Unit 3 framed streaming as a *choice* (stream on chat-shaped
+  surfaces, don't on atomic-output ones); Unit 11 frames it as a
+  *discipline*. The unit's load-bearing pedagogy is that *"stream
+  the output"* isn't a single decision but a three-decision
+  trilemma — what to stream, how to render it, how to recover
+  from mid-stream failure. Each pairing produces a different
+  feel; mismatched pairings produce a janky UI that the user
+  reads as broken. STRATEGY.md § TT2 explicitly flags streaming
+  the rationale as load-bearing for the grader's UX
+  (*"User sees a useful loading state, not a bare spinner"*);
+  this unit is the deep-dive that flag promises. Sits as Unit 11
+  because it's the first Production-block unit and the most
+  user-visible — every PM shipping an LLM feature with
+  non-trivial output length faces this decision, and faces it
+  before more specialized patterns (Tool use, Multimodal,
+  Agents, Safety).
 
 ---
 
@@ -233,11 +256,12 @@ Revisit after closed beta.
 
 1. **Author Unit 10 (RAG fundamentals) next.** Locked
    2026-05-14. No detour into Unit 12 or Unit 15 because
-   something else is "more interesting."
-2. **Lock Unit 11 (Streaming UX) before Unit 10 authoring
-   completes.** Maintain the one-unit-ahead lock buffer so the
-   prereq chain is always settled before slot (a) begins on the
-   active unit.
+   something else is "more interesting." Unit 11 (Streaming UX)
+   is also locked, satisfying the one-unit-ahead lock buffer.
+2. **Lock Unit 12 (Tool use / function calling) before Unit 11
+   authoring begins.** Maintain the one-unit-ahead lock buffer
+   so the prereq chain is always settled before slot (a) begins
+   on the active unit.
 3. **Re-read this file at every phase boundary.** What looked obvious
    at outline time may not survive authoring. Document the change.
 4. **Lock each next unit before authoring slot (a).** The discipline
