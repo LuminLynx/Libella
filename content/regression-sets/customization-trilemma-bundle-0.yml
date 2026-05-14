@@ -1,0 +1,693 @@
+# Regression set for the Fine-tuning vs. Prompting vs. RAG unit
+# (customization-trilemma-bundle-0).
+#
+# Unit 9 is treated as flagship under STRATEGY.md § T2 — target is
+# >= 20 pairs before the unit publishes. Authoring discipline mirrors
+# tokenization-bundle-0.yml + context-window-bundle-0.yml (the two
+# Phase 2/3 gate-passing references).
+#
+# Position-to-criterion mapping (from
+# content/units/customization-trilemma-bundle-0.md slot 8 rubric):
+#
+#   1. "Names the customization trilemma the unit is built around —
+#      fine-tuning vs. RAG vs. prompting as three approaches that map
+#      to three different problem shapes (behavior shift / knowledge
+#      gap / spec clarity), not as interchangeable levers — AND treats
+#      diagnosing the failure mode as the load-bearing step before
+#      picking an approach."
+#   2. "Identifies a concrete failure mode of mis-matching approach to
+#      problem shape AND names the mechanism behind it — e.g.,
+#      fine-tuning a knowledge gap because training shifts behavior
+#      distribution rather than loading facts; RAG-ing a behavior issue
+#      because retrieval injects content into context but doesn't
+#      change how the model interprets it; prompting a knowledge gap
+#      because no amount of instruction retrieves information the
+#      model doesn't have."
+#   3. "Distinguishes which approach is load-bearing for which problem
+#      shape — fine-tuning for behavior/style/persona shifts; RAG for
+#      knowledge gaps; prompting for spec-clarity problems — AND
+#      recognizes that production features usually layer multiple
+#      approaches (RAG + prompting as typical default)."
+#
+# Authoring distribution (21 pairs, 6/4/3/4/2/2):
+#   * 6 pairs all-three-met (varied English voices)
+#       p001, p002, p005, p016 (structured PM-doc), p018 (emoji),
+#       p021 (concise)
+#   * 4 pairs partial credit (2 of 3)
+#       p006 (c1+c2), p007 (c1+c3), p008 (c2+c3), p017 (c2+c3, code)
+#   * 3 pairs single-criterion-met
+#       p009 (c1), p010 (c2), p011 (c3)
+#   * 4 pairs all-missed but on-topic
+#       p004, p012, p019, p020
+#   * 2 pairs off-topic, all-missed, gradable (NOT flagged)
+#       p003, p013
+#   * 2 pairs flagged-expected (too thin to grade fairly per T2-B)
+#       p014, p015
+#
+# T2-B locked interpretation (per docs/PHASE_2_GATE.md and PR #72):
+# flagged = grader *uncertainty*, NOT "answer is bad." Off-topic
+# answers the grader can confidently grade as all Not-Met are
+# gradable — flagged: false. Thin/punting answers the grader cannot
+# fairly grade — flagged: true.
+#
+# Four deliberate-borderline pairs (mirrors Unit 2 pattern):
+#   * p007 (c2 borderline — gestures-without-mechanism). Names the
+#     trilemma and maps each problem to each approach but doesn't
+#     explain why each approach fits. c2 expected false; grader may
+#     reasonably read as met if it accepts the implicit shape-fit
+#     reasoning.
+#   * p015 (flag borderline — verbose-punt). Hedges throughout
+#     without committing to the trilemma, mechanisms, or regimes.
+#     Could read as confidently-all-not-met (Unit 2 p015 realigned
+#     this direction) or as too-thin-to-grade-fairly. Expected
+#     flagged: true; grader may reasonably read as false.
+#   * p017 (c1 borderline — code-comment-mechanism). Pseudocode
+#     comments name mechanisms and regimes cleanly but the trilemma
+#     itself is implicit. c1 expected false; grader may reasonably
+#     read as met (Unit 2 p017 went the other way on c1).
+#   * p019 (c1/c2/c3 borderline — vendor-claim-as-evidence).
+#     Mentions the trilemma but argues for fine-tuning across all
+#     three problems, citing recent provider availability as
+#     evidence. Tests whether the grader catches the contradiction
+#     between using the vocabulary and applying it contrarily. c1
+#     expected true (vocab mentioned); grader may reasonably mark
+#     false because the framing is contradicted in practice — same
+#     direction as Unit 2 p019.
+#
+# When the gate re-runs, watch for these calibration signals:
+#   - All-met pairs should NOT flag.
+#   - All-missed-on-topic pairs should ALSO not flag.
+#   - Off-topic-but-gradable should NOT flag (T2-B reading).
+#   - Thin/punting answers SHOULD flag.
+#   - Confidence on partial-credit pairs is the most informative
+#     signal — >90% confidence on a wrong judgement = prompt/rubric
+#     phrasing needs tuning.
+#   - Disagreement on the four borderlines is *expected signal*, not
+#     noise. PR-#72-equivalent triage applies post-gate-run.
+
+unit_id: customization-trilemma-bundle-0
+
+description: |
+  Phase 3 / Unit 9 flagship gate set. Authored 2026-05-14 against
+  the locked T2-B reading. 21 pairs; distribution biased toward
+  partial-credit and single-criterion since those are where grader
+  calibration is actually tested. Four deliberate borderline pairs
+  (p007, p015, p017, p019) carry the most informative signal.
+
+pairs:
+  - id: p001
+    label: All three met, balanced answer addressing each problem
+    answer: |
+      The eng lead is right that there are three approaches on the
+      table but wrong that we pick one. These are three different
+      problems with three different shapes, and they map cleanly to
+      three different approaches.
+
+      The tone problem is a behavior shift. The model can answer;
+      it just defaults to a voice we don't want. That's what
+      fine-tuning is for — training on examples of the right tone
+      changes the model's defaults. RAG won't help (retrieval
+      doesn't change interpretation), and prompting nudges per call
+      but doesn't shift defaults at production scale.
+
+      The new-product knowledge gap is a knowledge problem. The
+      facts exist in retrievable form (the Confluence docs). RAG
+      is the right tool — expand the index. Fine-tuning would be
+      wrong here: training shifts behavior distribution but doesn't
+      reliably load facts, and six months from now with product
+      line #3 we'd be stale again.
+
+      The output-drift problem is a spec problem. The model can do
+      the task and knows the facts; it just doesn't know what
+      "good" looks like specifically. That's a prompt fix — write
+      the format spec clearly, add 3-5 boundary examples.
+
+      Sequence: RAG expansion + prompt rewrite this quarter (cheap,
+      reversible); fine-tune for tone next quarter after we've
+      established that a stronger system prompt can't get tone
+      close enough. Where I'd be willing to be wrong: tone might
+      be addressable in prompting alone, worth trying first before
+      committing to fine-tuning's reversal cost.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p002
+    label: All three met, terse engineering-flavored
+    answer: |
+      Three problems, three shapes, three approaches. Don't pick
+      one.
+
+      (1) Tone = behavior shift. Fine-tune target. Mechanism:
+      training reshapes the model's output distribution to match
+      the example set. RAG won't fix tone — the model doesn't
+      change voice because you injected context. Prompting nudges
+      per call but doesn't move defaults at scale.
+
+      (2) New products = knowledge gap. RAG target. Mechanism:
+      retrieval pulls the missing facts into context per query.
+      Fine-tuning here is the classic anti-pattern: training
+      shifts behavior, not facts; six months later the product set
+      is different and the training is stale.
+
+      (3) Output format = spec-clarity. Prompt target. Mechanism:
+      clear rules and 3-5 examples in the system prompt teach the
+      format. Fine-tuning is overkill; RAG is the wrong shape.
+
+      Sequencing: prompt + RAG this quarter (cheap, reversible,
+      no training cycle). Stage fine-tuning for next quarter if
+      tone persists after the other two are addressed. Where I'd
+      be wrong: if tone is actually downstream of format (walls of
+      text feel canned), the prompt fix solves both.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p003
+    label: Off-topic — pivots to "should we even ship this?", gradable
+    answer: |
+      Before we invest in any of these approaches, we should settle
+      the bigger question: should we be running customer support
+      through an LLM at all if we're seeing this many quality
+      issues three months in? The reputational risk of a single
+      bad answer in support is real. I'd want this in front of
+      legal and product leadership before greenlighting further
+      investment. The architecture question is secondary to that
+      conversation.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p004
+    label: All-missed on-topic — picks "fine-tune everything" extreme
+    answer: |
+      This is a fine-tuning problem. All three issues are quality
+      problems, and the right way to fix quality at scale is to
+      fine-tune the model on examples of good outputs. We hand-
+      write 200 ideal customer-support responses covering the tone
+      we want, the new product information, and the proper output
+      format, and feed them into a fine-tune. One training run, all
+      three problems addressed. RAG and prompt rewrites are
+      band-aids; fine-tuning is the durable fix.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p005
+    label: All three met, written in the voice of someone who's been bitten
+    answer: |
+      I've watched a team make exactly this mistake. They had
+      budget for fine-tuning, fine-tuned to solve a knowledge gap,
+      and six months later the facts had drifted and they were
+      back where they started — minus the training spend.
+
+      The discipline is to diagnose before picking. Three
+      problems, three different shapes:
+
+      The tone problem is a behavior issue. The model can answer;
+      its default voice is the issue. Fine-tuning works here
+      because training literally shifts what the model does when
+      no other signal pushes it elsewhere. RAG won't touch tone;
+      prompting moves it per call but not in production-grade
+      defaults.
+
+      The new-product gap is a knowledge issue. The facts exist;
+      the model just hasn't seen them. RAG is the right tool
+      because retrieval injects exactly the missing information
+      into context for each query, and it doesn't go stale the way
+      fine-tuning would (re-index, not retrain).
+
+      The output format problem is a spec issue. The model can do
+      the work; we haven't told it precisely what we want. Update
+      the prompt with clear format rules and 3-5 examples. Cheap,
+      fast, reversible.
+
+      Sequence: prompt fix this week, RAG expansion this month,
+      fine-tune for tone next quarter only if a stronger system
+      prompt can't get tone close enough. The eng lead's "pick
+      one" is the trap — these are not the same problem at scale.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p006
+    label: c1 + c2 met, c3 missing — trilemma + mechanism, no regime mapping
+    answer: |
+      These are three different problems, not three flavors of the
+      same one. The customization trilemma — fine-tuning vs. RAG
+      vs. prompting — only works when you treat the three
+      approaches as solving three different problem shapes, not
+      as interchangeable levers.
+
+      The eng lead's "pick one" framing collapses what's actually
+      a multi-axis decision into a single bet, and that's where
+      the money tends to get wasted. Each approach has a specific
+      mechanism. Fine-tuning works by shifting the model's
+      behavior distribution through additional training; it
+      changes defaults but doesn't reliably load facts. RAG works
+      by injecting external information into the prompt at query
+      time; it adds knowledge without changing model behavior.
+      Prompting works by specifying behavior in the call itself;
+      cheap and fast but bounded by what instructions and examples
+      can convey.
+
+      What that means for the decision: pick the approach whose
+      mechanism matches the problem shape, not the one with the
+      most budget or the most internal advocacy.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p007
+    label: c1 + c3 met, c2 missing — maps each problem without naming mechanism (deliberate borderline)
+    answer: |
+      This is the classic customization-trilemma decision and the
+      eng lead is collapsing it incorrectly. Three problems, three
+      approaches, not one.
+
+      The tone problem maps to fine-tuning — that's what
+      fine-tuning is for, persistent behavior shifts.
+
+      The new-products knowledge gap maps to RAG — that's exactly
+      the shape RAG handles, knowledge the model doesn't have but
+      exists in retrievable form.
+
+      The output format problem maps to prompting — spec clarity,
+      write the format rules clearly, done.
+
+      So the answer isn't "pick one" — it's invest in RAG and the
+      prompt rewrite this quarter (both cheap, reversible) and
+      stage fine-tuning for next quarter after we've seen whether
+      the tone problem persists with a stronger system prompt.
+      Production features usually layer two or three of these
+      anyway.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: false
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p008
+    label: c2 + c3 met, c1 missing — mechanisms + regime without naming trilemma
+    answer: |
+      The tone problem is a behavior issue. Fine-tuning changes
+      the model's defaults by adjusting parameter weights through
+      training on example outputs — that's what we'd need to shift
+      the voice.
+
+      The new products are a content issue — the facts exist,
+      they're not in the model's training, and retrieving them at
+      query time is the natural fix.
+
+      The format problem is a specification issue — we haven't
+      told the model precisely what good looks like, so we add
+      format rules and examples to the system prompt.
+
+      We should layer the cheap-and-fast approaches (prompt fix
+      this week, RAG expansion this month) and reserve the
+      expensive-and-slow one (fine-tune for tone) for next quarter
+      once we've established that the cheaper layers can't get
+      tone close enough.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p009
+    label: c1 only — names trilemma, no mechanism, no regime
+    answer: |
+      The eng lead is asking the wrong question. "Pick one" treats
+      fine-tuning, RAG, and prompting as interchangeable levers
+      when they're actually three different approaches that solve
+      three different kinds of quality problems. Production teams
+      don't pick one — they understand which approach maps to
+      which problem shape and invest accordingly.
+
+      What I'd tell the eng lead: this is a multi-axis decision,
+      not a single bet. The three problems we're seeing aren't all
+      the same shape, so the answer can't be a single approach.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p010
+    label: c2 only — mechanism without trilemma or regime
+    answer: |
+      The cost math here is what breaks first if we get the
+      approach wrong. Fine-tuning shifts behavior distribution
+      through training; if we use it to fix the knowledge gap,
+      we're paying training cost to solve a problem that
+      retraining doesn't actually fix — facts don't get loaded by
+      training the way examples do, so six months from now when
+      the product set changes again, we're back here. Same
+      compounded cost, no durable fix.
+
+      The eng lead's framing under-counts that.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: true
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p011
+    label: c3 only — regime distinction without trilemma or mechanism
+    answer: |
+      This is a layered decision. Some of these problems are cheap
+      to address now and some aren't. The output format issue is a
+      quick prompt rewrite — minutes of work, no risk. The new
+      products issue needs us to expand the RAG index to include
+      the new product docs — a week or two of eng work, reversible.
+      The tone issue is the only one that genuinely needs
+      investment — fine-tuning, eval discipline, dataset curation,
+      weeks-to-months of work and weeks-to-months to reverse if we
+      don't like it. So we ship the prompt fix and RAG expansion
+      this quarter, and we plan fine-tuning for next quarter once
+      we've established the tone problem persists after the
+      cheaper layers.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p012
+    label: All-missed on-topic — conflates the approaches
+    answer: |
+      All three are fine-tuning problems. Fine-tuning is the most
+      powerful technique because it modifies the model itself
+      rather than just adding context or instructions, and
+      modifying the model is the only durable fix at scale. RAG is
+      just a band-aid for cases where fine-tuning is too
+      expensive, and prompting is for prototypes. For a customer-
+      support agent shipping to real users, we should invest in a
+      fine-tune that covers the tone, the new products, and the
+      output format together. One investment, durable fix.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p013
+    label: Off-topic — pivots to team morale framing, gradable
+    answer: |
+      Before we pick an approach, we should think about the
+      message we send to the eng team. They've been working on
+      this for three months and the quality issues are mounting.
+      Picking one approach implicitly says "the work so far
+      wasn't enough." I'd push back on the eng lead's framing not
+      because of the technical answer but because we need to
+      maintain team morale and ownership. Whichever direction we
+      go, the framing matters as much as the architecture.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p014
+    label: Flagged-expected — too thin to grade fairly
+    answer: |
+      Depends.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: true
+
+  - id: p015
+    label: Flag borderline — verbose punt, gestures without committing (deliberate borderline)
+    answer: |
+      It depends on the situation. There are pros and cons to
+      each approach and I'd want to consult the team and gather
+      more data before committing to a specific direction.
+      Probably some combination makes sense, given that these are
+      different kinds of issues. I'd recommend more analysis
+      before deciding.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: true
+
+  - id: p016
+    label: All three met, structured PM-doc voice
+    answer: |
+      My recommendation, with the reasoning broken out so the eng
+      lead and finance can audit it.
+
+      The framing first. The three complaints aren't three flavors
+      of one quality problem — they're three different shapes.
+      Tone is a behavior problem (model can answer, defaults are
+      wrong). New-products is a knowledge problem (facts exist in
+      our docs, model hasn't seen them). Output drift is a spec
+      problem (model can do the task, doesn't know what we want).
+      The eng lead's "pick one" treats them as interchangeable;
+      they aren't.
+
+      The approach per problem.
+      - Tone → fine-tuning. Mechanism: training shifts the model's
+        defaults; nothing else does that durably at scale.
+      - New products → RAG. Mechanism: retrieval injects the
+        missing facts into context per query. Fine-tuning here is
+        the classic anti-pattern (training shifts behavior, not
+        facts; stale in six months).
+      - Output drift → prompting. Mechanism: clear format rules
+        and 3-5 examples in the system prompt teach the spec.
+
+      The sequencing. Cheap and reversible first: prompt fix this
+      week, RAG expansion this month. Expensive and slow last:
+      fine-tune for tone next quarter, only if a stronger system
+      prompt can't get tone close enough.
+
+      Where I'd be willing to be wrong. Tone might be downstream
+      of format — long walls of text feel canned, and the prompt
+      fix might resolve both. Worth trying before fine-tuning.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p017
+    label: Edge case — pseudocode answer, c2 + c3 met, c1 borderline (deliberate borderline)
+    answer: |
+      def customization_decision(problem):
+          if problem.shape == 'behavior_shift':
+              # Fine-tuning shifts default behavior;
+              # RAG/prompting don't change defaults at scale.
+              return Approach.FINE_TUNE
+          elif problem.shape == 'knowledge_gap':
+              # RAG retrieves missing facts per query;
+              # training shifts behavior, doesn't load facts.
+              return Approach.RAG
+          elif problem.shape == 'spec_clarity':
+              # Prompt instructions/examples carry the contract;
+              # fine-tuning is overkill for spec problems.
+              return Approach.PROMPT
+
+      # For our three problems:
+      #   tone           -> FINE_TUNE
+      #   new_products   -> RAG
+      #   output_format  -> PROMPT
+      #
+      # Sequence cheap+reversible first (prompt, RAG),
+      # then fine-tune if behavior shift persists.
+      # Production usually layers two or three.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p018
+    label: Edge case — emoji + informal voice, all three met
+    answer: |
+      OK so 🙅 nope on the eng lead's "pick one" — that's the
+      customization trilemma trap right there. Three problems =
+      three shapes = three approaches:
+
+      1. Tone 🎤 → fine-tune. Mechanism: training shifts the
+         model's defaults. RAG doesn't change interpretation;
+         prompts nudge but don't lock at scale.
+
+      2. New products 📚 → RAG expansion. Mechanism: retrieval
+         pulls the missing facts in per query. Fine-tuning here =
+         throwing money at the wrong shape (training reshapes
+         behavior not facts, so we'd be stale in 6mo anyway 🙃).
+
+      3. Output format 📋 → prompt rewrite. Mechanism: clear rules
+         + 3-5 examples in the system prompt. Fine-tune for THIS
+         is using a sledgehammer to crack a nut 🔨.
+
+      Sequence: prompt fix this week (~$10 of token spend), RAG
+      expansion this month, fine-tune for tone NEXT quarter after
+      we've established a stronger system prompt can't get tone
+      close enough. Where I'd be wrong: tone might actually be a
+      format problem in disguise (long walls of text = canned-
+      feel), so the prompt fix might solve both 🤞.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p019
+    label: Confident-wrong vendor-anchored claim (deliberate borderline)
+    answer: |
+      The customization trilemma applies here, but I think the
+      eng lead is right to push for fine-tuning specifically.
+      Modern providers (OpenAI's GPT-4.1 mini fine-tune, Google's
+      Vertex AI tuning with LoRA under the hood) have made
+      fine-tuning fast and cheap enough that it's now the
+      production default for fixing quality issues at scale. RAG
+      is for cases where you need real-time data; prompting is
+      for prototypes. For a shipping product with three different
+      quality issues, one well-curated fine-tune covering all
+      three is the most efficient path. I'd push back on the eng
+      lead only to say we should fine-tune on a dataset that
+      addresses all three problems together, not pick one
+      problem to focus on.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p020
+    label: All-missed on-topic — redirects to upstream eval discipline
+    answer: |
+      The eng lead is asking the wrong question. The real problem
+      isn't which approach to invest in — it's why we're three
+      months in and only just now diagnosing quality issues.
+      Where's our eval discipline? We should have caught the
+      tone issue, the knowledge gap, and the format drift months
+      ago through structured evals (the Unit 4 pattern), not
+      through users complaining. Whatever we invest in next, the
+      precondition is establishing the eval discipline that
+      should have been there from day one. The customization
+      question is downstream of that.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p021
+    label: All three met, concise / punchy
+    answer: |
+      Three problems, three shapes, three approaches — not one.
+      Tone is a behavior issue → fine-tune (training shifts the
+      model's defaults). New products is a knowledge issue → RAG
+      (retrieval injects the missing facts per query). Output
+      format is a spec issue → prompting (write the format rules
+      clearly with examples). The eng lead's "pick one" compresses
+      what's actually a layered decision. Sequence: prompt fix
+      this week, RAG this month, fine-tune next quarter only if
+      tone persists after a stronger system prompt. Most
+      production features layer two approaches anyway; fine-tuning
+      enters last because reversal cost is highest.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
