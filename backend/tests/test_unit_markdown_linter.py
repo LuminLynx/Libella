@@ -66,6 +66,15 @@ def test_multi_sentence_definition_is_flagged() -> None:
     ), rendered
 
 
+def test_lowercase_second_sentence_definition_is_flagged() -> None:
+    # A second sentence starting lowercase would slip the case-sensitive
+    # form of the heuristic; this test locks in coverage of that bypass.
+    rendered = _violations_for("broken/lowercase-second-sentence.md")
+    assert any(
+        "'definition' must be a single sentence" in line for line in rendered
+    ), rendered
+
+
 def test_prereq_referencing_sibling_in_same_pass_is_accepted() -> None:
     # The clean fixture has id 'sample-clean'; if a second file declared it as
     # a prereq within the same lint pass, it should resolve cleanly.

@@ -208,10 +208,14 @@ def _validate_front_matter(parsed: ParsedUnit) -> None:
             # Strip the trailing period before scanning for internal sentence
             # breaks, so the legitimate end-of-string terminator doesn't match.
             # Heuristic: a sentence break is terminator (.?!) + optional
-            # closing quote + whitespace + capital letter. Catches both
-            # "...absent. The trap..." and '..."volume?" The trap...' shapes.
+            # closing quote + whitespace + ASCII letter (any case). Allowing
+            # lowercase catches a second sentence that starts lowercase or
+            # with a token like "e.g.," — a bypass of the case-sensitive
+            # form. Embedded abbreviations like "e.g.," that stay inside
+            # one sentence don't trigger because the next character after
+            # the abbreviating period is a comma, not whitespace.
             body = stripped[:-1] if stripped.endswith(".") else stripped
-            if re.search(r"[.?!]['\"]?\s+[A-Z]", body):
+            if re.search(r"[.?!]['\"]?\s+[A-Za-z]", body):
                 parsed.violations.append(
                     Violation(
                         path,
