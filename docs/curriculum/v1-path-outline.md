@@ -2,9 +2,9 @@
 
 > **Scope.** Phase 3 sequencing for the canonical Phase 1 path
 > (`llm-systems-for-pms`). Tracks units 1–8 as shipped, locks
-> unit 9 with title, trade-off, prereqs, and position rationale,
-> sketches unit 10 thematically without committing, and leaves
-> 11–20 in their original locked/sketched/placeholder states.
+> units 9 and 10 with title, trade-off, prereqs, and position
+> rationale, and leaves 11–20 in their original
+> locked/sketched/placeholder states.
 >
 > **Relationship to other docs.** STRATEGY.md says "20 units, well-built."
 > This file says *which* 20, in *which order*. EXECUTION.md says
@@ -103,17 +103,17 @@ from a different angle, building toward the synthesis decision.
 ## Productization (Units 7–10) — partially shipped
 
 After Foundations, the path branches into "*can we make this reliable
-enough to ship to users?*" Units 7 and 8 are shipped; Unit 9 is
-locked; Unit 10 remains sketched.
+enough to ship to users?*" Units 7 and 8 are shipped; Units 9 and 10
+are locked.
 
 | # | Unit | Status | Trade-off it teaches | Prereqs |
 |---|---|---|---|---|
 | 7 | **Hallucination + reliability** | ✅ | Detection vs. mitigation vs. containment for the structural base-rate problem | 4 |
 | 8 | **Cost dynamics at scale** | ✅ | Caching vs. batching vs. capacity — the "second cost conversation" multi-lever optimization | 1, 5 |
 | 9 | **Fine-tuning vs. prompting vs. RAG** | 🔒 | The customization trilemma: which approach matches which kind of quality problem (knowledge gap → RAG; behavior shift → fine-tuning; spec clarity → prompting) | 4, 5, 6 |
-| 10 | Vector search / RAG fundamentals | 🟡 | Most-asked-about pattern after the foundations are in place |
+| 10 | **Vector search / RAG fundamentals** | 🔒 | Recall (did retrieval find the right chunks?) vs. groundedness (did the model use them?) vs. citation faithfulness (does the cited source actually say what's claimed?) — three different RAG quality dimensions, three different failure modes, three different measurement disciplines | 1, 2, 4, 9 |
 
-### Position rationale (Units 7–9)
+### Position rationale (Units 7–10)
 
 - **Hallucination as Unit 7** opens the productization block because
   it's the single biggest PM-AI surprise — every team that ships an
@@ -145,10 +145,33 @@ locked; Unit 10 remains sketched.
   problems" instead of "RAG is the answer to *knowledge-gap*
   problems."
 
-### Open questions remaining for Unit 10
+- **Vector search / RAG fundamentals as Unit 10** closes the
+  Productization block by going deep on the pattern Unit 9 named
+  as the right tool for knowledge-gap problems. The unit's
+  load-bearing pedagogy is that RAG quality is not a single
+  thing — it splits into three measurable dimensions (retrieval
+  recall, model groundedness, citation faithfulness), each with
+  different failure modes and different eval methods. A PM
+  scoping a RAG feature without these three dimensions tends to
+  ship a system where *"the retrieval looks fine"* but the model
+  ignores the chunks, or the citations point at the wrong
+  document, or both. The unit sits after Unit 9 because Unit 9
+  frames RAG as one approach among three; Unit 10 takes *"RAG is
+  the answer"* as given and teaches what scoping a RAG system
+  actually entails. It closes Productization because the next
+  block (Units 11–15, Production) covers more specialized
+  patterns that often compose with RAG (streaming UX, tool use,
+  multimodal) — RAG is the workhorse foundation.
 
-- Is RAG one unit (10) or two (vector-search-as-tool + RAG-as-pattern)?
-  Authoring will resolve.
+  **Resolved at lock (2026-05-14): RAG ships as one unit, not
+  two.** The earlier open question of *"one unit or two
+  (vector-search-as-tool + RAG-as-pattern)?"* resolves toward
+  one unit. Vector search is a mechanism inside RAG, not a
+  separate PM-decision; teaching them as one unit keeps the
+  measurement-led framing intact (recall is what vector search
+  produces; groundedness and citation faithfulness are downstream
+  of it). A future bundle-1 iteration could split if real PM
+  decisions diverge, but for v1 one unit is enough.
 
 ---
 
@@ -208,12 +231,16 @@ Revisit after closed beta.
 
 ## What this file commits us to
 
-1. **Author Unit 10 (RAG fundamentals) next.** No detour into
-   Unit 12 or Unit 15 because something else is "more interesting."
-   Lock Unit 10 in this file before slot (a) begins.
-2. **Re-read this file at every phase boundary.** What looked obvious
+1. **Author Unit 10 (RAG fundamentals) next.** Locked
+   2026-05-14. No detour into Unit 12 or Unit 15 because
+   something else is "more interesting."
+2. **Lock Unit 11 (Streaming UX) before Unit 10 authoring
+   completes.** Maintain the one-unit-ahead lock buffer so the
+   prereq chain is always settled before slot (a) begins on the
+   active unit.
+3. **Re-read this file at every phase boundary.** What looked obvious
    at outline time may not survive authoring. Document the change.
-3. **Lock the next unit before authoring slot (a).** The discipline
+4. **Lock each next unit before authoring slot (a).** The discipline
    below (Process retrospective) explains why this matters; the
    short version is that locking forces position rationale to be
    written *before* authoring, not derived after the fact.
