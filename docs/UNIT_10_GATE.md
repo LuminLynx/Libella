@@ -9,24 +9,25 @@
 
 ## Decision
 
-**Unit 10 PASSED initial run on 2026-05-15 at 87% per-criterion
-agreement (above the 80% publish threshold).** The unit was
-already published on author (PR #110, status: published from the
-start); this PR realigns the regression YAML to the grader's
-spec-faithful reading on four axes and documents the gate audit.
-Re-run pending merge of this PR.
+**Unit 10 PASSED 2026-05-15.** The 21-pair regression set was run
+live against the deployed Railway grader on 2026-05-15 and hit
+**87% per-criterion agreement on the initial run** (above the 80%
+publish threshold). Four YAML expected-value realignments landed
+(no rewrites); the realigned set was re-run on 2026-05-15 and
+hit **100% per-criterion agreement (63/63) with zero errors and
+21/21 flagged-correct** — the third 100% gate run in the path
+(after Unit 4 and Unit 8; both also hit 100% on re-run per
+`docs/UNIT_4_GATE.md` and `docs/UNIT_8_GATE.md`).
+The unit was already published on author (PR #110, `status:
+published`); no flip required in the realignment PR. **Zero
+preserved disagreements for Unit 10**, continuing the Unit 9
+precedent.
 
-Four expected-value realignments landed (p010 c2, p011 c1+c2+c3,
-p014 flag) — zero rewrites. Two stochasticity events (p005
-ERROR, p007 single-criterion FAIL) were investigated via isolated
-re-run and confirmed as one-off grader noise; no action taken.
-**Zero preserved disagreements**, continuing the Unit 9 precedent.
-
-| Criterion | Required | Initial run (21 pairs) | Post-realignment (projected) | Verdict |
+| Criterion | Required | Initial run (21 pairs) | Re-run (post-realignment) | Verdict |
 |---|---|---|---|---|
-| Per-criterion agreement | ≥ 80% | 87% (55/63), 1 ERROR | **≥ 94% (59/63), 0 errors** (worst case if stochastic pairs re-error) | ✅ |
+| Per-criterion agreement | ≥ 80% | 87% (55/63), 1 ERROR | **100% (63/63), 0 errors** | ✅ |
 | Honest flagged behavior | spec-faithful | 19/21 — p014 drift caught | **21/21** | ✅ |
-| Cost / call | reasonable | ~$0.011/call, cache 6.2× | ~$0.011/call | ✅ |
+| Cost / call | reasonable | ~$0.011/call, cache 6.2× | ~$0.011/call, cache 6.1× | ✅ |
 
 ---
 
@@ -81,6 +82,45 @@ documented (p005, p007) without YAML changes — confirms the
 operational discipline from `UNIT_9_GATE.md`: low-confidence or
 one-off disagreements should be confirmed via isolated re-run
 before realigning.
+
+### Re-run evidence (2026-05-15, post-realignment)
+
+```
+Pairs scored:               21
+Errored (no score):         0
+Fully passed (all crit + flagged):  21 (100%)
+Per-criterion agreement:    63/63 (100%)
+Flagged-correct:            21/21
+
+Token usage (cost-relevant):
+  input tokens:        12667
+  cache reads:         77280
+  output tokens:       10843
+```
+
+Cost ≈ $0.22 total (~$0.011/call). Cache ratio 6.1× (essentially
+flat vs. the initial run's 6.2× — the realignment is YAML-only
+and doesn't change the cached prompt prefix).
+
+**Per-criterion agreement moved from 55/63 (87%) to 63/63 (100%).**
+Flagged-correct moved from 19/21 to **21/21**. Fully-passed moved
+from 16/21 (76%) to **21/21 (100%)**.
+
+**Third 100% gate run in the path** (after Unit 4 and Unit 8;
+Unit 9's re-run hit 98% with one residual stochasticity event at
+0.75 confidence on p006 c2). Unit 10's re-run shows zero
+stochasticity events on any pair — both p005 (initial-run ERROR)
+and p007 (initial-run single-criterion disagreement) graded
+cleanly. This is consistent with the diagnostic finding that both
+were one-off noise.
+
+**Notable on the initial → re-run delta:** Unit 4 jumped 92% →
+100% (+8 pp), Unit 8 jumped 92% → 100% (+8 pp), Unit 10 jumped
+87% → 100% (+13 pp). The Unit 10 jump is the largest in the path
+— reflects four clean YAML realignments after a slightly lower
+initial-run starting point.
+
+The four realignments held; no new disagreements appeared.
 
 ### Distribution shift post-realignment
 
@@ -224,5 +264,7 @@ needs to be locked before Unit 11 authoring begins.**
 - Runner: `backend/scripts/run_regression_set.py`.
 - Diagnostic (throwaway): `backend/scripts/_inspect_pairs.py` on
   `claude/unit-10-gate-diagnostics` — used for per-criterion
-  detail on p005, p007, p010. Delete after this PR merges.
+  detail on p005, p007, p010. The branch is deleted after this
+  PR merges (script never landed on `main`).
 - Authoring PR: #110.
+- Realignment PR: #111.
