@@ -1,5 +1,12 @@
 # Libella
 
+![Status](https://img.shields.io/badge/status-Phase%203%20in%20progress-blue)
+![Units](https://img.shields.io/badge/units-9%20of%2020%20published-purple)
+![Platform](https://img.shields.io/badge/platform-Android-green)
+![Backend](https://img.shields.io/badge/backend-FastAPI-teal)
+![Database](https://img.shields.io/badge/database-PostgreSQL-blue)
+![License](https://img.shields.io/badge/license-GPL--3.0-orange)
+
 Libella is a mobile-native learning product for product-side professionals who need to become AI-fluent enough to make AI product decisions, not become machine-learning engineers.
 
 The product teaches LLM systems through trade-offs: what a concept changes, what it costs, when it breaks, and how a product decision-maker should reason about it.
