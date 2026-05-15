@@ -1,0 +1,687 @@
+# Regression set for the Vector search & RAG fundamentals unit
+# (vector-search-rag-bundle-0).
+#
+# Unit 10 is authored as flagship under STRATEGY.md § T2 — target is
+# >= 20 pairs before the unit publishes. Authoring discipline mirrors
+# customization-trilemma-bundle-0.yml (Unit 9, the latest gate-
+# passing reference) including English-only authoring per the
+# discipline locked in docs/curriculum/v1-path-outline.md.
+#
+# Position-to-criterion mapping (from
+# content/units/vector-search-rag-bundle-0.md slot 8 rubric):
+#
+#   1. "Names all three independent quality dimensions — recall
+#      (retrieval), groundedness (anchoring), and citation
+#      faithfulness (source-quote validation) — and treats them as
+#      separately measurable rather than as one collapsed 'is the
+#      RAG good?' question."
+#   2. "Explains the mechanism behind a failure on at least one of
+#      the three dimensions — e.g., recall failure as chunks not
+#      retrieved; groundedness failure as model not anchoring on
+#      context; citation-faithfulness failure as cited passage not
+#      supporting the claim — AND identifies that the three failure
+#      modes need different fixes."
+#   3. "Names a concrete signal per dimension that distinguishes
+#      them — recall@K / MRR; RAGAS faithfulness / answer-context
+#      alignment; span-level source-quote validation — AND
+#      recognizes the common PM error of treating any single
+#      signal as a sufficient proxy for overall RAG quality."
+#
+# Authoring distribution (21 pairs; mirrors Unit 9 shape that
+# passed gate at 85% per-criterion agreement):
+#   * 6 pairs all-three-met (varied English voices)
+#       p001 (balanced prose), p002 (terse engineering),
+#       p005 (been-bitten voice), p016 (long-narrative),
+#       p017 (structured PM-doc — flowing prose, no markdown
+#       headers per Unit 9 p016 grader-bug lesson),
+#       p018 (emoji-tolerant)
+#   * 5 pairs partial credit (2 of 3)
+#       p006 (c1+c2), p007 (c1+c3), p008 (c1+c3),
+#       p011 (c1+c3), p021 (c1+c3)
+#   * 2 pairs single-criterion-met
+#       p009 (c1), p010 (c2)
+#   * 5 pairs all-missed on-topic
+#       p004, p012, p015, p019, p020
+#   * 2 pairs off-topic, all-missed, gradable (NOT flagged)
+#       p003, p013
+#   * 1 pair flagged-expected (too thin to grade fairly per T2-B)
+#       p014
+#
+# T2-B locked interpretation (per docs/PHASE_2_GATE.md and PR #72):
+# flagged = grader *uncertainty*, NOT "answer is bad." Off-topic
+# answers the grader can confidently grade as all Not-Met are
+# gradable — flagged: false. Thin/punting answers the grader cannot
+# fairly grade — flagged: true.
+#
+# Authoring-constraint reminders (from Unit 9 gate lessons):
+#   - No markdown-style section headers inside answer text (the
+#     grader has a deterministic payload bug on them — see
+#     docs/UNIT_9_GATE.md). Voice-variation pairs use flowing
+#     prose instead.
+#   - Deliberate-borderline pairs sit on the grader's confidence
+#     boundary; expected confidence band is 0.6-0.8. Disagreement
+#     at higher confidence is signal to triage per the realignment
+#     pattern in PR #104.
+#
+# Pre-gate expectation: this set is unrun. Triage doc lands as
+# docs/UNIT_10_GATE.md after the first gate run, following the
+# UNIT_2_GATE / UNIT_9_GATE pattern.
+
+unit_id: vector-search-rag-bundle-0
+
+description: |
+  Phase 3 / Unit 10 flagship gate set. Authored 2026-05-15.
+  21 pairs against the locked T2-B reading (flagged = grader
+  uncertainty, NOT off-topic-but-gradable). Distribution mirrors
+  Unit 9's gate-passing shape: 6 all-met / 5 partial-credit / 2
+  single-criterion-met / 5 all-missed-on-topic / 2 off-topic-
+  gradable / 1 flagged-expected. English-only per locked
+  discipline. Voice variations use flowing prose only (no
+  markdown-style section headers inside answer text, per
+  docs/UNIT_9_GATE.md lesson on the grader's structured-output
+  payload bug).
+
+pairs:
+  - id: p001
+    label: All three met, balanced prose covering all dimensions
+    answer: |
+      I'd push back on the framing of "is the RAG good?" as one
+      number. RAG quality decomposes into three independent
+      dimensions, and our feature can fail on any one of them while
+      the other two look fine.
+
+      First, recall — did retrieval find the right chunks? This is
+      a pipeline question: embed the query, search the index, pull
+      top K. If the right chunk isn't in the K we retrieved, the
+      model can't use it. I'd track recall@K and MRR. Failure mode
+      here is embedding mismatch, chunking boundary, or K set too
+      low.
+
+      Second, groundedness — did the model anchor on the retrieved
+      context, or did it drift back to parametric memory? The
+      retrieved chunks land in the context window but the model
+      still has to use them. I'd track RAGAS faithfulness or
+      answer-context alignment. Failure mode is chunk dilution from
+      high K or conflict between retrieved facts and the model's
+      prior.
+
+      Third, citation faithfulness — does the cited source actually
+      say what the answer claims? A citation is a UI affordance,
+      not a correctness guarantee. The model can cite chunk #3 and
+      write a sentence chunk #3 doesn't support. I'd track this
+      with span-level source-quote validation, not chunk overlap.
+
+      I'd push back if eng proposed a single composite score. The
+      three dimensions need three signals because they hide each
+      other — high recall@K can sit on top of a groundedness
+      failure, and high groundedness can sit on top of a
+      faithfulness failure.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p002
+    label: All three met, terse engineering voice
+    answer: |
+      RAG quality = 3 dimensions, measured independently.
+
+      (1) Recall: did we retrieve the right chunks? Signal:
+      recall@K, MRR. Failure mode: chunks not in top K (embedding
+      mismatch, chunking boundary, K too low). Pipeline-side fix.
+
+      (2) Groundedness: did the model use the chunks we retrieved?
+      Signal: RAGAS faithfulness, answer-context alignment.
+      Failure mode: model drifts back to parametric memory under
+      chunk dilution or context-vs-prior conflict. Prompt-side fix
+      (explicit anchoring, lower K with re-ranking).
+
+      (3) Citation faithfulness: does the cited span actually back
+      the claim? Signal: span-level source-quote validation.
+      Failure mode: chunk overlap mistaken for entailment;
+      aggregate citations covering mixed-support paragraphs.
+      Audit-side fix (citation validator in eval pipeline).
+
+      Push back on any composite score — the three dimensions hide
+      each other. High recall@K plus a groundedness failure looks
+      good on the retrieval dashboard and ships hallucinations.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p003
+    label: Off-topic, gradable, pivots to vendor selection
+    answer: |
+      Before defining quality metrics, the more important question
+      is which RAG platform we should build on. Pinecone, Weaviate,
+      and pgvector all have different trade-offs around cost,
+      latency, and operational complexity, and that decision will
+      affect what we can measure and how. I'd want eng to write up
+      a vendor comparison first, and we should revisit the quality
+      definition after we've picked the platform.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p004
+    label: All-missed on-topic, picks "just increase chunk size"
+    answer: |
+      Quality for RAG mostly comes down to chunk size. If we're
+      seeing weak answers, the team should increase chunk size so
+      that each retrieved chunk contains more surrounding context.
+      Larger chunks mean the model has more to work with and is
+      less likely to miss key information. I'd set a target of
+      doubling our current chunk size and re-running our eval set.
+      That single intervention addresses most RAG quality issues
+      and is the cheapest thing to try.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p005
+    label: All three met, "been bitten" experiential voice
+    answer: |
+      I've shipped a RAG feature that passed our recall@10 bar and
+      then got reamed in post-launch review because the cited
+      sources didn't say what the assistant claimed they said. That
+      taught me that "is the RAG good?" is the wrong question. RAG
+      quality is three independent dimensions, and a number on one
+      of them tells you nothing about the other two.
+
+      Recall is the pipeline question — did the right chunks land
+      in the top K? Measured with recall@K and MRR. The failure
+      mode I see most is chunking boundaries — the answer spans the
+      boundary between two chunks and neither is a strong
+      individual match.
+
+      Groundedness is the anchoring question — did the model use
+      the chunks we retrieved or did it fall back on what it
+      already "knew"? Measured with RAGAS faithfulness or
+      answer-context alignment. The failure mode is chunk dilution
+      under high K plus weak system-prompt anchoring; the model
+      treats retrieved context as a hint rather than ground truth.
+
+      Citation faithfulness is the validation question — does the
+      span we cited actually entail the specific claim? Measured
+      with span-level source-quote validation, not chunk overlap.
+      The failure mode is the one that bit me: aggregate citations
+      that cover multi-claim paragraphs where some claims aren't
+      actually supported.
+
+      If eng proposes a single quality number, I push back. The
+      dimensions hide each other.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p006
+    label: Partial credit (c1+c2) — names dimensions + mechanism, no signals
+    answer: |
+      RAG quality has three independent dimensions. Recall is
+      whether retrieval found the right chunks — the failure mode
+      is the right chunk not being in the top K because of
+      embedding mismatch or a chunking boundary. Groundedness is
+      whether the model anchored on the retrieved context — the
+      failure mode is the model drifting back to its parametric
+      memory under chunk dilution or context-vs-prior conflict.
+      Citation faithfulness is whether the cited span actually
+      supports the claim — the failure mode is the model citing a
+      chunk that mentions the topic but doesn't entail the
+      specific sentence it's attached to.
+
+      The three failure modes need different fixes — pipeline-side
+      for recall, prompt-side for groundedness, audit-side for
+      faithfulness. Treating them as one problem leads to wasted
+      investment in the wrong fix.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p007
+    label: Partial credit (c1+c3) — names dimensions + signals, mechanism thin
+    answer: |
+      Three quality dimensions for this RAG feature.
+
+      Recall — track recall@K and MRR. Tells you whether the right
+      chunks made it into the retrieval set.
+
+      Groundedness — track RAGAS faithfulness. Tells you whether
+      the model used the retrieved chunks.
+
+      Citation faithfulness — track span-level source-quote
+      validation. Tells you whether the cited passage actually
+      backs the claim.
+
+      I'd push back on a single composite score because each
+      dimension can fail independently, and one number would hide
+      which dimension is the problem.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: false
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p008
+    label: Partial credit (c1+c3) — hybrid-retrieval-focused
+    answer: |
+      RAG quality has three layers: retrieval, generation, and
+      audit. On retrieval, we track recall@K and MRR. The standard
+      improvement is hybrid retrieval — vector plus BM25 — which
+      catches keyword matches the embeddings miss, plus a
+      cross-encoder re-ranker on the top 50 candidates. That
+      usually moves recall meaningfully.
+
+      On generation, we track RAGAS faithfulness so we know the
+      model is anchoring on what we retrieved.
+
+      On audit, we track span-level source-quote validation so we
+      catch citations that don't back their claims.
+
+      The composite-score push-back is that each layer can fail
+      independently — high recall doesn't imply good generation,
+      good generation doesn't imply faithful citations.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: false
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p009
+    label: Single criterion (c1) — names dimensions only
+    answer: |
+      The three quality dimensions are recall (retrieval),
+      groundedness (anchoring), and citation faithfulness (source
+      validation). The team should track all three independently
+      rather than collapsing them into a single quality number,
+      because a feature can fail on any one of them while the
+      other two look fine. Each dimension has its own measurement
+      discipline and its own set of fixes, and lumping them
+      together leads to wasted investment.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p010
+    label: Single criterion (c2) — explains mechanisms without naming the three dimensions
+    answer: |
+      The core failure mode in RAG features is that the model is
+      not anchoring on the retrieved context. You retrieve a set of
+      chunks and inject them into the prompt, but the model has its
+      own learned priors and can drift back to those. This happens
+      especially under high K, because the model's attention spreads
+      across many retrieved chunks and the irrelevant ones dilute
+      the relevant ones. It also happens when the retrieved chunks
+      conflict with what the model "knows" from training — in a
+      non-trivial fraction of cases the model goes with training
+      rather than the retrieved context. The fix is on the prompt
+      side: explicit anchoring instructions and a lower K with
+      stronger re-ranking. That's the heart of RAG quality.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: true
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p011
+    label: Partial credit (c1+c3) — uses "grounding" loosely to mean both groundedness and faithfulness
+    answer: |
+      RAG quality is three things, measured separately. Recall is
+      whether retrieval found the right chunks — recall@K is the
+      headline number. Grounding is whether the answer is supported
+      by the sources — RAGAS faithfulness covers this, including
+      whether citations actually back their claims. Recall and
+      grounding are independent — high recall doesn't guarantee
+      good grounding, because the model can retrieve the right
+      chunks and then write something the chunks don't actually
+      support.
+
+      I'd push back on collapsing these into one score. If eng
+      shows me a single number, I want to know whether the failures
+      are upstream (retrieval) or downstream (grounding), because
+      the fixes are different.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: false
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p012
+    label: All-missed on-topic — recall@K is sufficient
+    answer: |
+      The quality question for RAG is straightforward: are we
+      retrieving the right chunks? Recall@10 is the number that
+      matters. If recall@10 is above 0.9, the feature is in good
+      shape; below that, retrieval needs work. I'd set 0.9 as the
+      launch bar. The downstream generation step is reliable
+      enough on a frontier model that we don't need a separate
+      generation-quality measurement — if the right chunks are in
+      context, the model will use them. We track one number,
+      drive it above the bar, ship.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p013
+    label: Off-topic, gradable, pivots to long-context replacing RAG
+    answer: |
+      I'd zoom out on the framing. With context windows now in the
+      million-token range, the case for building a RAG pipeline at
+      all is weaker than it was two years ago. We should ask
+      whether we can just put the whole knowledge base in context
+      and skip the retrieval pipeline entirely. The cost difference
+      versus running embeddings, vector search, and a re-ranker on
+      every query is shrinking. I'd want eng to model both
+      architectures before we lock in quality metrics for a system
+      we might not build.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p014
+    label: Flagged-expected — too thin to grade fairly
+    answer: |
+      Quality for RAG is really about measuring the right things.
+      The team should pick metrics that actually reflect the
+      experience users have, and we should review them quarterly.
+      I'd want to see a dashboard before launch.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: true
+
+  - id: p015
+    label: All-missed on-topic — citations imply faithfulness
+    answer: |
+      If the answer cites a source, the user can trust it — that's
+      the whole point of building RAG instead of just generating
+      from a base model. The quality metric we should drive is
+      citation coverage: what percentage of generated sentences
+      include a citation. If we get that above 95 percent, the
+      feature is auditable and users have the receipts. The
+      retrieval pipeline is solved infrastructure at this point;
+      our job is to make sure the model uses it consistently.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p016
+    label: All three met, long-narrative voice
+    answer: |
+      The way I think about RAG quality is that you have a
+      pipeline with three distinct stages and a single quality
+      number papers over which stage is breaking. That's the trap
+      we should avoid before launch.
+
+      The first stage is retrieval. The question is, did we pull
+      the chunks that contain the answer into the candidate set?
+      The pipeline embeds the query, searches the index, returns
+      top K. If the right chunk isn't in the top K, the downstream
+      model is operating blind. We measure this with recall@K and
+      with mean reciprocal rank, which captures how high the right
+      chunk ranks. The failure modes are embedding mismatch —
+      where query and chunk vocabulary differ enough that the
+      embedding model can't bridge them — and chunking boundary,
+      where the answer happens to span the divide between two
+      chunks and neither is individually a strong hit.
+
+      The second stage is generation, and the property we care
+      about is groundedness. The retrieved chunks land in the
+      context window, but the model still chooses whether to lean
+      on them or to fall back on what it learned in training. The
+      failure mode here is the model drifting from the retrieved
+      context, which happens especially under high K because
+      attention spreads across many chunks and the irrelevant ones
+      dilute the relevant ones. We measure groundedness with
+      RAGAS-style faithfulness scores or answer-context alignment.
+
+      The third stage is citation, and the property is faithfulness
+      of the citation itself. The model can produce a citation that
+      points at a real chunk and still claim something that chunk
+      does not actually entail. This is the dimension I see PMs
+      underweight most often, because a citation feels like a
+      guarantee and isn't. We measure this with span-level
+      source-quote validation — pull the specific cited span, check
+      whether it entails the specific claim it is attached to.
+
+      Three stages, three measurements. I would push back hard on
+      a single composite quality score, because each dimension can
+      fail independently and the dimensions hide each other from a
+      reader who is looking at one number.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p017
+    label: All three met, structured PM-doc voice (flowing prose, no markdown headers)
+    answer: |
+      Quality definition for this RAG launch. Three independent
+      dimensions, each with its own signal, none of them a proxy
+      for the others.
+
+      Dimension one is recall. The question we are answering with
+      this dimension is whether retrieval found the right chunks
+      to put in context. Signal we track is recall@K, with K
+      chosen at the value we ship at, plus MRR for diagnostic
+      depth. The failure this catches is the right chunk not being
+      in the retrieval set at all, usually from embedding mismatch
+      or chunking-boundary loss.
+
+      Dimension two is groundedness. The question is whether the
+      model anchored on the retrieved chunks or drifted back to
+      its parametric memory. Signal is RAGAS faithfulness or
+      answer-context alignment. The failure this catches is the
+      generation step ignoring the context we worked hard to
+      retrieve, which is invisible if you only look at recall@K.
+
+      Dimension three is citation faithfulness. The question is
+      whether the span we cite actually supports the specific
+      sentence it is attached to. Signal is span-level
+      source-quote validation, not chunk overlap. The failure this
+      catches is the model citing a chunk that mentions the topic
+      but does not entail the claim, which is invisible if you
+      only look at recall@K plus a groundedness score.
+
+      Push back on any composite. The dimensions hide each other,
+      and a single number would let us ship with one of them
+      silently broken.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p018
+    label: All three met, emoji-tolerant short-form
+    answer: |
+      Three dimensions for RAG quality — and they fail
+      independently, so we measure each one.
+
+      Recall — did retrieval pull the right chunks into context?
+      Signal: recall@K, MRR. Misses if the right chunk is at rank
+      12 and we retrieved 5 — chunk never reaches the model.
+
+      Groundedness — did the model actually use the chunks?
+      Signal: RAGAS faithfulness, answer-context alignment. Misses
+      when the model retrieves correctly and then drifts to its
+      training-time prior under chunk dilution.
+
+      Citation faithfulness — does the cited span back the
+      sentence it is on? Signal: span-level source-quote check,
+      not chunk overlap. Misses when the cited chunk mentions the
+      topic but does not entail the specific claim.
+
+      No composite score — the three hide each other.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p019
+    label: All-missed on-topic — "more chunks always better"
+    answer: |
+      My take on RAG quality is that we should optimize for
+      coverage. Context windows are huge now — hundreds of
+      thousands of tokens — so the smart move is to retrieve
+      generously. I'd set K to 50 or 100 as a default. The model
+      has plenty of room to read everything and pick out what
+      matters. The team's job is to make sure we never fail to
+      retrieve the right chunk, and the simplest way to guarantee
+      that is to retrieve a lot of chunks. Recall@50 above 0.98 is
+      the target.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p020
+    label: All-missed on-topic — citation UI focus
+    answer: |
+      The quality lever for RAG features is the citation
+      experience. Users need to see where the answer came from —
+      clickable source links, page numbers, hover previews — and
+      if we get that right, trust follows. I'd focus the team on
+      shipping inline citation chips with the cited passage
+      preview on hover. Retrieval is a solved problem; the user
+      experience around citations is where the differentiation
+      lives. Once the citation UI is in place, perceived quality
+      jumps regardless of the underlying retrieval numbers.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p021
+    label: Partial credit (c1+c3) — names dimensions and signals; mechanism collapses to one cause
+    answer: |
+      Three dimensions to track separately for this RAG launch.
+
+      Recall measures whether retrieval found the right chunks,
+      tracked via recall@K and MRR. Groundedness measures whether
+      the model anchored on the retrieved context, tracked via
+      RAGAS faithfulness or answer-context alignment. Citation
+      faithfulness measures whether the cited span actually
+      supports the claim, tracked via span-level source-quote
+      validation.
+
+      The common cause across all three failure modes is that
+      retrieval pulls weak chunks into the candidate set, which
+      degrades everything downstream. If we get retrieval right,
+      groundedness and citation faithfulness follow.
+
+      I'd push back on a single composite score because we want to
+      separate the dimensions in our dashboards even though they
+      share a common upstream cause.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: false
+        - position: 3
+          met: true
+      flagged: false
