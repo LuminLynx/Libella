@@ -15,7 +15,9 @@ live against the deployed Railway grader on 2026-05-15 and hit
 publish threshold). Four YAML expected-value realignments landed
 (no rewrites); the realigned set was re-run on 2026-05-15 and
 hit **100% per-criterion agreement (63/63) with zero errors and
-21/21 flagged-correct** — the first 100% gate run in the path.
+21/21 flagged-correct** — the third 100% gate run in the path
+(after Unit 4 and Unit 8; both also hit 100% on re-run per
+`docs/UNIT_4_GATE.md` and `docs/UNIT_8_GATE.md`).
 The unit was already published on author (PR #110, `status:
 published`); no flip required in the realignment PR. **Zero
 preserved disagreements for Unit 10**, continuing the Unit 9
@@ -104,12 +106,19 @@ and doesn't change the cached prompt prefix).
 Flagged-correct moved from 19/21 to **21/21**. Fully-passed moved
 from 16/21 (76%) to **21/21 (100%)**.
 
-**First 100% gate run in the path.** Unit 9's re-run hit 98% with
-one residual stochasticity event at 0.75 confidence (p006 c2).
-Unit 10's re-run shows zero stochasticity events on any pair —
-both p005 (initial-run ERROR) and p007 (initial-run single-
-criterion disagreement) graded cleanly. This is consistent with
-the diagnostic finding that both were one-off noise.
+**Third 100% gate run in the path** (after Unit 4 and Unit 8;
+Unit 9's re-run hit 98% with one residual stochasticity event at
+0.75 confidence on p006 c2). Unit 10's re-run shows zero
+stochasticity events on any pair — both p005 (initial-run ERROR)
+and p007 (initial-run single-criterion disagreement) graded
+cleanly. This is consistent with the diagnostic finding that both
+were one-off noise.
+
+**Notable on the initial → re-run delta:** Unit 4 jumped 92% →
+100% (+8 pp), Unit 8 jumped 92% → 100% (+8 pp), Unit 10 jumped
+87% → 100% (+13 pp). The Unit 10 jump is the largest in the path
+— reflects four clean YAML realignments after a slightly lower
+initial-run starting point.
 
 The four realignments held; no new disagreements appeared.
 
