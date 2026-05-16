@@ -15,15 +15,17 @@ already published on author (PR #114, `status: published`); this
 PR realigns the regression YAML and ships the gate audit. Re-run
 pending merge.
 
-One answer rewrite (p007 — deterministic grader-payload bug) plus
-four expected-value realignments (p008 c3, p011 c1+c3, p021 c3,
-p014 flag). One stochastic ERROR documented without change
-(p011's full-run payload error; graded clean in isolation). **Zero
-preserved disagreements**, continuing the Unit 9/10 precedent.
+Two answer rewrites (p007, p014 — both deterministic
+grader-payload bugs from parenthetical option-lists) plus three
+c-realignments (p008 c3, p011 c1+c3, p021 c3) and one flag
+realignment (p014). One stochastic ERROR documented without
+change (p011's full-run payload error; graded clean in
+isolation). **Zero preserved disagreements**, continuing the
+Unit 9/10 precedent.
 
-| Criterion | Required | Initial run (21 pairs) | Post-realignment (projected) | Verdict |
-|---|---|---|---|---|
-| Per-criterion agreement | ≥ 80% | 87% (55/63), 2 ERRORs | ≥ 95% (after c3 realignments + p007 rewrite) | ✅ |
+| Criterion | Required | Initial run (21 pairs) | Realignment re-run | Post-p014-rewrite (projected) | Verdict |
+|---|---|---|---|---|---|
+| Per-criterion agreement | ≥ 80% | 87% (55/63), 2 ERRORs | 95% (60/63), 1 ERROR (p014, now fixed) | 100% (63/63) | ✅ |
 | Honest flagged behavior | spec-faithful | 18/21 — p014 experiment caught | 21/21 | ✅ |
 | Cost / call | reasonable | ~$0.011/call | ~$0.011/call | ✅ |
 
@@ -105,9 +107,35 @@ p021 to pull per-criterion detail (~$0.04).
 | **p011** | c1 T→F (0.9), c3 T→F (0.82) | Answer explicitly decouples recovery (*"mostly takes care of itself"*, *"implementation detail the framework handles"*) — fails the coupled-c1 bar and the full-triple-c3 bar | **REALIGN c1+c3 → False** (becomes all-not-met) |
 | **p008** | c3 T→F (0.75) | Matched-combination map omits the explicit recovery leg and the "teams skip recovery" PM-error callout — both required by c3. Confidence in the stochasticity zone but reasoning identical to p011/p021 | **REALIGN c3 → False** (becomes c2-only) |
 | **p021** | c3 T→F (0.82) | Dismisses recovery as *"falls out of the rendering choice … for free"* — commits the exact error c3 warns against | **REALIGN c3 → False** (becomes c1-only) |
-| **p014** | flag T→F | The experiment — grader confidently resolved c2, did not flag | **REALIGN flag → False** (see headline finding) |
+| **p014** | flag T→F, then ERROR on re-run | The experiment — grader confidently resolved c2, did not flag (first run). On the realignment re-run + isolation it then errored **deterministically** with the payload bug (like p007, not stochastic like p011) | **REALIGN flag → False** (experiment captured from first-run data) **+ REWRITE** answer (remove parenthetical option-lists) |
 
-**One rewrite + four realignments. Zero preserved disagreements.**
+**Two rewrites (p007, p014) + four realignments. Zero preserved
+disagreements.** The realignment re-run (2026-05-16) scored 60/63
+(95%) with every realigned pair PASSing 3/3; the only non-pass was
+p014's then-undiscovered deterministic payload ERROR, fixed by the
+rewrite documented here.
+
+### Grader-payload trigger: parenthetical option-lists
+
+p007 and p014 both errored **deterministically**, and both
+contained **parenthetical option-lists** in the answer text —
+e.g. *"what to stream (tokens, semantic chunks, or status), how
+to render the streamed state (continuous flow, progressive
+sections, or typed-out), …"*. p007 errored 2×, was rewritten
+without the parenthetical, and passed. p014 graded once (lucky),
+then errored 2× (re-run + isolation); rewritten without the
+parentheticals.
+
+p006 has the same shape and passed both runs, so this is a
+**propensity raiser, not a hard guarantee** — but two
+deterministic failures from the same structure is enough to make
+it an authoring rule. Combined with Unit 9's markdown-header
+finding, the answer-text constraints are now: **no markdown-style
+headers, no quote-led sentences, no parenthetical option-lists.**
+The T2-D guardrail keeps all of these safe (rejected, never
+mis-graded) — but each costs a rewrite/re-run cycle, so they are
+authoring-time constraints, not runtime risks. This directly
+shapes Unit 12+ regression authoring.
 
 ### The c3-strict authoring lesson
 
