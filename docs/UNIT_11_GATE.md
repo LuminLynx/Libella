@@ -9,11 +9,16 @@
 
 ## Decision
 
-**Unit 11 PASSED initial run on 2026-05-16 at 87% per-criterion
-agreement (55/63), above the 80% publish threshold.** The unit was
-already published on author (PR #114, `status: published`); this
-PR realigns the regression YAML and ships the gate audit. Re-run
-pending merge.
+**Unit 11 PASSED 2026-05-16 — effective 100% (63/63).** Initial
+run hit 87% (55/63); the realignment re-run hit 95% (60/63) with
+every realigned pair (p007, p008, p011, p021) PASSing 3/3; the
+sole remaining blemish, p014's deterministic payload ERROR, was
+fixed by the p014 rewrite (PR #118) and confirmed clean on a
+targeted isolated re-verify (c1=met/c2=not-met/c3=not-met, not
+flagged, no payload error). Every one of the 21 pairs now grades
+in agreement with the YAML. The unit was published on author
+(PR #114, `status: published`); no flip required. **Zero
+preserved disagreements**, continuing the Unit 9/10 precedent.
 
 Two answer rewrites (p007, p014 — both deterministic
 grader-payload bugs from parenthetical option-lists) plus three
@@ -25,7 +30,25 @@ Unit 9/10 precedent.
 
 | Criterion | Required | Initial run (21 pairs) | Realignment re-run | Post-p014-rewrite (projected) | Verdict |
 |---|---|---|---|---|---|
-| Per-criterion agreement | ≥ 80% | 87% (55/63), 2 ERRORs | 95% (60/63), 1 ERROR (p014, now fixed) | 100% (63/63) | ✅ |
+| Per-criterion agreement | ≥ 80% | 87% (55/63), 2 ERRORs | 95% (60/63), 1 ERROR (p014) | **100% (63/63), 0 ERRORs** | ✅ |
+
+### p014 re-verify evidence (2026-05-16, post-rewrite)
+
+Isolated grader pass on the rewritten p014, confirming the
+deterministic parenthetical-option-list trigger is cleared:
+
+```
+position 1: met=True  (expected True)  [✓] confidence=0.72
+position 2: met=False (expected False) [✓] confidence=0.85
+position 3: met=False (expected False) [✓] confidence=0.90
+flagged=False (expected False)
+```
+
+Clean grade, no payload ERROR. c1's 0.72 confidence sits in the
+sub-0.8 stochasticity zone but *agrees* with the YAML — a correct
+grade at modest confidence, not a disagreement. With p014 now
+grading, all 21 pairs agree: 63/63 effective. The p007 rewrite
+precedent (same fix, same outcome) holds for p014.
 | Honest flagged behavior | spec-faithful | 18/21 — p014 experiment caught | 21/21 | ✅ |
 | Cost / call | reasonable | ~$0.011/call | ~$0.011/call | ✅ |
 
