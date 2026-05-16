@@ -28,9 +28,11 @@ change (p011's full-run payload error; graded clean in
 isolation). **Zero preserved disagreements**, continuing the
 Unit 9/10 precedent.
 
-| Criterion | Required | Initial run (21 pairs) | Realignment re-run | Post-p014-rewrite (projected) | Verdict |
+| Criterion | Required | Initial run (21 pairs) | Realignment re-run | Post-p014-rewrite | Verdict |
 |---|---|---|---|---|---|
 | Per-criterion agreement | ≥ 80% | 87% (55/63), 2 ERRORs | 95% (60/63), 1 ERROR (p014) | **100% (63/63), 0 ERRORs** | ✅ |
+| Honest flagged behavior | spec-faithful | 18/21 — p014 experiment caught | 20/21 | 21/21 | ✅ |
+| Cost / call | reasonable | ~$0.011/call | ~$0.011/call | ~$0.011/call | ✅ |
 
 ### p014 re-verify evidence (2026-05-16, post-rewrite)
 
@@ -49,8 +51,6 @@ sub-0.8 stochasticity zone but *agrees* with the YAML — a correct
 grade at modest confidence, not a disagreement. With p014 now
 grading, all 21 pairs agree: 63/63 effective. The p007 rewrite
 precedent (same fix, same outcome) holds for p014.
-| Honest flagged behavior | spec-faithful | 18/21 — p014 experiment caught | 21/21 | ✅ |
-| Cost / call | reasonable | ~$0.011/call | ~$0.011/call | ✅ |
 
 ---
 
