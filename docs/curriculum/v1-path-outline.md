@@ -177,13 +177,13 @@ are locked.
 
 ## Production (Units 11–15) — partially locked
 
-"*Can we operate this in front of real users?*" Unit 11 is locked;
-Units 12–15 remain sketched.
+"*Can we operate this in front of real users?*" Units 11 and 12
+are locked; Units 13–15 remain sketched.
 
 | # | Unit | Status | Trade-off it teaches | Prereqs |
 |---|---|---|---|---|
 | 11 | **Streaming UX** | 🔒 | What to stream (raw tokens / semantic chunks / status only) vs. how to render the streaming state (continuous flow / progressive sections / typed-out) vs. how to handle mid-stream failure (silent retry / partial accept / full restart) — three coupled decisions whose pairings produce three different user feels; mismatched pairings produce a UI the user reads as broken | 1, 3 |
-| 12 | Tool use / function calling | 🟡 | The shift from "answer-shaped output" to "the LLM can call your API" | — |
+| 12 | **Tool use / function calling** | 🔒 | Tool granularity (many narrow tools / few broad composites) vs. schema strictness (strict validation / lenient acceptance) vs. error-recovery locus (model retries on tool-error / orchestrator catches and re-prompts) — three coupled decisions that determine whether a tool-using LLM feature feels reliable, capable, and debuggable, or feels brittle, narrow, and opaque to ship and operate | 1, 4, 6, 10 |
 | 13 | Multimodal (vision basics) | 🟡 | Image-input use cases at PM level | — |
 | 14 | Agents / multi-step reasoning | 🟡 | When chain-of-thought helps vs. when it's expensive theater | — |
 | 15 | Safety + content moderation | 🟡 | What stops a feature from getting your team in trouble | — |
@@ -209,6 +209,44 @@ Units 12–15 remain sketched.
   non-trivial output length faces this decision, and faces it
   before more specialized patterns (Tool use, Multimodal,
   Agents, Safety).
+
+### Position rationale (Unit 12)
+
+- **Tool use as Unit 12** is the second Production-block unit and
+  the structural prerequisite for the three that follow.
+  Multimodal pipelines (Unit 13) invoke tools to route image
+  inputs; Agents (Unit 14) *are* tool-use orchestration loops —
+  the agentic pattern is unintelligible without tool-call
+  mechanics first; Safety (Unit 15) governs the action surface
+  that tool use creates (a model that can only emit text has a
+  much smaller blast radius than one that can call your API).
+  Putting Tool use early in the block makes the rest of the
+  block legible.
+- **It generalizes Unit 10's retrieval-as-a-tool framing.** Unit
+  10 (Vector search / RAG) taught retrieval as the canonical
+  knowledge-injection pattern; Unit 12 reframes retrieval as one
+  instance of the broader *"the LLM can call your API"* pattern
+  and teaches the design trade-offs that apply to every tool,
+  not just retrieval. This is why Unit 10 is a prereq, not just
+  Unit 1.
+- **The load-bearing pedagogy is that "give the model tools"
+  isn't one decision but three coupled ones** — granularity,
+  schema strictness, and error-recovery locus. As with the
+  Streaming UX trilemma (Unit 11), the pairings interact:
+  lenient schemas with model-side recovery can self-heal but
+  hide failures from the orchestrator; strict schemas with
+  orchestrator-side recovery are debuggable but brittle to
+  novel inputs. Mismatched pairings produce a feature that
+  *demos well and operates badly*.
+- **Prereqs 1, 4, 6, 10.** Unit 1 (what a tool call is at the
+  API boundary), Unit 6 (tool descriptions *are* prompts — same
+  discipline), Unit 10 (retrieval-as-tool, the pattern this
+  generalizes), and Unit 4 (Evals — the trade-off is only
+  resolvable empirically; "which granularity is right?" is an
+  eval question, and tool use without an eval discipline is
+  exactly the failure mode the curriculum exists to prevent).
+  Consistent with Units 9 and 10, which both list Evals as a
+  prereq.
 
 ---
 
@@ -254,11 +292,14 @@ Revisit after closed beta.
 
 ## What this file commits us to
 
-1. **Author Unit 10 (RAG fundamentals) next.** Locked
-   2026-05-14. No detour into Unit 12 or Unit 15 because
-   something else is "more interesting." Unit 11 (Streaming UX)
-   is also locked, satisfying the one-unit-ahead lock buffer.
-2. **Lock Unit 12 (Tool use / function calling) before Unit 11
+1. **Author Unit 11 (Streaming UX) next.** Unit 10 (RAG
+   fundamentals) shipped and passed gate 2026-05-15 (see
+   docs/UNIT_10_GATE.md — 100% per-criterion re-run). No detour
+   into Unit 13 or Unit 15 because something else is "more
+   interesting." Unit 12 (Tool use / function calling) is locked
+   2026-05-16, satisfying the one-unit-ahead lock buffer for
+   Unit 11.
+2. **Lock Unit 13 (Multimodal / vision basics) before Unit 12
    authoring begins.** Maintain the one-unit-ahead lock buffer
    so the prereq chain is always settled before slot (a) begins
    on the active unit.
