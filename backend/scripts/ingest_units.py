@@ -51,9 +51,10 @@ CANONICAL_PATH_ID = "llm-systems-for-pms"
 CANONICAL_PATH_SLUG = "llm-systems-for-pms"
 CANONICAL_PATH_TITLE = "LLM Systems for PMs"
 CANONICAL_PATH_DESCRIPTION = (
-    "The canonical Phase 1 curriculum: the LLM concepts a product manager "
-    "actually has to reason about — tokenization, context windows, latency, "
-    "evals — taught one trade-off at a time."
+    "The canonical curriculum: the LLM concepts a product manager "
+    "actually has to reason about — from tokenization and context "
+    "windows to evals, RAG, and the production trade-offs beyond — "
+    "taught one trade-off at a time."
 )
 
 _SECTION_HEADER_RE = re.compile(r"^##\s+(.+?)\s*$")
