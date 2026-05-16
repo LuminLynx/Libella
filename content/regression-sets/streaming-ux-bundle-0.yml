@@ -1,0 +1,719 @@
+# Regression set for the Streaming UX unit (streaming-ux-bundle-0).
+#
+# Unit 11 is authored as flagship under STRATEGY.md § T2 — >= 20
+# pairs before publish. Authoring discipline mirrors
+# vector-search-rag-bundle-0.yml (Unit 10, the latest gate-passing
+# reference: 100% per-criterion on re-run). English-only per the
+# discipline locked in docs/curriculum/v1-path-outline.md.
+#
+# Position-to-criterion mapping (from
+# content/units/streaming-ux-bundle-0.md slot 8 rubric):
+#
+#   1. "Names the three coupled streaming decisions (what to
+#      stream / how to render / how to recover) AND treats them
+#      as coupled — the combination produces the feel — not as
+#      three independent toggles."
+#   2. "Explains the mechanism behind a mismatched-combination
+#      failure (token-streaming structured output into a
+#      continuous-flow render shows garbage; no recovery decision
+#      freezes the UI on the first dropped stream) AND identifies
+#      that the decisions constrain each other."
+#   3. "Maps a matched combination to a surface (chat /
+#      artifact-canvas / agent-working feel) and why it fits AND
+#      recognizes the common PM error (treating 'add streaming'
+#      as one decision, defaulting to the chat triple, or
+#      skipping the recovery decision because it has no
+#      happy-path demo)."
+#
+# Authoring distribution (21 pairs; mirrors Unit 10's
+# gate-passing shape):
+#   * 6 pairs all-three-met (varied English voices)
+#       p001 (balanced prose), p002 (terse engineering),
+#       p005 (been-bitten), p016 (long-narrative),
+#       p017 (structured PM-doc — flowing prose, no markdown
+#       headers per Unit 9 p016 grader-bug lesson),
+#       p018 (emoji-tolerant)
+#   * 5 pairs partial credit (2 of 3) — deliberate borderlines
+#       p006 (c1+c2), p007 (c1+c3), p008 (c2+c3),
+#       p011 (c1+c3), p021 (c1+c3)
+#   * 2 pairs single-criterion-met
+#       p009 (c1), p010 (c2)
+#   * 5 pairs all-missed on-topic
+#       p004, p012, p015, p019, p020
+#   * 2 pairs off-topic, all-missed, gradable (NOT flagged) —
+#     deliberately probe the Unit 3 boundary
+#       p003 (pivots to "should we stream at all"), p013
+#       (pivots to SSE-vs-WebSocket transport debate)
+#   * 1 pair flagged-expected EXPERIMENT (p014)
+#       Authored with genuine one-criterion ambiguity (c1
+#       clear-met, c3 clear-missed, c2 a true coin-flip), NOT
+#       the verbose-punt shape. Tests the docs/UNIT_10_GATE.md
+#       hypothesis: verbose-punt answers get confidently graded
+#       all-not-met (no flag), but a real partial-credit
+#       ambiguity SHOULD trigger grader uncertainty. Building
+#       the evidence base toward the Unit 12/13 lock decision
+#       on whether partial-credit-shape becomes the locked
+#       prerequisite for flagged-expected.
+#
+# T2-B locked interpretation (per docs/PHASE_2_GATE.md and PR #72):
+# flagged = grader *uncertainty*, NOT "answer is bad." Off-topic
+# answers the grader can confidently grade as all Not-Met are
+# gradable — flagged: false.
+#
+# Authoring-constraint reminders (from Unit 9 + 10 gate lessons):
+#   - No markdown-style section headers inside answer text (the
+#     grader has a deterministic payload bug on them — see
+#     docs/UNIT_9_GATE.md). Voice-variation pairs use flowing
+#     prose instead.
+#   - Deliberate-borderline pairs sit on the grader's confidence
+#     boundary; expected band 0.6-0.8. High-confidence
+#     disagreement is triage signal per the realignment pattern
+#     in PRs #104 / #111.
+#
+# Pre-gate expectation: this set is unrun. Triage doc lands as
+# docs/UNIT_11_GATE.md after the first gate run, following the
+# UNIT_2 / UNIT_9 / UNIT_10 gate pattern.
+
+unit_id: streaming-ux-bundle-0
+
+description: |
+  Phase 3 / Unit 11 flagship gate set. Authored 2026-05-16.
+  21 pairs against the locked T2-B reading (flagged = grader
+  uncertainty, NOT off-topic-but-gradable). Distribution mirrors
+  Unit 10's gate-passing shape: 6 all-met / 5 partial-credit / 2
+  single-criterion-met / 5 all-missed-on-topic / 2 off-topic-
+  gradable / 1 flagged-expected. The flagged-expected pair (p014)
+  is a deliberate experiment authored with genuine one-criterion
+  ambiguity rather than a verbose punt, to test the
+  docs/UNIT_10_GATE.md hypothesis about what actually triggers
+  the grader's flag. English-only per locked discipline. Voice
+  variations use flowing prose only (no markdown-style section
+  headers inside answer text, per docs/UNIT_9_GATE.md lesson).
+
+pairs:
+  - id: p001
+    label: All three met, balanced prose covering the three decisions and the surface fit
+    answer: |
+      Eng saying "stream it like chat" is the trap. Streaming this
+      brief isn't one decision — it's three coupled ones, and the
+      combination produces the feel, not any single choice.
+
+      What to stream: raw tokens, semantic chunks, or status only.
+      How to render the streamed state: continuous flow,
+      progressive sections, or typed-out. How to recover from a
+      mid-stream failure: silent retry, partial accept, or full
+      restart.
+
+      For a structured brief with headings, bullets, and a summary
+      table, the matched combination is semantic-chunk streaming
+      plus progressive-section rendering plus partial-accept
+      recovery — the artifact/canvas feel. The brief assembles
+      section by section, and if the stream dies at the table the
+      user keeps the headings and bullets that already arrived.
+
+      The chat triple eng wants is token streaming plus
+      continuous-flow rendering plus full-restart recovery. On
+      this surface it fails two ways. First, the user watches a
+      half-parsed markdown table assemble character by character
+      and reads the feature as broken even though it's working.
+      Second, the decisions constrain each other: continuous-flow
+      rendering rules out partial-accept recovery, because a
+      half-streamed token is incoherent to keep, so a dropped
+      stream means a full restart and ten more seconds. Demos
+      fine on a fast network, operates badly on a real one.
+
+      Before launch I want the recovery decision made explicitly
+      — it has no happy-path demo, so it gets skipped, and the
+      first dropped stream in production decides it for us.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p002
+    label: All three met, terse engineering voice
+    answer: |
+      Three coupled decisions, not one. What to stream: tokens /
+      semantic chunks / status. How to render: continuous flow /
+      progressive sections / typed-out. How to recover: silent
+      retry / partial accept / full restart. Combination produces
+      the feel.
+
+      Brief surface (headings + bullets + table, ~10s): pick
+      semantic-chunk + progressive-section + partial-accept. The
+      artifact/canvas feel. Sections land whole; a mid-stream drop
+      keeps delivered sections.
+
+      Eng's "like chat" = token + continuous-flow + full-restart.
+      Fails here: continuous-flow render shows a half-parsed table
+      as garbage, user reads working feature as broken. And the
+      decisions constrain each other — continuous-flow rules out
+      partial-accept (half-token is incoherent to keep), so any
+      drop costs a full 10s restart.
+
+      Pre-launch: force the recovery decision. No happy-path demo
+      means it's undecided until the first prod incident.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p003
+    label: Off-topic, gradable, re-litigates Unit 3's "should we stream at all"
+    answer: |
+      Before we talk about how to stream, I'd challenge whether we
+      should stream this at all. Ten seconds is long, but if we
+      can get the generation down to three or four seconds with a
+      faster model or a smaller prompt, a clean non-streamed
+      response with a good loading state might beat any streaming
+      implementation. Streaming adds real engineering and a whole
+      failure surface. I'd want eng to benchmark a non-streamed
+      version first and only invest in streaming if we can't get
+      total latency into an acceptable range. The right answer
+      might be no streaming, not better streaming.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p004
+    label: All-missed on-topic — "streaming is a config flag"
+    answer: |
+      Streaming is basically a configuration flag at this point.
+      Every provider SDK supports it — you set stream=true and the
+      tokens come back incrementally. Eng is right that we just
+      turn it on the same way the chat feature does. There isn't
+      really a product decision here; it's an implementation
+      detail the engineers handle. I'd let them flip the flag and
+      move on to the parts of the feature that actually need
+      product input, like the prompt and the output format.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p005
+    label: All three met, been-bitten experiential voice
+    answer: |
+      I shipped exactly this once — a structured report, streamed
+      "like the chat feature." It demoed great and then support
+      lit up: users said the report looked broken. It wasn't
+      broken. We were token-streaming a markdown table into a
+      continuous-flow render, so people watched pipe characters
+      and dashes assemble character by character and assumed the
+      AI had failed.
+
+      That scar taught me streaming is three coupled decisions.
+      What to stream: tokens, semantic chunks, or status. How to
+      render: continuous flow, progressive sections, or typed-out.
+      How to recover from a dropped stream: silent retry, partial
+      accept, or full restart. The combination is what produces
+      the feel.
+
+      For a structured brief the matched combination is
+      semantic-chunk streaming plus progressive sections plus
+      partial-accept recovery — sections land whole, and a drop
+      keeps what arrived. The chat triple is wrong here, and the
+      decisions constrain each other: once you pick continuous
+      flow you can't do partial-accept, because a half-token isn't
+      something you can keep. The recovery decision is the one we
+      hadn't made at all — there's no happy-path demo for it, so
+      nobody owned it until production did.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p006
+    label: Partial credit (c1+c2) — names the three coupled decisions and the mechanism, never maps a matched combination to the surface
+    answer: |
+      Streaming this brief is three coupled decisions, not one.
+      What to stream (tokens, semantic chunks, or status), how to
+      render the streamed state (continuous flow, progressive
+      sections, or typed-out), and how to recover from a
+      mid-stream failure (silent retry, partial accept, or full
+      restart). The combination is what matters, not any single
+      pick.
+
+      Eng's "stream it like chat" instinct fails because of how
+      the decisions interact. Token-streaming a structured brief
+      into a continuous-flow render means the user watches a
+      half-parsed table assemble character by character and reads
+      the feature as broken. And the decisions constrain each
+      other — choosing continuous-flow rendering rules out
+      partial-accept recovery, because a half-streamed token isn't
+      coherent to keep, so a dropped stream forces a full restart.
+
+      The team needs to make these decisions deliberately rather
+      than inheriting the chat feature's defaults.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p007
+    label: Partial credit (c1+c3) — names the three coupled decisions and maps the matched combination, mechanism asserted not explained
+    answer: |
+      Streaming the brief is three coupled decisions: what to
+      stream, how to render the streamed state, and how to recover
+      from a mid-stream failure. They're coupled — the combination
+      produces the feel, not any single choice.
+
+      For a structured brief with headings, bullets, and a table,
+      the right combination is semantic-chunk streaming plus
+      progressive-section rendering plus partial-accept recovery —
+      the artifact/canvas feel. Sections assemble whole and a drop
+      keeps what arrived. Eng's "stream it like chat" is the chat
+      triple (token plus continuous-flow plus full-restart), which
+      is the wrong combination for this surface — chat's triple
+      fits conversational messages, not structured partially-
+      valuable output.
+
+      "Stream it like chat" is the classic PM error of treating
+      streaming as one decision and defaulting to the chat triple
+      everywhere. It'll demo fine and operate badly here.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: false
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p008
+    label: Partial credit (c2+c3) — explains the mechanism and maps a matched combination, only two of the three decisions enumerated cleanly
+    answer: |
+      Eng's "stream it like chat" instinct is the problem. Chat
+      token-streams into a continuous-flow view. If we do that
+      with a structured brief, the user watches a half-parsed
+      markdown table assemble character by character and reads the
+      working feature as broken. The deeper issue is that the
+      rendering choice constrains the failure-handling choice:
+      once you've committed to continuous flow, you can't keep a
+      partial result on a dropped stream because a half-token
+      isn't coherent, so you're forced into a full ten-second
+      restart.
+
+      For this surface the matched combination is semantic-chunk
+      streaming with progressive-section rendering — the
+      artifact/canvas feel, where the brief grows section by
+      section and a drop keeps the sections already delivered.
+      That fits structured output where partial results still have
+      value, which chat's combination does not.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p009
+    label: Single criterion (c1) — cleanly names the three coupled decisions, stops there
+    answer: |
+      Streaming this isn't a single decision. It's three coupled
+      ones, and the combination is what determines how the feature
+      feels rather than any individual choice. First, what to
+      stream — raw tokens, semantic chunks, or status only.
+      Second, how to render the streamed state — continuous flow,
+      progressive sections, or a deliberately typed-out reveal.
+      Third, how to recover from a mid-stream failure — silent
+      retry, partial accept, or full restart. The team should
+      treat these as one coupled decision space, not three
+      independent toggles, and decide them together rather than
+      inheriting the chat feature's combination by default.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p010
+    label: Single criterion (c2) — explains the mismatch mechanism without naming the three-decision framework or mapping a good combination
+    answer: |
+      The thing that will bite us is what happens when you push a
+      structured document through a renderer that appends every
+      token as it arrives. A markdown table or a JSON block is
+      only coherent once it's complete; mid-stream it's a mess of
+      half-formed syntax, and the user sees that mess and concludes
+      the AI is broken even though generation is working perfectly.
+      It gets worse on a dropped connection — because the renderer
+      has been showing raw incremental output, there's no clean
+      partial result to keep, so the only safe move is to throw it
+      all away and regenerate from scratch, which on a ten-second
+      generation is a very visible penalty. The render approach
+      and the failure approach are entangled; you can't choose one
+      without constraining the other.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: true
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p011
+    label: Partial credit (c1+c3) — names decisions and maps a combination but underweights recovery as a real decision
+    answer: |
+      Streaming the brief breaks down into what to stream and how
+      to render it, and those two together with the failure
+      behavior make up the decision. What to stream: tokens,
+      semantic chunks, or status. How to render: continuous flow,
+      progressive sections, or typed-out. Recovery mostly takes
+      care of itself once rendering is right, so the real choices
+      are the first two.
+
+      For a structured brief the matched combination is
+      semantic-chunk streaming with progressive-section rendering
+      — the artifact/canvas feel, where the document assembles
+      section by section. Eng's "stream it like chat" defaults to
+      the chat triple, which is the wrong combination for
+      structured output and is the usual PM mistake of treating
+      streaming as one inherited decision.
+
+      Recovery is an implementation detail the framework handles;
+      the product decisions are stream granularity and render
+      mode.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: false
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p021
+    label: Partial credit (c1+c3) — collapses recovery into rendering, coupling named, surface mapped, mechanism muddied
+    answer: |
+      Three coupled decisions drive the streaming feel: what to
+      stream, how to render the streamed state, and how the UI
+      behaves on failure. They're coupled, so the combination is
+      what matters.
+
+      For a structured brief the matched combination is
+      semantic-chunk streaming plus progressive-section rendering,
+      which gives the artifact/canvas feel where the brief grows
+      section by section. That fits this surface; the chat triple
+      eng wants does not, and defaulting to it is the standard
+      "treat streaming as one decision" error.
+
+      On failure, the UI just handles it — a good progressive-
+      section renderer will naturally show whatever arrived, so
+      the recovery behavior falls out of the rendering choice
+      rather than being its own decision. Pick the right render
+      mode and failure handling comes along for free.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: false
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p012
+    label: All-missed on-topic — "token-stream everything, lowest TTFT always wins"
+    answer: |
+      The metric that matters for streaming is time to first
+      token. Users judge responsiveness by how fast something
+      starts appearing, so the right call is always to token-
+      stream at the lowest possible granularity and render every
+      token the instant it arrives. Buffering into semantic chunks
+      just adds latency before the user sees anything, which is
+      exactly what we're trying to avoid. Token streaming with
+      immediate rendering minimizes time to first token on every
+      surface, including this brief. Lowest TTFT wins; that's the
+      whole game.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p013
+    label: Off-topic, gradable, pivots to SSE-vs-WebSocket transport debate
+    answer: |
+      The real question here is transport. Server-Sent Events is
+      the default, but it's unidirectional and has connection
+      limits over HTTP/1.1, whereas WebSockets give us
+      bidirectional communication and better control over
+      reconnection. For a feature we want to scale, I'd push eng
+      to evaluate WebSockets or even gRPC streaming instead of
+      defaulting to SSE. The transport choice determines our
+      reconnection story and our infrastructure cost more than
+      anything on the UI side. Let's get the protocol decision
+      right first.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p014
+    label: Flagged-expected EXPERIMENT — c1 clear-met, c3 clear-missed, c2 a genuine coin-flip (real one-criterion ambiguity, not a verbose punt)
+    answer: |
+      Streaming this brief is three coupled decisions: what to
+      stream (tokens, semantic chunks, or status), how to render
+      the streamed state (continuous flow, progressive sections,
+      or typed-out), and how to recover from a mid-stream failure
+      (silent retry, partial accept, or full restart). They're
+      coupled and the team should decide them together rather than
+      inheriting the chat feature's combination.
+
+      These decisions clearly affect each other — the render
+      choice and the recovery choice are related, and picking one
+      narrows what makes sense for the others. Eng's "stream it
+      like chat" instinct is risky for a structured brief because
+      what works for a conversational message may not work the
+      same way here.
+
+      I'd want the team to walk through the combinations together
+      before launch and make sure the pieces fit the surface.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: true
+
+  - id: p015
+    label: All-missed on-topic — "skip recovery, streams basically never drop in prod"
+    answer: |
+      Recovery handling is over-engineering for a v1. Streams
+      almost never drop in production — the providers are highly
+      available and most users are on solid connections. Building
+      partial-accept logic or retry orchestration for an edge case
+      that happens to a fraction of a percent of requests is a bad
+      use of the team's time before launch. We should ship the
+      streaming happy path, watch the error rate, and only invest
+      in recovery if the data shows it's actually a problem.
+      Premature failure handling will slow the launch for no real
+      user benefit.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p016
+    label: All three met, long-narrative voice
+    answer: |
+      Let me walk through why "stream it like the chat feature"
+      is the wrong instinct for this brief, because the reasoning
+      is the whole point.
+
+      Streaming looks like one decision and is actually three, and
+      the three are coupled. The first is what we put on the wire
+      — raw token deltas, semantically meaningful chunks like a
+      completed section, or just status events that say what the
+      system is doing. The second is how the client renders the
+      streamed state — appending every delta in a continuous flow,
+      holding each unit until it's complete and revealing it as a
+      whole section, or pacing a deliberate typed-out reveal. The
+      third is what the UI does when the stream dies partway,
+      which it will — silently retrying, accepting and marking the
+      partial result, or discarding and regenerating from scratch.
+
+      What makes this a single coupled decision rather than three
+      independent ones is that the choices constrain each other.
+      If we render in a continuous flow, partial-accept recovery
+      stops being coherent, because the thing we'd be accepting is
+      a half-formed token stream, not a usable artifact — so the
+      render choice has silently made the recovery choice for us.
+
+      For a structured brief — headings, bullets, a summary table,
+      ten seconds end to end — the combination that fits is
+      semantic-chunk streaming, progressive-section rendering, and
+      partial-accept recovery. That is the artifact feel: the
+      brief assembles section by section, and if the stream dies
+      at the table the user still keeps the headings and bullets.
+      Eng's chat triple — token streaming, continuous flow, full
+      restart — produces a half-parsed table assembling character
+      by character, which users read as a broken feature, and a
+      forced full restart on every dropped connection. It demos
+      fine and operates badly, and the recovery decision is the
+      one nobody will make unless we force it before launch
+      because it has no happy-path demo.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p017
+    label: All three met, structured PM-doc voice (flowing prose, no markdown headers)
+    answer: |
+      Scoping streaming for the brief surface. There are three
+      coupled decisions here and the combination produces the
+      feel, so they have to be decided together rather than
+      inherited from the chat feature.
+
+      The first decision is what to stream, where the options are
+      raw tokens, semantic chunks, or status only. The second is
+      how to render the streamed state, where the options are
+      continuous flow, progressive sections, or a typed-out
+      reveal. The third is how to recover from a mid-stream
+      failure, where the options are silent retry, partial accept,
+      or full restart. These are coupled because a continuous-flow
+      render makes partial-accept recovery incoherent, so the
+      second decision constrains the third.
+
+      The recommended combination for this brief is semantic-chunk
+      streaming, progressive-section rendering, and partial-accept
+      recovery, which is the artifact feel: the document assembles
+      section by section and a dropped stream keeps the delivered
+      sections. The rationale for not following eng's "stream it
+      like chat" is that the chat triple is token streaming plus
+      continuous flow plus full restart, which on a structured
+      brief renders a half-parsed table the user reads as broken
+      and forces a full ten-second restart on any drop. The risk
+      if we skip this analysis is that the recovery decision goes
+      unmade, because it has no happy-path demo, and production
+      makes it for us.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p018
+    label: All three met, emoji-tolerant short-form
+    answer: |
+      Streaming = 3 coupled decisions, combination makes the feel.
+
+      What to stream → tokens / semantic chunks / status.
+      How to render → continuous flow / progressive sections /
+      typed-out.
+      How to recover → silent retry / partial accept / full
+      restart.
+
+      Brief surface (headings + bullets + table): semantic-chunk +
+      progressive-section + partial-accept = artifact feel.
+      Sections land whole, a drop keeps what arrived.
+
+      Eng's "like chat" = token + continuous-flow + full-restart.
+      Wrong here: continuous-flow shows a half-parsed table as
+      garbage, and it rules out partial-accept (half-token can't
+      be kept) so every drop is a full 10s restart. Coupled, see?
+
+      Force the recovery decision pre-launch — no happy-path demo
+      means it's undecided until prod.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p019
+    label: All-missed on-topic — "typed-out reveal everywhere, it feels premium"
+    answer: |
+      The way to make this feel polished is a typed-out reveal.
+      The best AI products animate text appearing at a steady,
+      readable pace — it reads as deliberate and premium rather
+      than a wall of text dumping out. I'd have eng implement a
+      typed-out animation for the brief and honestly use it
+      everywhere in the product for consistency. The exact
+      streaming granularity underneath doesn't matter much because
+      the typed-out pacing smooths it out anyway. It's the single
+      highest-leverage thing we can do for perceived quality.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p020
+    label: All-missed on-topic — "status-only on the chat surface is fine, users like progress"
+    answer: |
+      Users like seeing progress, so the safe choice for any LLM
+      feature is status-only streaming — show "thinking",
+      "drafting", "finalizing" and reveal the finished output at
+      the end. It avoids all the messiness of partial rendering
+      and it works the same on every surface, including the chat
+      feature and this brief. People are used to progress
+      indicators and they trust them. I'd standardize on
+      status-only streaming across the product so we don't have to
+      reason about render modes or partial failures at all.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
