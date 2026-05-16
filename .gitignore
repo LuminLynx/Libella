@@ -11,3 +11,10 @@ local.properties
 docs/test.kt
 gradle-cache-agp-8.5.2-v1.tar.zst
 *.dump
+
+# Local secrets — never commit. config.py loads these for local dev;
+# production uses real platform env vars (Railway/CI). The committed
+# template is .env.example (placeholders only).
+.env
+.env.*
+!.env.example
