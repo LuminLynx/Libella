@@ -3,7 +3,21 @@ from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+REPO_ROOT = BASE_DIR.parent
 SEED_PATH = BASE_DIR / "db" / "seed.sql"
+
+# Load a local .env before reading any environment variables, so local
+# development doesn't depend on hand-exporting secrets per shell. Real
+# platform env vars (Railway, CI) take precedence — override=False — so
+# production behaviour is unchanged and a missing .env is a no-op.
+try:
+    from dotenv import load_dotenv
+
+    for _env_file in (REPO_ROOT / ".env", BASE_DIR / ".env"):
+        if _env_file.is_file():
+            load_dotenv(_env_file, override=False)
+except ModuleNotFoundError:
+    pass
 
 # `production` triggers the strict-secrets / strict-config gate below.
 # Set via Railway / your hosting platform's env vars; defaults to
