@@ -105,11 +105,30 @@
 #     as "falls out of rendering for free" — commits the exact
 #     error the rubric warns against).
 #   * p014 — flagged realigned T->F (the experiment; grader
-#     confidently resolved c2, did not flag).
+#     confidently resolved c2, did not flag on the first run).
+#     SECOND PASS (2026-05-16 re-run + isolation): p014 then
+#     errored DETERMINISTICALLY with the grader-payload bug —
+#     same class as p007, NOT stochastic like p011. Its answer
+#     was rewritten to remove parenthetical option-lists
+#     (c1=T/c2=F/c3=F profile preserved; it is now a plain
+#     single-criterion-met pair, the experiment having already
+#     concluded on the first-run data).
 #
-# One rewrite (p007) + four expected-value realignments (p008 c3,
-# p011 c1+c3, p021 c3, p014 flag). Zero preserved disagreements,
-# continuing the Unit 9/10 precedent. p011's stochastic ERROR is
+# Grader-payload trigger pattern (p007 + p014, both
+# deterministic): parenthetical option-lists inside answer text
+# ("what to stream (tokens, semantic chunks, or status), ...")
+# raise the grader's structured-output failure rate to
+# effectively deterministic. p006 has the same shape and passed
+# both runs, so it is propensity not a hard guarantee — but the
+# authoring rule is now: no parenthetical option-lists in answer
+# text, alongside no markdown headers (Unit 9) and no quote-led
+# sentences. The T2-D guardrail keeps these safe (rejected, not
+# mis-graded) but each costs a rewrite cycle.
+#
+# Two rewrites (p007, p014) + three expected-value realignments
+# (p008 c3, p011 c1+c3, p021 c3) + one flag realignment (p014).
+# Zero preserved disagreements, continuing the Unit 9/10
+# precedent. p011's stochastic ERROR is
 # documented, not treated as a content bug.
 #
 # When the gate re-runs after realignment, watch for:
@@ -118,7 +137,9 @@
 #   - p011 grading cleanly (no payload ERROR) — confirms the
 #     full-run ERROR was stochastic.
 #   - p008/p011/p021 matching the realigned c3=False reading.
-#   - p014 not flagged (experiment result holds).
+#   - p014 grading cleanly (no payload ERROR) — confirms the
+#     rewrite cleared its deterministic parenthetical-list
+#     trigger; expected c1=T/c2=F/c3=F, not flagged.
 #   - Zero flagged-expected pairs remain in the set.
 
 unit_id: streaming-ux-bundle-0
@@ -128,17 +149,20 @@ description: |
   realigned 2026-05-16 after the initial gate run per
   docs/UNIT_11_GATE.md. 21 pairs against the locked T2-B reading
   (flagged = grader uncertainty, NOT off-topic-but-gradable).
-  One rewrite (p007 — deterministic grader-payload bug, Unit 9
-  p016 precedent) plus four expected-value realignments (p008 c3,
-  p011 c1+c3, p021 c3, p014 flag). The c3-strict pattern across
-  p008/p011/p021 is the headline authoring lesson (parallel to
-  Unit 9/10 c2-strict). The p014 experiment refuted the
-  flagged-expected hypothesis — genuine one-criterion ambiguity
-  does not trigger the flag any more than verbose punts did;
-  flagged-expected is retired from the authoring distribution
-  from Unit 12 onward. Zero preserved disagreements. English-only
-  per locked discipline; voice variations use flowing prose only.
-  See header for full triage.
+  Two rewrites (p007 + p014 — both deterministic grader-payload
+  bugs from parenthetical option-lists, Unit 9 p016 class) plus
+  three expected-value realignments (p008 c3, p011 c1+c3, p021
+  c3) and one flag realignment (p014). The c3-strict pattern
+  across p008/p011/p021 is the headline authoring lesson
+  (parallel to Unit 9/10 c2-strict). The p014 experiment refuted
+  the flagged-expected hypothesis — genuine one-criterion
+  ambiguity does not trigger the flag any more than verbose punts
+  did; flagged-expected is retired from the authoring
+  distribution from Unit 12 onward. New authoring constraint: no
+  parenthetical option-lists in answer text (p007 + p014 trigger
+  the grader-payload bug deterministically). Zero preserved
+  disagreements. English-only per locked discipline; voice
+  variations use flowing prose only. See header for full triage.
 
 pairs:
   - id: p001
@@ -554,24 +578,24 @@ pairs:
       flagged: false
 
   - id: p014
-    label: EXPERIMENT RESULT — genuine one-criterion ambiguity did NOT trigger the flag; grader confidently resolved c2 (flagged realigned True→False 2026-05-16; hypothesis refuted, see docs/UNIT_11_GATE.md)
+    label: Single criterion (c1) — names the three coupled decisions, vague on coupling, no combination mapped (answer rewritten 2026-05-16 to clear a deterministic grader-payload trigger; the flagged-expected experiment it originally ran is concluded — see docs/UNIT_11_GATE.md)
     answer: |
-      Streaming this brief is three coupled decisions: what to
-      stream (tokens, semantic chunks, or status), how to render
-      the streamed state (continuous flow, progressive sections,
-      or typed-out), and how to recover from a mid-stream failure
-      (silent retry, partial accept, or full restart). They're
-      coupled and the team should decide them together rather than
-      inheriting the chat feature's combination.
+      Streaming this brief is three coupled decisions, not one.
+      The first is what to stream. The second is how to render the
+      streamed state. The third is how to recover from a
+      mid-stream failure. They are coupled, and the team should
+      decide them together rather than inheriting the chat
+      feature's combination.
 
-      These decisions clearly affect each other — the render
-      choice and the recovery choice are related, and picking one
-      narrows what makes sense for the others. Eng's "stream it
-      like chat" instinct is risky for a structured brief because
-      what works for a conversational message may not work the
-      same way here.
+      These decisions clearly affect each other, and the render
+      choice and the recovery choice in particular are related, so
+      picking one narrows what makes sense for the others. The
+      instinct to stream this the way the chat feature streams is
+      risky for a structured brief, because what works for a
+      conversational message may not work the same way on this
+      surface.
 
-      I'd want the team to walk through the combinations together
+      I would want the team to walk through the options together
       before launch and make sure the pieces fit the surface.
     expected:
       criteria:
