@@ -177,14 +177,14 @@ are locked.
 
 ## Production (Units 11–15) — partially locked
 
-"*Can we operate this in front of real users?*" Units 11 and 12
-are locked; Units 13–15 remain sketched.
+"*Can we operate this in front of real users?*" Units 11, 12,
+and 13 are locked; Units 14–15 remain sketched.
 
 | # | Unit | Status | Trade-off it teaches | Prereqs |
 |---|---|---|---|---|
 | 11 | **Streaming UX** | 🔒 | What to stream (raw tokens / semantic chunks / status only) vs. how to render the streaming state (continuous flow / progressive sections / typed-out) vs. how to handle mid-stream failure (silent retry / partial accept / full restart) — three coupled decisions whose pairings produce three different user feels; mismatched pairings produce a UI the user reads as broken | 1, 3 |
 | 12 | **Tool use / function calling** | 🔒 | Tool granularity (many narrow tools / few broad composites) vs. schema strictness (strict validation / lenient acceptance) vs. error-recovery locus (model retries on tool-error / orchestrator catches and re-prompts) — three coupled decisions that determine whether a tool-using LLM feature feels reliable, capable, and debuggable, or feels brittle, narrow, and opaque to ship and operate | 1, 4, 6, 10 |
-| 13 | Multimodal (vision basics) | 🟡 | Image-input use cases at PM level | — |
+| 13 | **Multimodal (vision basics)** | 🔒 | Send the raw image to a vision model (flexible, zero pipeline, expensive per image, hard to eval) vs. extract structured signal first with OCR / classical CV (cheap, precise, brittle to inputs it wasn't built for) vs. hybrid (cheap extractor with a VLM fallback on low-confidence) — the PM error is defaulting to "throw the image at the multimodal model" for a stable extraction problem, or building a brittle CV pipeline for genuinely open-ended visual understanding | 1, 4, 8 |
 | 14 | Agents / multi-step reasoning | 🟡 | When chain-of-thought helps vs. when it's expensive theater | — |
 | 15 | Safety + content moderation | 🟡 | What stops a feature from getting your team in trouble | — |
 
@@ -213,15 +213,18 @@ are locked; Units 13–15 remain sketched.
 ### Position rationale (Unit 12)
 
 - **Tool use as Unit 12** is the second Production-block unit and
-  the structural prerequisite for the three that follow.
-  Multimodal pipelines (Unit 13) invoke tools to route image
-  inputs; Agents (Unit 14) *are* tool-use orchestration loops —
-  the agentic pattern is unintelligible without tool-call
-  mechanics first; Safety (Unit 15) governs the action surface
-  that tool use creates (a model that can only emit text has a
-  much smaller blast radius than one that can call your API).
-  Putting Tool use early in the block makes the rest of the
-  block legible.
+  the structural prerequisite for the agentic and safety units.
+  Agents (Unit 14) *are* tool-use orchestration loops — the
+  agentic pattern is unintelligible without tool-call mechanics
+  first; Safety (Unit 15) governs the action surface that tool
+  use creates (a model that can only emit text has a much smaller
+  blast radius than one that can call your API). Multimodal
+  (Unit 13) is *adjacent*, not downstream — multimodal pipelines
+  often route image inputs through tools in practice, but the
+  core vision trade-off (VLM vs. extract-first) doesn't require
+  tool-use mechanics, so Unit 13 is independently authorable and
+  does not list Unit 12 as a prereq. Putting Tool use early in
+  the block still makes the agent/safety arc legible.
 - **It generalizes Unit 10's retrieval-as-a-tool framing.** Unit
   10 (Vector search / RAG) taught retrieval as the canonical
   knowledge-injection pattern; Unit 12 reframes retrieval as one
@@ -247,6 +250,41 @@ are locked; Units 13–15 remain sketched.
   exactly the failure mode the curriculum exists to prevent).
   Consistent with Units 9 and 10, which both list Evals as a
   prereq.
+
+### Position rationale (Unit 13)
+
+- **Multimodal as Unit 13** is a *capability* unit, not a
+  mechanics unit. It depends on the production-economics
+  foundation — Unit 8 (Cost dynamics) because image tokens are a
+  distinct, often dominant cost line, and the "is the VLM worth
+  it vs. a cheaper extractor" economics is the *core* of the
+  unit; Unit 4 (Evals) because vision outputs need their own
+  eval discipline (you cannot eyeball-vibe-check image
+  understanding at scale); Unit 1 (LLM mechanics) for how vision
+  models tokenize and process images. Cost is the load-bearing
+  prereq here — the trade-off is fundamentally an economic one.
+- **It is orthogonal to Unit 12 (Tool use), not downstream.** The
+  core send-the-image-to-a-VLM vs. extract-structured-signal-first
+  vs. hybrid trade-off is a direct model-capability decision; it
+  does not require tool-use orchestration mechanics. Multimodal
+  pipelines often *do* route images through tools in production,
+  but that is an implementation detail, not a teaching
+  dependency. Unit 13 is independently authorable and omits
+  Unit 12 from its prereqs — keeping the chain minimal, the same
+  discipline applied to every prior lock.
+- **The load-bearing pedagogy is that "use the multimodal model"
+  is not the default.** Many image tasks are stable extraction
+  problems better served by OCR / classical CV at a fraction of
+  the cost and with far better evaluability; conversely, some
+  genuinely open-ended visual-understanding tasks are only
+  solvable with a VLM and a brittle CV pipeline will fail them.
+  The PM skill is diagnosing which shape a task is before
+  reaching for the expensive, hard-to-eval option.
+- **Position before Agents (14) and Safety (15)** because
+  multimodal inputs expand the action and risk surface those
+  units govern — an agent that can see screenshots, or a safety
+  layer that must moderate images, both presuppose the
+  vision-capability literacy this unit builds.
 
 ---
 
@@ -292,14 +330,19 @@ Revisit after closed beta.
 
 ## What this file commits us to
 
-1. **Author Unit 11 (Streaming UX) next.** Unit 10 (RAG
-   fundamentals) shipped and passed gate 2026-05-15 (see
-   docs/UNIT_10_GATE.md — 100% per-criterion re-run). No detour
-   into Unit 13 or Unit 15 because something else is "more
-   interesting." Unit 12 (Tool use / function calling) is locked
-   2026-05-16, satisfying the one-unit-ahead lock buffer for
-   Unit 11.
-2. **Lock Unit 13 (Multimodal / vision basics) before Unit 12
+1. **Author Unit 12 (Tool use / function calling) next.** Unit 11
+   (Streaming UX) shipped and passed gate 2026-05-16 (see
+   docs/UNIT_11_GATE.md — effective 100% after the p007/p014
+   rewrites). No detour into Unit 14 or Unit 15 because something
+   else is "more interesting." Unit 13 (Multimodal / vision
+   basics) is locked 2026-05-17, satisfying the one-unit-ahead
+   lock buffer for Unit 12. Unit 12's regression set is authored
+   under the carried-forward constraints from UNIT_11_GATE.md:
+   **no flagged-expected pairs** (the flag does not fire on real
+   answers regardless of shape) and **no parenthetical
+   option-lists / markdown headers / quote-led sentences in
+   answer text** (deterministic grader-payload triggers).
+2. **Lock Unit 14 (Agents / multi-step reasoning) before Unit 13
    authoring begins.** Maintain the one-unit-ahead lock buffer
    so the prereq chain is always settled before slot (a) begins
    on the active unit.
