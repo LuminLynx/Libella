@@ -1,0 +1,676 @@
+# Regression set for the Tool use / function calling unit
+# (tool-use-bundle-0).
+#
+# Unit 12 is authored as flagship under STRATEGY.md § T2 — >= 20
+# pairs before publish. First unit authored under the carried-
+# forward UNIT_11_GATE.md constraints:
+#   * NO flagged-expected pairs. The flag does not fire on real
+#     answers regardless of shape (refuted across Units 2/9/10/11).
+#   * NO parenthetical option-lists in answer text — e.g. never
+#     "granularity (narrow, broad, or composite)" inside an
+#     answer; write it as prose. This was the deterministic
+#     grader-payload trigger in Unit 11 p007/p014.
+#   * NO markdown-style section headers (Unit 9 p016 lesson),
+#     NO quote-led sentences (Unit 11 lesson).
+#   * English-only per docs/curriculum/v1-path-outline.md.
+#
+# Position-to-criterion mapping (from
+# content/units/tool-use-bundle-0.md slot 8 rubric):
+#
+#   1. "Names the three coupled tool-use decisions — tool
+#      granularity, schema strictness, error-recovery locus —
+#      AND treats them as coupled, the combination sets the
+#      feel, not three independent toggles."
+#   2. "Explains the mechanism behind a mismatched-combination
+#      failure AND identifies that the decisions constrain each
+#      other (lenient schema implies model-side recovery; an
+#      open-ended tool surface cannot be deterministically
+#      wrapped)."
+#   3. "Maps a matched combination to a surface by its stakes
+#      (reliable-workflow for high-stakes mutations like a
+#      refund; agentic-exploration for open-ended assistants;
+#      guided-agent for semi-structured) AND names the common PM
+#      error (treating tool use as one decision, inheriting SDK
+#      defaults, skipping the recovery decision)."
+#
+# Authoring distribution (21 pairs; Unit 10/11 gate-passing
+# shape minus the retired flagged-expected slot):
+#   * 6 pairs all-three-met (varied English voices, no
+#     parenthetical option-lists)
+#       p001 (balanced prose), p002 (terse engineering),
+#       p005 (been-bitten), p016 (long-narrative),
+#       p017 (structured PM-doc — flowing prose), p018
+#       (short-form)
+#   * 5 pairs partial credit (2 of 3) — deliberate borderlines
+#       p006 (c1+c2), p007 (c1+c3), p008 (c2+c3),
+#       p011 (c1+c3), p021 (c1+c3)
+#   * 2 pairs single-criterion-met
+#       p009 (c1), p010 (c2)
+#   * 6 pairs all-missed on-topic — absorbs the retired
+#     flagged-expected slot into the most reliably-graded bucket
+#       p004, p012, p014, p015, p019, p020
+#   * 2 pairs off-topic, all-missed, gradable (NOT flagged) —
+#     deliberately probe the Unit 14/15 boundary
+#       p003 (pivots to "should we let it act at all"),
+#       p013 (pivots to MCP / transport-protocol infra)
+#   * 0 pairs flagged-expected — retired per UNIT_11_GATE.md
+#
+# T2-B locked interpretation (per docs/PHASE_2_GATE.md and PR #72):
+# flagged = grader uncertainty, NOT "answer is bad." Off-topic
+# answers the grader can confidently grade all-not-met are
+# gradable — flagged: false.
+#
+# Pre-gate expectation: this set is unrun. Triage doc lands as
+# docs/UNIT_12_GATE.md after the first gate run, following the
+# UNIT_2 / UNIT_9 / UNIT_10 / UNIT_11 gate pattern.
+
+unit_id: tool-use-bundle-0
+
+description: |
+  Phase 3 / Unit 12 flagship gate set. Authored 2026-05-17.
+  21 pairs against the locked T2-B reading. First set authored
+  under the UNIT_11_GATE.md carried-forward constraints: zero
+  flagged-expected pairs, no parenthetical option-lists in answer
+  text, no markdown headers, no quote-led sentences, English-only.
+  Distribution is the Unit 10/11 gate-passing shape with the
+  retired flagged-expected slot absorbed into all-missed-on-topic
+  (6) — 6 all-met / 5 partial-credit / 2 single-criterion / 6
+  all-missed-on-topic / 2 off-topic-gradable. The two off-topic
+  pairs deliberately probe the Unit 14/15 scope boundary.
+
+pairs:
+  - id: p001
+    label: All three met, balanced prose covering the three decisions and the refund stakes
+    answer: |
+      Eng saying it will just define the functions is the trap.
+      Tool use here is not one decision but three coupled ones,
+      and the combination is what sets the feel rather than any
+      single choice.
+
+      The first decision is tool granularity, whether we expose
+      many narrow single-purpose tools or a few broad composites.
+      The second is schema strictness, whether the input contract
+      rejects malformed arguments or coerces them. The third is
+      error-recovery locus, whether a failed call is handed back
+      to the model to retry or caught by a deterministic
+      orchestrator. These constrain each other: a lenient schema
+      only works if the model interprets the coerced result, so
+      it implies model-side recovery.
+
+      For the refund capability specifically I would pick narrow
+      tools with a strict schema and orchestrator recovery, the
+      reliable-workflow combination, because a refund is an
+      irreversible auditable mutation where correctness beats
+      flexibility. The failure eng would hit by inheriting the
+      SDK default is broad lenient tools with model-side
+      recovery: a refund that errors gets fed back as text and
+      the model cheerfully retries it, double-refunding a
+      customer. Before launch I want the recovery decision made
+      explicitly, because it has no happy-path demo and otherwise
+      production decides it for us.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p002
+    label: All three met, terse engineering voice
+    answer: |
+      Three coupled decisions, not one. Granularity is narrow
+      single-purpose tools versus broad composites. Strictness is
+      reject-malformed versus coerce. Recovery locus is model
+      retries on the fed-back error versus a deterministic
+      orchestrator catching it. Coupled: lenient schema forces
+      model-side recovery because the model is what reads the
+      coerced result, and an open-ended tool surface cannot be
+      deterministically wrapped.
+
+      Refund is a high-stakes irreversible mutation, so narrow
+      plus strict plus orchestrator recovery, the
+      reliable-workflow combination. Auditable, predictable,
+      failures caught before they execute twice.
+
+      Define-the-functions defaults to broad and lenient with the
+      model retrying on error. On a refund that means the model
+      re-issues the refund when the first call returns an error,
+      double-paying the customer. Demos clean, operates badly.
+      Force the recovery decision before launch.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p003
+    label: Off-topic, gradable, pivots to "should we let a model take actions at all"
+    answer: |
+      Before we design any of this, I think the real question is
+      whether we should let a model take real-world actions on
+      customer accounts at all. Issuing refunds autonomously is a
+      trust and liability decision, not an engineering one. I
+      would want legal and risk to weigh in on whether an LLM
+      should ever be in the loop on money movement, and I would
+      lean toward keeping a human approving every refund
+      regardless of how the tools are built. The architecture is
+      secondary to that governance call.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p004
+    label: All-missed on-topic — "tool use is just an SDK feature, add the functions"
+    answer: |
+      Tool use is basically a solved SDK feature at this point.
+      Every provider lets you pass function definitions and the
+      model calls them. Eng is right that we define the functions
+      for looking up an order, checking inventory, and issuing a
+      refund, wire them up, and ship. There is not really a
+      product decision here beyond writing good descriptions. I
+      would let the engineers handle the integration and spend
+      our time on the conversation design instead.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p005
+    label: All three met, been-bitten experiential voice
+    answer: |
+      I shipped this mistake once. We gave a support assistant
+      broad, forgiving tools and let the model retry whenever a
+      call failed. It demoed beautifully. In production a refund
+      endpoint started returning a timeout while still processing
+      the refund, the model saw the error text, decided to try
+      again, and we double-refunded a few hundred customers
+      before anyone noticed.
+
+      That taught me tool use is three coupled decisions.
+      Granularity is how narrow each tool is. Strictness is
+      whether bad arguments are rejected or coerced.
+      Recovery-locus is whether the model retries on a fed-back
+      error or a deterministic orchestrator owns the failure.
+      They are coupled, because once you let the schema be
+      lenient the only thing that can interpret the result is the
+      model, so you have chosen model-side recovery whether you
+      meant to or not.
+
+      For a refund, narrow tools with a strict schema and
+      orchestrator recovery is the only combination I would
+      accept now, because the stakes are irreversible and
+      auditable. The product error is treating this as one
+      decision and inheriting the SDK default, and the recovery
+      decision is the one nobody makes until production makes it.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p006
+    label: Partial credit (c1+c2) — names the three coupled decisions and a mechanism, never maps a combination to surface stakes
+    answer: |
+      Tool use is three coupled decisions, not one. Tool
+      granularity is whether tools are many and narrow or few and
+      broad. Schema strictness is whether malformed arguments are
+      rejected or coerced. Error-recovery locus is whether the
+      model retries on a fed-back error or a deterministic
+      orchestrator catches it. The combination is what matters,
+      and the decisions constrain each other: a lenient schema
+      implies model-side recovery because the model is the only
+      thing that can interpret a coerced result, and an
+      open-ended tool surface cannot be deterministically
+      wrapped.
+
+      The failure mode eng would hit by inheriting the default is
+      broad lenient tools with orchestrator-only recovery. The
+      orchestrator cannot anticipate the model's improvisations,
+      so errors fall through silently and surface later as bad
+      data. The team needs to choose these deliberately rather
+      than accept the SDK default.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p007
+    label: Partial credit (c1+c3) — names the three coupled decisions and maps reliable-workflow by stakes, mechanism asserted not explained
+    answer: |
+      Tool use is three coupled decisions: tool granularity,
+      schema strictness, and error-recovery locus. They are
+      coupled, so the combination is what produces the feel
+      rather than any single pick.
+
+      For the refund capability the right combination is narrow
+      tools with a strict schema and orchestrator recovery, the
+      reliable-workflow combination, because a refund is a
+      high-stakes irreversible mutation that has to be auditable.
+      An open-ended assistant surface would instead want the
+      agentic-exploration combination, but a refund is not that
+      surface. Eng's instinct to just define the functions is the
+      classic product error of treating tool use as one decision
+      and inheriting whatever the SDK does by default, and it
+      will operate badly here even though it demos fine.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: false
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p008
+    label: Partial credit (c2+c3) — explains the mechanism and maps a stakes-matched combination, recovery leg left implicit so the three decisions are not all named
+    answer: |
+      The thing that will bite the team is the interaction
+      between how forgiving the tools are and what happens when
+      one fails. If we make the refund tool broad and lenient and
+      let the model handle errors, a refund endpoint that returns
+      an error while still processing the refund gets retried by
+      the model, and the customer is paid twice. The deeper point
+      is that the leniency choice constrains the failure choice:
+      once the schema is loose, only the model can interpret the
+      result, so you have implicitly handed recovery to the
+      model.
+
+      For a refund, which is irreversible and auditable, the
+      right match is a narrow strict tool whose failures are
+      owned by a deterministic wrapper, the reliable-workflow
+      shape. That fits the stakes; an open-ended assistant would
+      not need that rigor. The error is reaching for the
+      forgiving default because it is less upfront work.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p009
+    label: Single criterion (c1) — cleanly names the three coupled decisions, stops there
+    answer: |
+      Tool use is not a single decision. It is three coupled
+      ones, and the team should decide them together rather than
+      inheriting the SDK default. The first is tool granularity,
+      how narrow or broad each tool is. The second is schema
+      strictness, whether the input contract rejects bad
+      arguments or coerces them. The third is error-recovery
+      locus, whether a failed call goes back to the model or to a
+      deterministic orchestrator. These are coupled, so the
+      combination is what determines how the feature behaves, and
+      they should not be treated as three independent toggles.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p010
+    label: Single criterion (c2) — explains the broad-lenient-plus-orchestrator-only failure mechanism without naming the framework or mapping a combination
+    answer: |
+      The core thing that will go wrong is how the forgiveness of
+      the tool inputs interacts with who handles failures. If the
+      tools accept loosely-shaped arguments and a deterministic
+      wrapper is the only thing catching errors, the wrapper
+      cannot anticipate what the model will improvise, so a whole
+      class of failures simply falls through and shows up later
+      as corrupted data nobody traced. It gets worse because the
+      looseness and the failure handling are entangled: once
+      arguments are coerced rather than validated, the only thing
+      that can make sense of the coerced result is the model
+      itself, so a wrapper-only approach is fighting the design.
+      That entanglement is the heart of why this is hard.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: true
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p011
+    label: Partial credit (c1+c3) — names decisions and maps a stakes combination but treats recovery-locus as not really a product decision
+    answer: |
+      Tool use is three coupled decisions: tool granularity,
+      schema strictness, and error-recovery locus. The
+      combination is what matters, so they should be chosen
+      together.
+
+      For the refund capability the right shape is narrow tools
+      with a strict schema, the reliable-workflow combination,
+      because a refund is a high-stakes irreversible mutation
+      that must be auditable. Defaulting to broad forgiving tools
+      is the usual product mistake of treating tool use as one
+      inherited decision.
+
+      Error recovery mostly takes care of itself once the tools
+      are narrow and strict, so it is really an implementation
+      detail the framework handles rather than a product
+      decision. The two product choices are granularity and
+      strictness; the framework will deal with failures sensibly.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: false
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p012
+    label: All-missed on-topic — "schema strictness doesn't matter, frontier models rarely emit bad args"
+    answer: |
+      Schema strictness is over-thought. Frontier models are very
+      good at producing well-formed arguments now, so rejecting
+      malformed input is solving a problem we will almost never
+      have. We should keep the tool definitions permissive so the
+      model is not fighting the contract, accept whatever it
+      sends for the order lookup and the refund, and let the
+      downstream services validate if they care. Strict schemas
+      just add friction and more failure paths for a case that
+      barely occurs in practice. Permissive by default is the
+      pragmatic call.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p013
+    label: Off-topic, gradable, pivots to MCP vs native function calling transport debate
+    answer: |
+      The decision that actually matters here is the integration
+      protocol. Native provider function calling locks us into
+      one vendor's schema format, whereas the Model Context
+      Protocol gives us a portable tool layer we can reuse across
+      models and even across products. I would push eng to
+      standardize on an MCP server for the order and refund tools
+      rather than hand-wiring provider-specific function
+      definitions. Get the transport and portability decision
+      right first and the rest follows from it.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p014
+    label: All-missed on-topic — "one broad do-everything tool is simplest"
+    answer: |
+      Simplicity should win here. Instead of a pile of narrow
+      tools, give the model a single broad tool that takes an
+      action name and a free-form parameters object and routes
+      internally. One tool is less to document, less for the
+      model to choose between, and less surface to maintain. The
+      model is smart enough to fill in the right action and
+      arguments for an order lookup or a refund. Fewer tools is
+      strictly simpler and simpler is better, so a single
+      do-everything tool is the right call.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p015
+    label: All-missed on-topic — "always let the model retry on any tool error"
+    answer: |
+      Error handling is straightforward: whenever a tool call
+      fails, hand the error back to the model and let it try
+      again. The model has the full context and can adapt its
+      next attempt, which is more flexible than hard-coding
+      recovery logic for every failure mode. This works uniformly
+      for the order lookup, the inventory check, and the refund,
+      so we do not need different handling per tool. Universal
+      model-side retry is the simplest robust policy and we
+      should apply it everywhere.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p016
+    label: All three met, long-narrative voice
+    answer: |
+      Let me walk through why just defining the functions is the
+      wrong instinct for this assistant, because the reasoning is
+      the whole point.
+
+      Tool use looks like one decision and is actually three, and
+      the three are coupled. The first is how granular the tools
+      are, ranging from many tools that each do exactly one thing
+      to a few broad tools that each do a lot. The second is how
+      strict the input contract is, from rejecting anything
+      malformed to quietly coercing whatever the model sends. The
+      third is where a failed call is recovered, either handed
+      back to the model to reason about and retry or caught by a
+      deterministic orchestrator that decides what happens next.
+
+      What makes this one coupled decision rather than three
+      independent ones is that the choices constrain each other.
+      The moment the schema is lenient, the only thing capable of
+      interpreting a coerced result is the model, so leniency has
+      silently chosen model-side recovery for you. And a tool
+      surface that is broad and open-ended cannot be wrapped by a
+      deterministic orchestrator, because the orchestrator would
+      have to anticipate every improvisation.
+
+      For the refund capability the combination that fits is
+      narrow tools, a strict schema, and orchestrator recovery,
+      the reliable-workflow shape, because a refund is
+      irreversible, auditable, and exactly the kind of action you
+      do not want a model retrying on its own. The order lookup
+      could tolerate something looser, but the refund cannot. The
+      failure the team would ship by inheriting the default is a
+      refund that errors, comes back to the model as text, and
+      gets retried into a double payment, and the recovery
+      decision is the one that never gets made until an incident
+      makes it.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p017
+    label: All three met, structured PM-doc voice in flowing prose, no headers or parentheticals
+    answer: |
+      Scoping tool use for the assistant. There are three coupled
+      decisions and the combination produces the feel, so they
+      have to be decided together rather than inherited from the
+      SDK.
+
+      The first decision is tool granularity, which runs from
+      many narrow single-purpose tools to a few broad composites.
+      The second is schema strictness, which runs from rejecting
+      malformed arguments to coercing them best-effort. The third
+      is error-recovery locus, which is either the model
+      retrying on a fed-back error or a deterministic orchestrator
+      owning the failure. These are coupled because a lenient
+      schema forces model-side recovery, since only the model can
+      interpret a coerced result, and a broad open-ended surface
+      cannot be deterministically wrapped.
+
+      The recommended combination for the refund capability is
+      narrow tools with a strict schema and orchestrator
+      recovery, the reliable-workflow shape, because the refund
+      is an irreversible auditable mutation where correctness
+      beats flexibility. The rationale for not just defining the
+      functions is that the SDK default tends toward broad
+      lenient tools with model-side recovery, and on a refund
+      that means the model retries a failed payment and
+      double-pays the customer. The risk if this analysis is
+      skipped is that the recovery decision is never made,
+      because it has no happy-path demo, and production makes it
+      for us.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p018
+    label: All three met, short-form
+    answer: |
+      Three coupled decisions, not one. Granularity, schema
+      strictness, recovery locus. Coupled because a lenient
+      schema forces model-side recovery and an open-ended surface
+      cannot be deterministically wrapped.
+
+      Refund is high-stakes and irreversible, so narrow plus
+      strict plus orchestrator recovery, the reliable-workflow
+      combination.
+
+      Just-define-the-functions inherits broad, lenient,
+      model-retries. On a refund that double-pays customers when
+      the endpoint errors mid-process. Force the recovery
+      decision before launch.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: true
+        - position: 3
+          met: true
+      flagged: false
+
+  - id: p019
+    label: All-missed on-topic — "recovery is the framework's job, not a product decision"
+    answer: |
+      Failure handling is an infrastructure concern, not
+      something product should be scoping. The agent framework we
+      are using already has retry and error-handling built in, so
+      whether a failed refund is retried or escalated is something
+      the framework decides and the engineers configure. Our job
+      is to specify what the tools do and write good
+      descriptions; the plumbing around failures is below the
+      product line. I would not spend product cycles on recovery
+      behavior when the framework owns it.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p020
+    label: All-missed on-topic — "tools are basically prompt engineering, just describe them well"
+    answer: |
+      The lever that actually matters for tool use is the
+      descriptions. A tool is only as good as how well you
+      describe it to the model, so the work is really prompt
+      engineering. If we write clear, detailed descriptions for
+      the order lookup, the inventory check, and the refund, the
+      model will call them correctly. Everything else is
+      secondary to getting the wording of the tool descriptions
+      right. I would focus the team's effort there and treat the
+      rest as boilerplate.
+    expected:
+      criteria:
+        - position: 1
+          met: false
+        - position: 2
+          met: false
+        - position: 3
+          met: false
+      flagged: false
+
+  - id: p021
+    label: Partial credit (c1+c3) — coupling named and surface mapped by stakes, but the failure mechanism is muddied
+    answer: |
+      Tool use is three coupled decisions: tool granularity,
+      schema strictness, and error-recovery locus. They are
+      coupled, so the combination is what matters rather than any
+      single choice.
+
+      For the refund capability the right combination is narrow
+      tools with a strict schema and orchestrator recovery, the
+      reliable-workflow shape, because a refund is a high-stakes
+      irreversible mutation and that combination fits the stakes.
+      Defaulting to whatever the SDK does is the standard mistake
+      of treating tool use as one decision.
+
+      If the combination is wrong things will generally go badly
+      and the feature will feel unreliable, since mismatched
+      pieces tend to interact poorly and produce a worse outcome
+      overall. The important part is picking the combination that
+      matches the surface, and a poor match will degrade quality
+      in the ways you would expect.
+    expected:
+      criteria:
+        - position: 1
+          met: true
+        - position: 2
+          met: false
+        - position: 3
+          met: true
+      flagged: false
