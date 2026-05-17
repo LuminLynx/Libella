@@ -33,19 +33,20 @@
 #      error (treating tool use as one decision, inheriting SDK
 #      defaults, skipping the recovery decision)."
 #
-# Authoring distribution (21 pairs; Unit 10/11 gate-passing
-# shape minus the retired flagged-expected slot):
+# Authoring distribution (21 pairs; post-Unit-12-gate
+# realignment per docs/UNIT_12_GATE.md, 2026-05-17):
 #   * 6 pairs all-three-met (varied English voices, no
 #     parenthetical option-lists)
 #       p001 (balanced prose), p002 (terse engineering),
 #       p005 (been-bitten), p016 (long-narrative),
 #       p017 (structured PM-doc — flowing prose), p018
 #       (short-form)
-#   * 5 pairs partial credit (2 of 3) — deliberate borderlines
-#       p006 (c1+c2), p007 (c1+c3), p008 (c2+c3),
-#       p011 (c1+c3), p021 (c1+c3)
-#   * 2 pairs single-criterion-met
-#       p009 (c1), p010 (c2)
+#   * 2 pairs partial credit (2 of 3) — was 5 pre-realignment
+#       p006 (c1+c2), p007 (c1+c3)
+#   * 5 pairs single-criterion-met — was 2 pre-realignment
+#       p009 (c1), p010 (c2), p008 (c2 — c3 realigned T->F),
+#       p011 (c1 — c3 realigned T->F), p021 (c1 — c3 realigned
+#       T->F)
 #   * 6 pairs all-missed on-topic — absorbs the retired
 #     flagged-expected slot into the most reliably-graded bucket
 #       p004, p012, p014, p015, p019, p020
@@ -60,23 +61,60 @@
 # answers the grader can confidently grade all-not-met are
 # gradable — flagged: false.
 #
-# Pre-gate expectation: this set is unrun. Triage doc lands as
-# docs/UNIT_12_GATE.md after the first gate run, following the
-# UNIT_2 / UNIT_9 / UNIT_10 / UNIT_11 gate pattern.
+# UNIT_12_GATE realignment (2026-05-17): initial run (21 pairs,
+# 95% per-criterion agreement, 0 ERRORs, 21/21 flagged-correct —
+# cleanest initial run in the path) triaged via _inspect_pairs on
+# the claude/unit-12-gate-diagnostics throwaway branch. All three
+# disagreements were c3, all expected-True -> grader-False, same
+# rationale (the c3-strict pattern):
+#   * p008 c3 T->F (0.75) — gestures vaguely at the PM error
+#     instead of naming the specific skipping-recovery / SDK-
+#     default failure. Becomes c2-only.
+#   * p011 c3 T->F (0.85) — dismisses recovery as "an
+#     implementation detail the framework handles", committing
+#     the recovery-skip error c3 warns against. Becomes c1-only.
+#   * p021 c3 T->F (0.80) — omits why-stakes-drive-the-choice
+#     and the specific PM error. Becomes c1-only.
+# Three cross-pair-consistent realignments, zero rewrites (the
+# no-parenthetical-option-lists constraint held — zero payload
+# ERRORs), zero flag realignments (flagged-expected retirement
+# held — 21/21). Zero preserved disagreements, continuing the
+# Unit 9/10/11 precedent. p008's 0.75 is in the stochasticity
+# zone but the identical rationale at 0.85/0.80 on p011/p021
+# justifies realign over preserve (same reasoning as Unit 11
+# p008).
+#
+# Cross-unit pattern escalation: c3-strict here is the SAME root
+# cause as Unit 9 c2-strict, Unit 10 c2-strict, Unit 11 c3-strict
+# — rubric criteria with conjunctive AND-clauses authored too
+# leniently. Four of the last four gated units. Escalated in
+# docs/UNIT_12_GATE.md from a someday-note to a live authoring-
+# checklist item (split AND-clause criteria into separately-
+# scored sub-criteria in the next bundle-1 rubric pass).
+#
+# When the gate re-runs after realignment, watch for:
+#   - p008/p011/p021 matching the realigned c3=False reading.
+#   - Still zero payload ERRORs (constraint holds).
+#   - Still 21/21 flagged-correct.
 
 unit_id: tool-use-bundle-0
 
 description: |
-  Phase 3 / Unit 12 flagship gate set. Authored 2026-05-17.
-  21 pairs against the locked T2-B reading. First set authored
-  under the UNIT_11_GATE.md carried-forward constraints: zero
-  flagged-expected pairs, no parenthetical option-lists in answer
-  text, no markdown headers, no quote-led sentences, English-only.
-  Distribution is the Unit 10/11 gate-passing shape with the
-  retired flagged-expected slot absorbed into all-missed-on-topic
-  (6) — 6 all-met / 5 partial-credit / 2 single-criterion / 6
-  all-missed-on-topic / 2 off-topic-gradable. The two off-topic
-  pairs deliberately probe the Unit 14/15 scope boundary.
+  Phase 3 / Unit 12 flagship gate set. Authored 2026-05-17;
+  realigned 2026-05-17 after the initial gate run per
+  docs/UNIT_12_GATE.md. 21 pairs against the locked T2-B reading.
+  First set authored under the UNIT_11_GATE.md carried-forward
+  constraints: zero flagged-expected pairs, no parenthetical
+  option-lists in answer text, no markdown headers, no quote-led
+  sentences, English-only — all three validated by the initial
+  run (zero payload ERRORs, 21/21 flagged-correct, 95%
+  per-criterion, the cleanest initial run in the path). Three
+  cross-pair-consistent c3 realignments (p008/p011/p021 c3
+  T->F), zero rewrites, zero flag realignments, zero preserved
+  disagreements. The c3-strict pattern is the same root cause as
+  Unit 9/10 c2-strict and Unit 11 c3-strict — escalated in
+  UNIT_12_GATE.md to a live authoring-checklist item. See header
+  for full triage.
 
 pairs:
   - id: p001
@@ -290,7 +328,7 @@ pairs:
       flagged: false
 
   - id: p008
-    label: Partial credit (c2+c3) — explains the mechanism and maps a stakes-matched combination, recovery leg left implicit so the three decisions are not all named
+    label: Single criterion (c2) — explains the mechanism but the matched-combination map gestures vaguely at the PM error instead of naming it (c3 realigned True→False 2026-05-17 per docs/UNIT_12_GATE.md c3-strict pattern)
     answer: |
       The thing that will bite the team is the interaction
       between how forgiving the tools are and what happens when
@@ -316,7 +354,7 @@ pairs:
         - position: 2
           met: true
         - position: 3
-          met: true
+          met: false
       flagged: false
 
   - id: p009
@@ -368,7 +406,7 @@ pairs:
       flagged: false
 
   - id: p011
-    label: Partial credit (c1+c3) — names decisions and maps a stakes combination but treats recovery-locus as not really a product decision
+    label: Single criterion (c1) — names the three coupled decisions but dismisses recovery-locus as an implementation detail, committing the recovery-skip error c3 warns against (c3 realigned True→False 2026-05-17 per docs/UNIT_12_GATE.md c3-strict pattern)
     answer: |
       Tool use is three coupled decisions: tool granularity,
       schema strictness, and error-recovery locus. The
@@ -394,7 +432,7 @@ pairs:
         - position: 2
           met: false
         - position: 3
-          met: true
+          met: false
       flagged: false
 
   - id: p012
@@ -645,7 +683,7 @@ pairs:
       flagged: false
 
   - id: p021
-    label: Partial credit (c1+c3) — coupling named and surface mapped by stakes, but the failure mechanism is muddied
+    label: Single criterion (c1) — coupling named but the stakes mapping omits why-stakes-drive-the-choice and the specific PM error, failing c3 (c3 realigned True→False 2026-05-17 per docs/UNIT_12_GATE.md c3-strict pattern)
     answer: |
       Tool use is three coupled decisions: tool granularity,
       schema strictness, and error-recovery locus. They are
@@ -672,5 +710,5 @@ pairs:
         - position: 2
           met: false
         - position: 3
-          met: true
+          met: false
       flagged: false
