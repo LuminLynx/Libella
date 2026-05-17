@@ -9,22 +9,44 @@
 
 ## Decision
 
-**Unit 12 PASSED initial run on 2026-05-17 at 95% per-criterion
-agreement (60/63) — the cleanest initial run in the path.** Zero
-payload ERRORs, 21/21 flagged-correct. The unit was published on
-author (PR #123, `status: published`); this PR realigns the
-regression YAML and ships the gate audit. Re-run pending merge.
+**Unit 12 PASSED 2026-05-17 — true 100% (63/63).** Initial run
+hit 95% (60/63) with zero payload ERRORs and 21/21
+flagged-correct — the cleanest initial run in the path. Three
+cross-pair-consistent c3 realignments (p008, p011, p021, all c3
+True→False) landed; the realignment re-run hit **100% (63/63),
+0 ERRORs, 21/21 flagged-correct, 21/21 fully passed** with no
+residual blemish — cleaner than Unit 11, which needed a post-
+re-run p014 rewrite. The unit was published on author (PR #123,
+`status: published`); no flip required. **Zero rewrites, zero
+flag realignments, zero preserved disagreements** — continuing
+the Unit 9/10/11 precedent and setting a new best.
 
-Three cross-pair-consistent c3 realignments (p008, p011, p021,
-all c3 True→False). **Zero rewrites, zero flag realignments,
-zero preserved disagreements** — continuing the Unit 9/10/11
-precedent and setting a new best.
-
-| Criterion | Required | Initial run (21 pairs) | Post-realignment (projected) | Verdict |
+| Criterion | Required | Initial run (21 pairs) | Realignment re-run | Verdict |
 |---|---|---|---|---|
-| Per-criterion agreement | ≥ 80% | 95% (60/63), 0 ERRORs | 100% (63/63) | ✅ |
+| Per-criterion agreement | ≥ 80% | 95% (60/63), 0 ERRORs | **100% (63/63), 0 ERRORs** | ✅ |
 | Honest flagged behavior | spec-faithful | 21/21 | 21/21 | ✅ |
 | Cost / call | reasonable | ~$0.011/call | ~$0.011/call | ✅ |
+
+### Re-run evidence (2026-05-17, post-realignment)
+
+```
+Pairs scored:               21
+Errored (no score):         0
+Fully passed (all crit + flagged):  21 (100%)
+Per-criterion agreement:    63/63 (100%)
+Flagged-correct:            21/21
+```
+
+All three realigned pairs (p008, p011, p021) graded `crit=3/3
+flagged=ok` against the realigned c3=False reading. Zero payload
+ERRORs on the re-run confirms the no-parenthetical-option-lists
+constraint holds across runs, not just by luck. 21/21
+flagged-correct confirms the flagged-expected retirement holds.
+Unit 12 is the first unit in the path to reach a clean 100% on
+the realignment re-run with **no residual rewrite** (Unit 4 and
+Unit 8 reached 100% but via different paths; Unit 11 needed a
+post-re-run p014 rewrite). 95% → 100%, three realignments, zero
+rewrites — the cleanest gate closeout to date.
 
 ---
 
