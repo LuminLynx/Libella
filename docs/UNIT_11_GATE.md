@@ -157,6 +157,14 @@ finding, the answer-text constraints are now: **no markdown-style
 headers, no quote-led sentences, no parenthetical option-lists.**
 The T2-D guardrail keeps all of these safe (rejected, never
 mis-graded) — but each costs a rewrite/re-run cycle, so they are
+
+> **Retroactive sweep (2026-05-17).** Per the UNIT_12_GATE.md
+> finding, the pre-constraint shipped regression sets were
+> swept for this trigger. Units 9 and 10 were clean; Unit 11
+> p006 was the sole remaining instance and was de-parentheticalized
+> to prose (c1+c2 profile unchanged) so a future bundle-1
+> rubric re-run cannot hit a spurious payload ERROR on it.
+> Tracked separately from this gate's PASSED decision.
 authoring-time constraints, not runtime risks. This directly
 shapes Unit 12+ regression authoring.
 

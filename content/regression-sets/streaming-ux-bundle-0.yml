@@ -324,15 +324,16 @@ pairs:
       flagged: false
 
   - id: p006
-    label: Partial credit (c1+c2) — names the three coupled decisions and the mechanism, never maps a matched combination to the surface
+    label: Partial credit (c1+c2) — names the three coupled decisions and the mechanism, never maps a matched combination to the surface (answer de-parentheticalized 2026-05-17 per the UNIT_12_GATE.md sweep; profile unchanged)
     answer: |
       Streaming this brief is three coupled decisions, not one.
-      What to stream (tokens, semantic chunks, or status), how to
-      render the streamed state (continuous flow, progressive
-      sections, or typed-out), and how to recover from a
-      mid-stream failure (silent retry, partial accept, or full
-      restart). The combination is what matters, not any single
-      pick.
+      The first is what to stream, whether raw tokens or semantic
+      chunks or just status. The second is how to render the
+      streamed state, whether as a continuous flow or progressive
+      sections or a typed-out reveal. The third is how to recover
+      from a mid-stream failure, whether by silent retry or
+      partial accept or full restart. The combination is what
+      matters, not any single pick.
 
       Eng's "stream it like chat" instinct fails because of how
       the decisions interact. Token-streaming a structured brief
